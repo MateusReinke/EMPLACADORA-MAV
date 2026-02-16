@@ -12,8 +12,8 @@ set -uo pipefail
 
 ensure_node_dependencies() {
   if [ ! -d node_modules ] || ! node -e "require.resolve('express');require.resolve('cookie-parser');require.resolve('pg')" >/dev/null 2>&1; then
-    echo "[start.sh] Dependências Node ausentes; executando npm ci..."
-    npm ci || return 1
+    echo "[start.sh] Dependências Node ausentes; executando npm install..."
+    npm install || return 1
   fi
 
   return 0

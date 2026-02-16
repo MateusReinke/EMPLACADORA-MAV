@@ -13,6 +13,9 @@ const DB_PORT = Number(process.env.POSTGRES_PORT || 5435);
 const DB_NAME = process.env.POSTGRES_DB || 'emplacadora';
 const DB_USER = process.env.POSTGRES_USER || 'emplacadora';
 const DB_PASSWORD = process.env.POSTGRES_PASSWORD || 'emplacadora123';
+const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@emplacadora.com';
+const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || '123456';
+const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador Padrão';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +79,53 @@ const buildWhere = (filters = [], startIndex = 1) => {
   };
 };
 
+
+const ensureAuthSchema = async () => {
+  await pool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('admin','seller','physical','juridical')),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(
+    `
+      INSERT INTO users (name, email, password, role, active)
+      VALUES ($1, $2, $3, 'admin', true)
+      ON CONFLICT (email)
+      DO UPDATE SET
+        name = EXCLUDED.name,
+        password = EXCLUDED.password,
+        role = 'admin',
+        active = true,
+        updated_at = NOW()
+    `,
+    [DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD]
+  );
+};
+
+const getAuthDiagnostics = async () => {
+  const [{ rows: adminRows }, { rows: totalRows }] = await Promise.all([
+    pool.query('SELECT id, email, role, active FROM users WHERE email = $1 LIMIT 1', [DEFAULT_ADMIN_EMAIL]),
+    pool.query('SELECT COUNT(*)::int AS total FROM users'),
+  ]);
+
+  return {
+    adminEmail: DEFAULT_ADMIN_EMAIL,
+    adminExists: !!adminRows[0],
+    adminActive: adminRows[0]?.active ?? false,
+    usersCount: totalRows[0]?.total ?? 0,
+  };
+};
+
 const getSessionUser = async (req) => {
   const token = req.cookies?.vp_session;
   if (!token) return null;
@@ -91,7 +141,8 @@ const getSessionUser = async (req) => {
 app.get('/api/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ ok: true });
+    const auth = await getAuthDiagnostics();
+    res.json({ ok: true, auth });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error) });
   }
@@ -251,6 +302,19 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[server] running on 0.0.0.0:${PORT}`);
-});
+const bootstrap = async () => {
+  try {
+    await ensureAuthSchema();
+    const auth = await getAuthDiagnostics();
+    console.log('[server] auth bootstrap:', auth);
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[server] running on 0.0.0.0:${PORT}`);
+    });
+  } catch (error) {
+    console.error('[server] failed to initialize database:', error);
+    process.exit(1);
+  }
+};
+
+bootstrap();

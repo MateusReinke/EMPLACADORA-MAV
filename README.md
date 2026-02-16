@@ -1,60 +1,37 @@
 # EMPLACADORA-MAV
 
-Aplicação com frontend React + API Node + PostgreSQL no mesmo deploy.
-
-## Arquitetura de deploy
-
-No `docker compose up --build -d`, sobe tudo junto:
-- API/Frontend em `8090`
-- PostgreSQL em `5435`
-- Schema e seeds automáticos no bootstrap (`deploy/init.sql`)
+Aplicação React/Vite para gestão de emplacadora, preparada para rodar com:
+- **App Web na porta `8090`**
+- **PostgreSQL na porta `5435`**
+- **Deploy no mesmo container** (app + banco no mesmo runtime)
 
 ## Credenciais padrão
 
-- **admin**: `admin@emplacadora.com` / `123456`
-- **seller demo**: `vendedor@emplacadora.com` / `123456`
-- **client demo**: `cliente@emplacadora.com` / `123456`
+Para primeiro acesso:
+- **Email:** `admin@emplacadora.com`
+- **Senha:** `123456`
+- **Perfil:** `admin`
 
-## Subir com Docker Compose
-
-```bash
-docker compose up --build -d
-```
-
-Acesso:
-- App/API: `http://localhost:8090`
-- Rede local: `http://SEU_IP_LOCAL:8090`
-- PostgreSQL: `localhost:5435`
-
-Logs:
+## Rodando localmente (sem Docker)
 
 ```bash
-docker compose logs -f
+npm install
+npm run dev -- --host 0.0.0.0 --port 8090
 ```
 
-Parar:
+## Deploy em um único container
 
 ```bash
-docker compose down
+docker build -t emplacadora-mav .
+docker run --rm -p 8090:8090 -p 5435:5435 emplacadora-mav
 ```
 
-## Banco estruturado no deploy
+Ao iniciar, o container:
+1. sobe o PostgreSQL interno na porta `5435`;
+2. cria banco/usuário padrão (se ainda não existirem);
+3. aplica seed de usuário admin inicial;
+4. sobe o frontend em `8090`.
 
-O bootstrap cria (se necessário):
-- `users`
-- `clients`
-- `vehicles`
-- `service_categories`
-- `service_types`
-- `order_statuses`
-- `orders`
-- `inventory_movements`
-- `dashboard_layouts`
-- view `inventory_status`
+## Variáveis de ambiente
 
-Além de seeds iniciais de status/categorias/tipos de placa e usuário admin.
-
-## Observação sobre integração
-
-A integração agora é via backend HTTP (`/api/*`) em PostgreSQL.
-Não usa localStorage como fonte de dados da aplicação.
+Use como base o `.env.example`.

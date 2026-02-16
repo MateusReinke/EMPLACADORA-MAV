@@ -39,4 +39,4 @@ psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -v admin_name="$DEFAULT_ADMIN_NAME" \
   -f /docker-entrypoint-initdb.d/init.sql
 
-npm run preview -- --host 0.0.0.0 --port "$APP_PORT"
+npm run start

@@ -39,7 +39,6 @@ const ALLOWED_TABLES = new Set([
   'service_types',
   'order_statuses',
   'plate_types',
-  'inventory_items',
   'inventory_movements',
   'dashboard_layouts',
   'inventory_status',

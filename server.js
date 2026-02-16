@@ -16,8 +16,6 @@ const DB_PASSWORD = process.env.POSTGRES_PASSWORD || 'emplacadora123';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@emplacadora.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || '123456';
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador Padrão';
-const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || 'dev-integration-key';
-const API_VERSION = 'v1';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -127,60 +125,6 @@ const getAuthDiagnostics = async () => {
     usersCount: totalRows[0]?.total ?? 0,
   };
 };
-
-
-const parsePagination = (req) => {
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 500);
-  const offset = Math.max(Number(req.query.offset) || 0, 0);
-  return { limit, offset };
-};
-
-const requireIntegrationKey = (req, res, next) => {
-  const provided = req.header('x-api-key');
-  if (!provided || provided !== INTEGRATION_API_KEY) {
-    return res.status(401).json({
-      ok: false,
-      error: {
-        message: 'Não autorizado. Informe x-api-key válido.',
-      },
-    });
-  }
-
-  return next();
-};
-
-const mapOrderWhere = (params = {}) => {
-  const clauses = [];
-  const values = [];
-
-  if (params.statusId) {
-    clauses.push(`o.status_id = $${values.length + 1}`);
-    values.push(params.statusId);
-  }
-
-  if (params.updatedSince) {
-    clauses.push(`o.updated_at >= $${values.length + 1}`);
-    values.push(params.updatedSince);
-  }
-
-  return {
-    sql: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
-    values,
-  };
-};
-
-const orderSelectSql = `
-  SELECT o.*,
-    json_build_object('id', c.id, 'name', c.name, 'document', c.document, 'type', c.type, 'created_by', c.created_by) AS client,
-    json_build_object('id', st.id, 'name', st.name, 'category_id', st.category_id) AS "serviceType",
-    json_build_object('id', v.id, 'license_plate', v.license_plate, 'brand', v.brand, 'model', v.model, 'year', v.year, 'client_id', v.client_id, 'plate_type_id', v.plate_type_id, 'category', v.category) AS vehicle,
-    json_build_object('id', os.id, 'name', os.name, 'color', os.color, 'sort_order', os.sort_order) AS status
-  FROM orders o
-  LEFT JOIN clients c ON c.id = o.client_id
-  LEFT JOIN service_types st ON st.id = o.service_type_id
-  LEFT JOIN vehicles v ON v.id = o.vehicle_id
-  LEFT JOIN order_statuses os ON os.id = o.status_id
-`;
 
 const getSessionUser = async (req) => {
   const token = req.cookies?.vp_session;

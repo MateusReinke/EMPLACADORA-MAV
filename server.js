@@ -16,12 +16,8 @@ const DB_PASSWORD = process.env.POSTGRES_PASSWORD || 'emplacadora123';
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@emplacadora.com';
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || '123456';
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador Padrão';
-<<<<<<< HEAD
 const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || 'dev-integration-key';
 const API_VERSION = 'v1';
-=======
->>>>>>> main
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -131,7 +127,6 @@ const getAuthDiagnostics = async () => {
   };
 };
 
-<<<<<<< HEAD
 
 const parsePagination = (req) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 500);
@@ -185,9 +180,6 @@ const orderSelectSql = `
   LEFT JOIN vehicles v ON v.id = o.vehicle_id
   LEFT JOIN order_statuses os ON os.id = o.status_id
 `;
-
-=======
->>>>>>> main
 const getSessionUser = async (req) => {
   const token = req.cookies?.vp_session;
   if (!token) return null;
@@ -502,35 +494,21 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-<<<<<<< HEAD
 const startHttpServer = () => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[server] running on 0.0.0.0:${PORT}`);
   });
 };
-
-=======
->>>>>>> main
 const bootstrap = async () => {
   try {
     await ensureAuthSchema();
     const auth = await getAuthDiagnostics();
     console.log('[server] auth bootstrap:', auth);
-<<<<<<< HEAD
   } catch (error) {
     console.error('[server] failed to initialize database during bootstrap:', error);
     console.error('[server] continuing startup; /api/health will report DB status.');
   } finally {
     startHttpServer();
-=======
-
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`[server] running on 0.0.0.0:${PORT}`);
-    });
-  } catch (error) {
-    console.error('[server] failed to initialize database:', error);
-    process.exit(1);
->>>>>>> main
   }
 };
 

@@ -82,8 +82,8 @@ export const SUCCESS_MESSAGES = {
 export const checkAPIHealth = async () => {
   try {
     // Simple query to check if DB is responsive
-    const { data, error } = await import('@/lib/supabaseClient').then(
-      ({ supabase }) => supabase.from('service_categories').select('count').limit(1)
+    const { data, error } = await import('@/lib/dbClient').then(
+      ({ db }) => db.from('service_categories').select('count').limit(1)
     );
     
     return !error;

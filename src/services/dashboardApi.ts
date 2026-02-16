@@ -1,5 +1,5 @@
 // src/services/dashboardApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { DashboardStats, InventoryItem } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,14 +25,14 @@ export class DashboardService {
     ).toISOString();
 
     // 1. Total de pedidos
-    const { count: totalOrdersCount, error: ordersCountError } = await supabase
+    const { count: totalOrdersCount, error: ordersCountError } = await db
       .from("orders")
       .select("*", { count: "exact" });
     if (ordersCountError)
       console.error("Erro ao buscar total de pedidos:", ordersCountError);
 
     // 2. Faturamento do mês
-    const { data: monthlyOrders, error: monthlyOrdersError } = await supabase
+    const { data: monthlyOrders, error: monthlyOrdersError } = await db
       .from("orders")
       .select("value")
       .gte("created_at", startOfMonth)
@@ -44,13 +44,13 @@ export class DashboardService {
 
     // 3. Total de clientes
     const { count: totalClientsCount, error: clientsCountError } =
-      await supabase.from("clients").select("*", { count: "exact" });
+      await db.from("clients").select("*", { count: "exact" });
     if (clientsCountError)
       console.error("Erro ao buscar total de clientes:", clientsCountError);
 
     // 4. Total de vendedores
     const { count: totalSellersCount, error: sellersCountError } =
-      await supabase
+      await db
         .from("users")
         .select("*", { count: "exact" })
         .eq("role", "seller");
@@ -59,7 +59,7 @@ export class DashboardService {
 
     // 5. Pedidos por status
     const { data: ordersByStatusData, error: ordersByStatusError } =
-      await supabase.from("orders").select(`
+      await db.from("orders").select(`
         status_id,
         status:order_statuses (name, color)
       `);
@@ -85,7 +85,7 @@ export class DashboardService {
 
     // 6. Pedidos por tipo de serviço
     const { data: ordersByServiceTypeData, error: ordersByServiceTypeError } =
-      await supabase.from("orders").select(`
+      await db.from("orders").select(`
         service_type_id,
         serviceType:service_types (name)
       `);
@@ -132,7 +132,7 @@ export class DashboardService {
         999
       ).toISOString();
 
-      const { data: monthOrdersData, error: monthOrdersError } = await supabase
+      const { data: monthOrdersData, error: monthOrdersError } = await db
         .from("orders")
         .select("value")
         .gte("created_at", monthStart)
@@ -154,7 +154,7 @@ export class DashboardService {
 
     // 8. Itens em estoque baixo/crítico
     const { data: inventoryItemsData, error: inventoryItemsError } =
-      await supabase
+      await db
         .from("inventory_status") // Usando a VIEW aqui
         .select("*");
 
@@ -167,7 +167,7 @@ export class DashboardService {
       console.error("Erro ao buscar itens de estoque:", inventoryItemsError);
 
     // 9. Atividades Recentes (combina orders, clients e inventory_movements)
-    const { data: recentOrdersData, error: recentOrdersError } = await supabase
+    const { data: recentOrdersData, error: recentOrdersError } = await db
       .from("orders")
       .select(
         `
@@ -184,7 +184,7 @@ export class DashboardService {
       .limit(5);
 
     const { data: recentClientsData, error: recentClientsError } =
-      await supabase
+      await db
         .from("clients")
         .select(
           `
@@ -198,7 +198,7 @@ export class DashboardService {
         .limit(5);
 
     const { data: recentMovementsData, error: recentMovementsError } =
-      await supabase
+      await db
         .from("inventory_movements")
         .select(
           `

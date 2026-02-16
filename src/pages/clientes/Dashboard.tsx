@@ -9,7 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ClientDashboard() {
@@ -21,7 +21,7 @@ export default function ClientDashboard() {
   // Buscar client_id pelo user_id
   useEffect(() => {
     if (!user) return;
-    supabase
+    db
       .from("clients")
       .select("id")
       .eq("user_id", user.id)
@@ -35,8 +35,8 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!clientId) return;
     Promise.all([
-      supabase.from("vehicles").select("*").eq("client_id", clientId),
-      supabase
+      db.from("vehicles").select("*").eq("client_id", clientId),
+      db
         .from("orders")
         .select("*")
         .eq("client_id", clientId)

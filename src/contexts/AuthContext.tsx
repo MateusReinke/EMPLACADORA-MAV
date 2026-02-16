@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       password,
     });
 
-    if (data.user && !error) {
+    if (!error && data?.user) {
       await fetchUserProfile(data.user.id);
     }
 

@@ -1,73 +1,62 @@
-# Welcome to your Lovable project
+# EMPLACADORA-MAV
 
-## Project info
+Aplicação React/Vite para gestão de emplacadora, preparada para rodar com:
+- **App Web na porta `8090`**
+- **PostgreSQL na porta `5435`**
+- **Deploy no mesmo container** (app + banco no mesmo runtime)
 
-**URL**: https://lovable.dev/projects/4d70c790-90f3-40c3-b376-e93aac57d916
+## Credenciais padrão
 
-## How can I edit this code?
+Para primeiro acesso:
+- **Email:** `admin@emplacadora.com`
+- **Senha:** `123456`
+- **Perfil:** `admin`
 
-There are several ways of editing your application.
+## Rodando localmente (sem Docker)
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/4d70c790-90f3-40c3-b376-e93aac57d916) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm install
+npm run dev -- --host 0.0.0.0 --port 8090
 ```
 
-**Edit a file directly in GitHub**
+## Rodando via Docker Compose (recomendado)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+docker compose up --build -d
+```
 
-**Use GitHub Codespaces**
+Acesso:
+- App: `http://localhost:8090`
+- App na rede local: `http://SEU_IP_LOCAL:8090`
+- PostgreSQL: `localhost:5435`
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Para acompanhar logs:
 
-## What technologies are used for this project?
+```bash
+docker compose logs -f
+```
 
-This project is built with:
+Para parar:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+docker compose down
+```
 
-## How can I deploy this project?
+> Se quiser limpar também o volume do banco: `docker compose down -v`
 
-Simply open [Lovable](https://lovable.dev/projects/4d70c790-90f3-40c3-b376-e93aac57d916) and click on Share -> Publish.
+## Deploy em um único container (sem compose)
 
-## Can I connect a custom domain to my Lovable project?
+```bash
+docker build -t emplacadora-mav .
+docker run --rm -p 8090:8090 -p 5435:5435 emplacadora-mav
+```
 
-Yes, you can!
+Ao iniciar, o container:
+1. sobe o PostgreSQL interno na porta `5435`;
+2. cria banco/usuário padrão (se ainda não existirem);
+3. aplica seed de usuário admin inicial;
+4. sobe o frontend em `8090` com bind em `0.0.0.0`.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Variáveis de ambiente
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Use como base o `.env.example`.

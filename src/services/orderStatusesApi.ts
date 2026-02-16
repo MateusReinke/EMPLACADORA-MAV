@@ -1,5 +1,5 @@
 // src/services/orderStatusesApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 
 export interface OrderStatus {
   id: string;
@@ -12,7 +12,7 @@ export interface OrderStatus {
 export class OrderStatusesService {
   /** Retorna todos os status ativos ordenados por sort_order */
   static async getOrderStatuses(): Promise<OrderStatus[]> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("order_statuses")
       .select("id, name, active, color, sort_order")
       .eq("active", true)

@@ -1,6 +1,6 @@
 
 // src/services/clientsApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { Client as ClientType } from "@/types";
 
 export interface Client {
@@ -24,7 +24,7 @@ export type NewClient = Omit<
 export class ClientsService {
   /** Lista todos os clientes ativos */
   static async getClients(): Promise<ClientType[]> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("clients")
       .select("*")
       .eq("active", true)
@@ -35,7 +35,7 @@ export class ClientsService {
 
   /** Cria um novo cliente */
   static async createClient(payload: NewClient): Promise<ClientType> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("clients")
       .insert([payload])
       .select()

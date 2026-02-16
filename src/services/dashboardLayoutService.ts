@@ -1,5 +1,5 @@
 // src/services/dashboardLayoutService.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { DashboardWidget, DashboardLayout } from "@/types/dashboardWidgets";
 
 export class DashboardLayoutService {
@@ -9,7 +9,7 @@ export class DashboardLayoutService {
     userId: string,
     layout: DashboardWidget[]
   ): Promise<void> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from(this.TABLE_NAME)
       .upsert(
         {
@@ -34,7 +34,7 @@ export class DashboardLayoutService {
   }
 
   static async getLayout(userId: string): Promise<DashboardWidget[] | null> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from(this.TABLE_NAME)
       .select("layout_data")
       .eq("user_id", userId)

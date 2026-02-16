@@ -8,15 +8,15 @@ services:
       - "8090:8090"
       - "5435:5435"
     environment:
-      APP_PORT: 8090
-      POSTGRES_PORT: 5435
-      POSTGRES_DB: emplacadora
-      POSTGRES_USER: emplacadora
-      POSTGRES_PASSWORD: emplacadora123
-      DEFAULT_ADMIN_EMAIL: admin@emplacadora.com
-      DEFAULT_ADMIN_PASSWORD: 123456
-      DEFAULT_ADMIN_NAME: Administrador Padrão
-      INTEGRATION_API_KEY: dev-integration-key
+      APP_PORT: ${APP_PORT:-8090}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5435}
+      POSTGRES_DB: ${POSTGRES_DB:-emplacadora}
+      POSTGRES_USER: ${POSTGRES_USER:-emplacadora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-emplacadora123}
+      DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@emplacadora.com}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-123456}
+      DEFAULT_ADMIN_NAME: ${DEFAULT_ADMIN_NAME:-Administrador Padrão}
+      INTEGRATION_API_KEY: ${INTEGRATION_API_KEY:-dev-integration-key}
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped

@@ -38,8 +38,26 @@ O backend também garante no startup que:
 
 ## Variáveis de ambiente
 
-Use como base o `.env.example`.
+Use como base o `.env.example` (já com valores padrão para importação no Coolify/Compose).
 
+```bash
+cp .env.example .env
+```
+
+Variáveis disponíveis:
+- `APP_PORT`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `DEFAULT_ADMIN_EMAIL`
+- `DEFAULT_ADMIN_PASSWORD`
+- `DEFAULT_ADMIN_NAME`
+- `INTEGRATION_API_KEY`
+
+No `docker-compose.yml`, todas elas estão configuradas com fallback (`${VAR:-valor}`), então podem aparecer para preenchimento no ambiente de deploy.
+
+O `start.sh` também valida dependências em runtime e executa `npm ci` automaticamente quando `node_modules` não estiver disponível (cenário comum em alguns providers quando o diretório da app é remontado).
 
 ## Verificação rápida de saúde
 
@@ -50,7 +68,6 @@ curl -s http://localhost:8090/api/health
 ```
 
 A resposta deve conter `ok: true` e `auth.adminExists: true`.
-<<<<<<< HEAD
 
 
 ## Estrutura de APIs para Integrações
@@ -101,5 +118,3 @@ Se abrir `http://SEU_IP:8090` e aparecer `ERR_CONNECTION_REFUSED`:
    ```
 
 O startup agora tenta subir o PostgreSQL local, mas inicia a API mesmo se o banco local falhar, para facilitar diagnóstico via logs e `/api/health`.
-=======
->>>>>>> main

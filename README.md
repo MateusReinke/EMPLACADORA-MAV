@@ -57,8 +57,6 @@ Variáveis disponíveis:
 
 No `docker-compose.yml`, todas elas estão configuradas com fallback (`${VAR:-valor}`), então podem aparecer para preenchimento no ambiente de deploy.
 
-O `start.sh` também valida dependências em runtime e executa `npm ci` automaticamente quando `node_modules` não estiver disponível (cenário comum em alguns providers quando o diretório da app é remontado).
-
 ## Verificação rápida de saúde
 
 Após subir o container, valide banco + admin com:

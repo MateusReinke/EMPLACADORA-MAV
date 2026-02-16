@@ -10,8 +10,19 @@ set -uo pipefail
 : "${DEFAULT_ADMIN_PASSWORD:=123456}"
 : "${DEFAULT_ADMIN_NAME:=Administrador Padrão}"
 
+ensure_node_dependencies() {
+  if [ ! -d node_modules ] || ! node -e "require.resolve('express');require.resolve('cookie-parser');require.resolve('pg')" >/dev/null 2>&1; then
+    echo "[start.sh] Dependências Node ausentes; executando npm ci..."
+    npm ci || return 1
+  fi
+
+  return 0
+}
+
 start_local_postgres() {
   export PGDATA=/var/lib/postgresql/data
+  local pg_conf_file="$PGDATA/postgresql.conf"
+
   mkdir -p "$PGDATA"
   chown -R postgres:postgres /var/lib/postgresql
 
@@ -19,13 +30,15 @@ start_local_postgres() {
     su - postgres -c "/usr/lib/postgresql/15/bin/initdb -D '$PGDATA'" || return 1
   fi
 
-  cat > /tmp/postgresql.conf <<CFG
+  cat > "$pg_conf_file" <<CFG
 listen_addresses = '0.0.0.0'
 port = ${POSTGRES_PORT}
 CFG
-  chown postgres:postgres /tmp/postgresql.conf
+  chown postgres:postgres "$pg_conf_file"
 
-  su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D '$PGDATA' -o '-c config_file=/tmp/postgresql.conf' -w start" || return 1
+  if ! pg_isready -h 127.0.0.1 -p "$POSTGRES_PORT" >/dev/null 2>&1; then
+    su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D '$PGDATA' -o '-c config_file=$pg_conf_file' -w start" || return 1
+  fi
 
   export PGPASSWORD="$POSTGRES_PASSWORD"
 
@@ -44,6 +57,11 @@ CFG
   echo "[start.sh] PostgreSQL local inicializado com sucesso na porta ${POSTGRES_PORT}."
   return 0
 }
+
+if ! ensure_node_dependencies; then
+  echo "[start.sh] Falha ao instalar dependências Node; encerrando."
+  exit 1
+fi
 
 if ! start_local_postgres; then
   echo "[start.sh] Aviso: falha ao iniciar/configurar PostgreSQL local."

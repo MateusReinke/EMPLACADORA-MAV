@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import NewOrderForm from "@/components/forms/NewOrderForm";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Order {
@@ -35,7 +35,7 @@ const ClientOrders = () => {
     if (!user) return;
 
     const fetchOrders = async () => {
-      const { data: client, error: clientError } = await supabase
+      const { data: client, error: clientError } = await db
         .from("clients")
         .select("id")
         .eq("user_id", user.id)
@@ -45,7 +45,7 @@ const ClientOrders = () => {
 
       setClientId(client.id);
 
-      const { data: ordersData } = await supabase
+      const { data: ordersData } = await db
         .from("orders")
         .select("*")
         .eq("client_id", client.id)

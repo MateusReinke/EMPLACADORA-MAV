@@ -1,5 +1,5 @@
 // src/services/serviceTypesApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 
 /* --------- MODELAGEM (agora com categoria) --------- */
 export interface ServiceCategory {
@@ -22,7 +22,7 @@ export interface ServiceType {
 /* --------- CATEGORIAS --------- */
 export class CategoryService {
   static async getCategories(): Promise<ServiceCategory[]> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("service_categories")
       .select("*")
       .order("name", { ascending: true });
@@ -32,7 +32,7 @@ export class CategoryService {
 
   /* opcional – permitir criar categoria direto pelo front */
   static async createCategory(name: string): Promise<ServiceCategory> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("service_categories")
       .insert([{ name }])
       .select()
@@ -46,7 +46,7 @@ export class CategoryService {
 export class ApiService {
   // ========= SERVICE TYPES =========
   static async getServiceTypes(): Promise<ServiceType[]> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("service_types")
       .select(`*, category:service_categories ( id, name )`)
       .order("created_at", { ascending: false });
@@ -57,7 +57,7 @@ export class ApiService {
   static async createServiceType(
     svc: Omit<ServiceType, "id" | "created_at" | "updated_at" | "category">
   ): Promise<ServiceType> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("service_types")
       .insert([svc])
       .select(`*, category:service_categories ( id, name )`)
@@ -70,7 +70,7 @@ export class ApiService {
     id: string,
     updated: Partial<ServiceType>
   ): Promise<ServiceType> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("service_types")
       .update({ ...updated, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -81,7 +81,7 @@ export class ApiService {
   }
 
   static async deleteServiceType(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await db
       .from("service_types")
       .delete()
       .eq("id", id);

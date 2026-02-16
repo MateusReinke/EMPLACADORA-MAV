@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import SupabaseInitializer from "@/components/SupabaseInitializer";
 
 // Import pages como default
 import Login from "./pages/Login";
@@ -45,7 +44,6 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <SupabaseInitializer />
           <Toaster />
           <Sonner />
           <Routes>

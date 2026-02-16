@@ -1,0 +1,24 @@
+services:
+  emplacadora:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emplacadora-mav
+    ports:
+      - "8090:8090"
+      - "5435:5435"
+    environment:
+      APP_PORT: 8090
+      POSTGRES_PORT: 5435
+      POSTGRES_DB: emplacadora
+      POSTGRES_USER: emplacadora
+      POSTGRES_PASSWORD: emplacadora123
+      DEFAULT_ADMIN_EMAIL: admin@emplacadora.com
+      DEFAULT_ADMIN_PASSWORD: 123456
+      DEFAULT_ADMIN_NAME: Administrador Padrão
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:

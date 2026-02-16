@@ -1,5 +1,5 @@
 // src/services/vehiclesApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 
 export interface Vehicle {
   id: string;
@@ -17,7 +17,7 @@ export type NewVehicle = Omit<Vehicle, "id">;
 export class VehicleService {
   /** Busca todos os veículos de um cliente */
   static async getClientVehicles(clientId: string): Promise<Vehicle[]> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("vehicles")
       .select("*")
       .eq("client_id", clientId);
@@ -27,7 +27,7 @@ export class VehicleService {
 
   /** Cria um novo veículo */
   static async createVehicle(payload: NewVehicle): Promise<Vehicle> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("vehicles")
       .insert([payload])
       .select()

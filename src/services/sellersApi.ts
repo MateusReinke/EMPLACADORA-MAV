@@ -1,5 +1,5 @@
 // src/services/sellersApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 
 export interface Seller {
   id: string;
@@ -16,7 +16,7 @@ export interface Seller {
 export class SellersService {
   /** Lista todos os vendedores */
   static async getSellers(): Promise<Seller[]> {
-    const { data: sellers, error } = await supabase
+    const { data: sellers, error } = await db
       .from("users")
       .select("*")
       .eq("role", "seller")
@@ -28,14 +28,14 @@ export class SellersService {
     const sellersWithStats = await Promise.all(
       (sellers || []).map(async (seller) => {
         // Contar clientes criados por este vendedor
-        const { count: clientsCount } = await supabase
+        const { count: clientsCount } = await db
           .from("clients")
           .select("*", { count: "exact", head: true })
           .eq("created_by", seller.id)
           .eq("active", true);
 
         // Contar pedidos criados por este vendedor
-        const { count: ordersCount } = await supabase
+        const { count: ordersCount } = await db
           .from("orders")
           .select("*", { count: "exact", head: true })
           .eq("created_by", seller.id);
@@ -57,7 +57,7 @@ export class SellersService {
     email: string;
     phone?: string;
   }): Promise<Seller> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("users")
       .insert([
         {
@@ -77,7 +77,7 @@ export class SellersService {
     id: string,
     payload: Partial<Pick<Seller, "name" | "email" | "phone">>
   ): Promise<Seller> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("users")
       .update(payload)
       .eq("id", id)
@@ -90,7 +90,7 @@ export class SellersService {
 
   /** Deletar vendedor (soft delete seria melhor) */
   static async deleteSeller(id: string): Promise<void> {
-    const { error } = await supabase.from("users").delete().eq("id", id);
+    const { error } = await db.from("users").delete().eq("id", id);
     if (error) throw error;
   }
 }

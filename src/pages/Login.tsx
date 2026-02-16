@@ -17,7 +17,8 @@ const Login = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
-  const { login, loading, isAuthenticated, user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,6 +49,8 @@ const Login = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const success = await login(email, password);
 
@@ -56,6 +59,8 @@ const Login = () => {
       }
     } catch (error) {
       setFormError("Erro ao fazer login");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -109,8 +114,8 @@ const Login = () => {
             </CardContent>
 
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Entrando..." : "Entrar"}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </CardFooter>
           </form>

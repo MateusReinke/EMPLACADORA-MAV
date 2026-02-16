@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
 import LicensePlate from "@/components/LicensePlate";
 
@@ -68,7 +68,7 @@ export default function NewVehicleForm({
 
   // — Carrega tipos de placa —
   useEffect(() => {
-    supabase
+    db
       .from("plate_types")
       .select("id,label,code,color")
       .then(({ data, error }) => {
@@ -166,7 +166,7 @@ export default function NewVehicleForm({
       // Use provided clientId or get from user
       let targetClientId = clientId;
       if (!targetClientId && user?.id) {
-        const { data: cli } = await supabase
+        const { data: cli } = await db
           .from("clients")
           .select("id")
           .eq("user_id", user.id)
@@ -191,14 +191,14 @@ export default function NewVehicleForm({
 
       let res;
       if (initialData?.id) {
-        res = await supabase
+        res = await db
           .from("vehicles")
           .update(payload)
           .eq("id", initialData.id)
           .select()
           .single();
       } else {
-        res = await supabase.from("vehicles").insert(payload).select().single();
+        res = await db.from("vehicles").insert(payload).select().single();
       }
       if (res.error) throw res.error;
 

@@ -98,10 +98,9 @@ try {
 
 ## Segurança
 
-- Todas as APIs respeitam Row Level Security (RLS) do Supabase
 - Autenticação automática via contexto de auth
-- Validação de dados no backend via triggers
-- Auditoria automática de operações críticas
+- Validação de dados nas camadas de serviço
+- Operações com persistência local para ambiente de execução único
 
 ## Tipos TypeScript
 
@@ -140,7 +139,6 @@ import type { ServiceType, Client, Order } from '@/services/apiIndex';
 - Autenticação e Autorização
 - Tratamento de Erros
 - Validação de Dados
-- Segurança RLS
 - Auditoria de Operações
 
 🎯 **Projeto 100% Funcional!**

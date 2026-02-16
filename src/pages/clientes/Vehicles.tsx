@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import NewVehicleForm from "@/components/forms/NewVehicleForm";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ const ClientVehicles = () => {
     const fetchClientAndVehicles = async () => {
       try {
         // First, find the client
-        const { data: client, error: clientError } = await supabase
+        const { data: client, error: clientError } = await db
           .from("clients")
           .select("id")
           .eq("user_id", user.id)
@@ -80,7 +80,7 @@ const ClientVehicles = () => {
 
   const fetchVehicles = async (clientId: string) => {
     try {
-      const { data: vehicles, error } = await supabase
+      const { data: vehicles, error } = await db
         .from("vehicles")
         .select("*")
         .eq("client_id", clientId)
@@ -96,7 +96,7 @@ const ClientVehicles = () => {
 
   const handleDeleteVehicle = async (vehicleId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("vehicles")
         .delete()
         .eq("id", vehicleId);

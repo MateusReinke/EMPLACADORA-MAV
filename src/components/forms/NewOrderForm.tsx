@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { Loader2, Plus } from "lucide-react";
 
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -108,7 +108,7 @@ export default function NewOrderForm({
 
         // se for cliente, busca own clientId + veículos
         if (isClient && user?.id) {
-          const { data: me } = await supabase
+          const { data: me } = await db
             .from("clients")
             .select("id")
             .eq("user_id", user.id)

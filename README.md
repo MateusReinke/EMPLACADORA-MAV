@@ -50,3 +50,56 @@ curl -s http://localhost:8090/api/health
 ```
 
 A resposta deve conter `ok: true` e `auth.adminExists: true`.
+<<<<<<< HEAD
+
+
+## Estrutura de APIs para Integrações
+
+Além das rotas internas da aplicação, o backend agora expõe uma estrutura dedicada para integrações externas em `/api/integrations`.
+
+### Segurança
+- Header obrigatório: `x-api-key`
+- Chave configurada por ambiente: `INTEGRATION_API_KEY`
+
+### Endpoints disponíveis
+- `GET /api/integrations` - catálogo da API
+- `GET /api/integrations/health` - saúde da API + diagnóstico de admin
+- `GET /api/integrations/orders` - listagem de pedidos (`limit`, `offset`, `status_id`, `updated_since`)
+- `GET /api/integrations/orders/:id` - detalhe de pedido
+- `POST /api/integrations/orders/:id/status` - atualização de status
+- `GET /api/integrations/clients` - listagem de clientes
+- `GET /api/integrations/vehicles` - listagem de veículos
+- `GET /api/integrations/service-types` - tipos de serviço
+- `GET /api/integrations/order-statuses` - status de pedido
+- `POST /api/integrations/webhooks/test` - endpoint de teste de webhook
+
+### Exemplo rápido
+```bash
+curl -s http://localhost:8090/api/integrations/health   -H "x-api-key: dev-integration-key"
+```
+
+
+## Troubleshooting de deploy
+
+Se abrir `http://SEU_IP:8090` e aparecer `ERR_CONNECTION_REFUSED`:
+
+1. Verifique se o container está de pé:
+   ```bash
+   docker ps
+   ```
+2. Verifique logs:
+   ```bash
+   docker logs -f emplacadora-mav
+   ```
+3. Valide a porta publicada:
+   ```bash
+   docker port emplacadora-mav
+   ```
+4. Teste local no host:
+   ```bash
+   curl -s http://127.0.0.1:8090/api/health
+   ```
+
+O startup agora tenta subir o PostgreSQL local, mas inicia a API mesmo se o banco local falhar, para facilitar diagnóstico via logs e `/api/health`.
+=======
+>>>>>>> main

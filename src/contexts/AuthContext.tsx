@@ -52,8 +52,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     db.auth
       .getSession()
+<<<<<<< HEAD
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching auth session:', error);
+          setLoading(false);
+          return;
+        }
+
+        const session = data?.session ?? null;
+        setUser(session?.user ?? null);
+
+=======
       .then(({ data: { session } }) => {
         setUser(session?.user ?? null);
+>>>>>>> main
         if (session?.user) {
           fetchUserProfile(session.user.id);
         } else {

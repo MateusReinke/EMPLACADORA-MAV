@@ -39,11 +39,9 @@ const ALLOWED_TABLES = new Set([
   'service_types',
   'order_statuses',
   'plate_types',
-  'inventory_items',
   'inventory_movements',
   'dashboard_layouts',
   'inventory_status',
-  'funcionario_comissao_servico',
 ]);
 
 const isSafeIdent = (s) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s);
@@ -74,6 +72,7 @@ const buildWhere = (filters = [], startIndex = 1) => {
   return {
     sql: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
     values,
+    nextIndex: i,
   };
 };
 
@@ -83,46 +82,10 @@ const getSessionUser = async (req) => {
   const userId = sessions.get(token);
   if (!userId) return null;
   const { rows } = await pool.query(
-    `SELECT id, email, role, ativo, active
-     FROM users WHERE id = $1 LIMIT 1`,
+    'SELECT id, email, role FROM users WHERE id = $1 AND active = true LIMIT 1',
     [userId]
   );
-  const user = rows[0];
-  if (!user) return null;
-  if (user.ativo === false || user.active === false) return null;
-  return user;
-};
-
-const requireAuth = async (req, res) => {
-  const user = await getSessionUser(req);
-  if (!user) {
-    res.status(401).json({ data: null, error: { message: 'Não autenticado' } });
-    return null;
-  }
-  return user;
-};
-
-const requireAdmin = async (req, res) => {
-  const user = await requireAuth(req, res);
-  if (!user) return null;
-  if (user.role !== 'admin') {
-    res.status(403).json({ data: null, error: { message: 'Acesso restrito ao ADMIN' } });
-    return null;
-  }
-  return user;
-};
-
-const normalizeOrderRow = (order) => ({
-  ...order,
-  created_by: order.created_by || order.funcionario_responsavel_id,
-  value: Number(order.value || order.valor_total || 0),
-});
-
-const getCancelStatusId = async () => {
-  const { rows } = await pool.query(
-    `SELECT id FROM order_statuses WHERE UPPER(name) = 'CANCELADO' LIMIT 1`
-  );
-  return rows[0]?.id || null;
+  return rows[0] || null;
 };
 
 app.get('/api/health', async (_req, res) => {
@@ -151,10 +114,7 @@ app.post('/api/auth/signin', async (req, res) => {
   }
 
   const { rows } = await pool.query(
-    `SELECT id, email, role, ativo, active
-     FROM users
-     WHERE email = $1 AND password = $2 AND role = 'admin' AND COALESCE(ativo, true) = true AND COALESCE(active, true) = true
-     LIMIT 1`,
+    'SELECT id, email, role FROM users WHERE email = $1 AND password = $2 AND active = true LIMIT 1',
     [email, password]
   );
   const user = rows[0];
@@ -175,195 +135,8 @@ app.post('/api/auth/signout', (req, res) => {
   res.json({ error: null });
 });
 
-const handleOrderInsert = async (rowsToInsert, loggedUserId) => {
-  const inserted = [];
-
-  for (const raw of rowsToInsert) {
-    const row = normalizeOrderRow(raw);
-    const clientId = row.client_id;
-    const vehicleId = row.vehicle_id;
-    const serviceTypeId = row.service_type_id;
-    const funcionarioId = row.funcionario_responsavel_id || row.created_by;
-    const value = Number(row.valor_total || row.value || 0);
-
-    if (!clientId || !vehicleId || !serviceTypeId || !funcionarioId || value <= 0) {
-      throw new Error('Campos obrigatórios do pedido ausentes: cliente_id, veiculo_id, funcionario_id, valor_total');
-    }
-
-    const [svcRes, funcRes] = await Promise.all([
-      pool.query(`SELECT * FROM service_types WHERE id = $1 LIMIT 1`, [serviceTypeId]),
-      pool.query(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [funcionarioId]),
-    ]);
-
-    const service = svcRes.rows[0];
-    const funcionario = funcRes.rows[0];
-    if (!service) throw new Error('Serviço não encontrado');
-    if (!funcionario) throw new Error('Funcionário responsável não encontrado');
-
-    // 1) Regra de estoque: bloqueia criação se faltar
-    let estoqueItem = null;
-    if (service.vinculado_estoque && service.estoque_item_id) {
-      const st = await pool.query(`SELECT * FROM inventory_items WHERE id = $1 LIMIT 1`, [service.estoque_item_id]);
-      estoqueItem = st.rows[0];
-      if (!estoqueItem) throw new Error('Item de estoque vinculado ao serviço não encontrado');
-
-      const qtdAtual = Number(estoqueItem.quantidade_atual ?? estoqueItem.quantity ?? 0);
-      const qtdBaixa = Number(service.quantidade_baixa_estoque || 0);
-      if (qtdBaixa > 0 && qtdAtual < qtdBaixa) {
-        throw new Error('Estoque insuficiente para o serviço selecionado');
-      }
-    }
-
-    // 2) Comissão: calcula no momento e nunca recalcula automaticamente
-    let comissaoCalculada = 0;
-    if (funcionario.recebe_comissao) {
-      if (funcionario.tipo_comissao === 'percentual') {
-        comissaoCalculada = value * (Number(funcionario.percentual_comissao || 0) / 100);
-      } else if (funcionario.tipo_comissao === 'fixo_por_servico') {
-        const fx = await pool.query(
-          `SELECT valor_comissao FROM funcionario_comissao_servico
-           WHERE funcionario_id = $1 AND servico_id = $2 LIMIT 1`,
-          [funcionarioId, serviceTypeId]
-        );
-        comissaoCalculada = Number(fx.rows[0]?.valor_comissao || 0);
-      }
-    }
-
-    const createdBy = row.created_by || loggedUserId;
-    const statusId = row.status_id || null;
-
-    const orderRes = await pool.query(
-      `INSERT INTO orders (
-        order_number, service_type_id, client_id, vehicle_id, funcionario_responsavel_id,
-        message, estimated_delivery_date, status_id,
-        value, valor_total, valor_comissao_calculado, comissao_status, created_by
-      ) VALUES (
-        $1,$2,$3,$4,$5,
-        $6,$7,$8,
-        $9,$10,$11,$12,$13
-      ) RETURNING *`,
-      [
-        row.order_number || null,
-        serviceTypeId,
-        clientId,
-        vehicleId,
-        funcionarioId,
-        row.message || null,
-        row.estimated_delivery_date || null,
-        statusId,
-        value,
-        value,
-        Number(comissaoCalculada.toFixed(2)),
-        'pendente',
-        createdBy,
-      ]
-    );
-
-    const createdOrder = orderRes.rows[0];
-
-    // 3) Baixa automática de estoque após criação
-    if (estoqueItem && Number(service.quantidade_baixa_estoque || 0) > 0) {
-      const qtdBaixa = Number(service.quantidade_baixa_estoque || 0);
-      const qtdAtual = Number(estoqueItem.quantidade_atual ?? estoqueItem.quantity ?? 0);
-      const next = qtdAtual - qtdBaixa;
-
-      await pool.query(
-        `UPDATE inventory_items
-         SET quantidade_atual = $2, quantity = $2, updated_at = NOW()
-         WHERE id = $1`,
-        [estoqueItem.id, next]
-      );
-
-      await pool.query(
-        `INSERT INTO inventory_movements (inventory_item_id, movement_type, quantity, responsible_id, order_id, notes)
-         VALUES ($1, 'out', $2, $3, $4, $5)`,
-        [estoqueItem.id, qtdBaixa, createdBy, createdOrder.id, 'Baixa automática por criação do pedido']
-      );
-    }
-
-    inserted.push(createdOrder);
-  }
-
-  return inserted;
-};
-
-const handleOrderUpdate = async (filters, payload, loggedUser) => {
-  const where = buildWhere(filters);
-  const currentRows = await pool.query(`SELECT * FROM orders ${where.sql}`, where.values);
-  if (!currentRows.rows.length) return [];
-
-  const cancelStatusId = await getCancelStatusId();
-  const targetCancelByStatus = payload?.status_id && cancelStatusId && payload.status_id === cancelStatusId;
-
-  // apenas admin pode marcar comissão paga
-  if (payload?.comissao_status === 'pago' && loggedUser.role !== 'admin') {
-    throw new Error('Somente ADMIN pode marcar comissão como paga');
-  }
-
-  const cols = Object.keys(payload || {}).filter(isSafeIdent);
-  const values = cols.map((c) => payload[c]);
-  let updated = [];
-
-  if (cols.length) {
-    const setSql = cols.map((c, i) => `${c} = $${i + 1}`).join(', ');
-    const whereSql = where.sql
-      ? ` ${where.sql.replace(/\$(\d+)/g, (_, n) => `$${Number(n) + cols.length}`)}`
-      : '';
-
-    const q = `UPDATE orders SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
-    const r = await pool.query(q, [...values, ...where.values]);
-    updated = r.rows;
-  } else {
-    updated = currentRows.rows;
-  }
-
-  // cancelamento: devolve estoque + cancela comissão
-  for (const before of currentRows.rows) {
-    const after = updated.find((u) => u.id === before.id) || before;
-    const becameCanceled = targetCancelByStatus || after.comissao_status === 'cancelado';
-
-    if (becameCanceled) {
-      const svcRes = await pool.query(`SELECT * FROM service_types WHERE id = $1 LIMIT 1`, [before.service_type_id]);
-      const service = svcRes.rows[0];
-
-      if (service?.vinculado_estoque && service?.estoque_item_id && Number(service.quantidade_baixa_estoque || 0) > 0) {
-        const qtd = Number(service.quantidade_baixa_estoque || 0);
-        await pool.query(
-          `UPDATE inventory_items
-           SET quantidade_atual = COALESCE(quantidade_atual, 0) + $2,
-               quantity = COALESCE(quantity, 0) + $2,
-               updated_at = NOW()
-           WHERE id = $1`,
-          [service.estoque_item_id, qtd]
-        );
-
-        await pool.query(
-          `INSERT INTO inventory_movements (inventory_item_id, movement_type, quantity, responsible_id, order_id, notes)
-           VALUES ($1, 'in', $2, $3, $4, $5)`,
-          [service.estoque_item_id, qtd, loggedUser.id, before.id, 'Devolução automática por cancelamento']
-        );
-      }
-
-      await pool.query(
-        `UPDATE orders
-         SET comissao_status = 'cancelado',
-             valor_comissao_calculado = 0,
-             updated_at = NOW()
-         WHERE id = $1`,
-        [before.id]
-      );
-    }
-  }
-
-  const reloaded = await pool.query(`SELECT * FROM orders ${where.sql}`, where.values);
-  return reloaded.rows;
-};
-
 app.post('/api/query', async (req, res) => {
   try {
-    const loggedUser = await requireAuth(req, res);
-    if (!loggedUser) return;
-
     const {
       table,
       action = 'select',
@@ -377,11 +150,6 @@ app.post('/api/query', async (req, res) => {
 
     if (!ALLOWED_TABLES.has(table)) {
       return res.status(400).json({ data: null, error: { message: 'Tabela não permitida' } });
-    }
-
-    // Segurança: users e comissão apenas admin
-    if ((table === 'users' || table === 'funcionario_comissao_servico') && loggedUser.role !== 'admin') {
-      return res.status(403).json({ data: null, error: { message: 'Acesso restrito ao ADMIN' } });
     }
 
     if (action === 'select') {
@@ -434,19 +202,14 @@ app.post('/api/query', async (req, res) => {
       const rowsToInsert = Array.isArray(payload) ? payload : [];
       if (!rowsToInsert.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
 
-      let inserted;
-      if (table === 'orders') {
-        inserted = await handleOrderInsert(rowsToInsert, loggedUser.id);
-      } else {
-        inserted = [];
-        for (const row of rowsToInsert) {
-          const cols = Object.keys(row).filter(isSafeIdent);
-          const vals = cols.map((c) => row[c]);
-          const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
-          const q = `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-          const r = await pool.query(q, vals);
-          inserted.push(r.rows[0]);
-        }
+      const inserted = [];
+      for (const row of rowsToInsert) {
+        const cols = Object.keys(row).filter(isSafeIdent);
+        const vals = cols.map((c) => row[c]);
+        const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
+        const q = `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`;
+        const r = await pool.query(q, vals);
+        inserted.push(r.rows[0]);
       }
 
       if (singleMode === 'single') return res.json({ data: inserted[0] ?? null, error: null });
@@ -455,22 +218,14 @@ app.post('/api/query', async (req, res) => {
 
     if (action === 'update') {
       const where = buildWhere(filters);
-      let rows;
-
-      if (table === 'orders') {
-        rows = await handleOrderUpdate(filters, payload || {}, loggedUser);
-      } else {
-        const cols = Object.keys(payload || {}).filter(isSafeIdent);
-        if (!cols.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
-
-        const setSql = cols.map((c, i) => `${c} = $${i + 1}`).join(', ');
-        const values = cols.map((c) => payload[c]);
-        const whereSql = where.sql ? ` ${where.sql.replace(/\$(\d+)/g, (_, n) => `$${Number(n) + cols.length}`)}` : '';
-        const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
-        const r = await pool.query(q, [...values, ...where.values]);
-        rows = r.rows;
-      }
-
+      const cols = Object.keys(payload || {}).filter(isSafeIdent);
+      if (!cols.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
+      const setSql = cols.map((c, i) => `${c} = $${i + 1}`).join(', ');
+      const values = cols.map((c) => payload[c]);
+      const whereSql = where.sql ? ` ${where.sql.replace(/\$(\d+)/g, (_, n) => `$${Number(n) + cols.length}`)}` : '';
+      const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
+      const r = await pool.query(q, [...values, ...where.values]);
+      const rows = r.rows;
       if (singleMode === 'single') {
         if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' } });
         return res.json({ data: rows[0], error: null });

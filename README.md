@@ -1,66 +1,37 @@
 # EMPLACADORA-MAV
 
-Aplicação com frontend React + API Node + PostgreSQL no mesmo deploy.
+Aplicação React/Vite para gestão de emplacadora, preparada para rodar com:
+- **App Web na porta `8090`**
+- **PostgreSQL na porta `5435`**
+- **Deploy no mesmo container** (app + banco no mesmo runtime)
 
-## Deploy inicial (admin único)
+## Credenciais padrão
 
-Após o primeiro deploy, existirá apenas **1 usuário ADMIN**:
-- `admin@emplacadora.com`
-- senha inicial: `123456`
+Para primeiro acesso:
+- **Email:** `admin@emplacadora.com`
+- **Senha:** `123456`
+- **Perfil:** `admin`
 
-Somente o ADMIN cria/edita/remove usuários e configura regras financeiras/comissão.
-
-## Arquitetura
-
-`docker compose up --build -d` sobe:
-- API + Frontend em `8090`
-- PostgreSQL em `5435`
-- bootstrap de schema e seeds via `deploy/init.sql`
-
-## Subir com Docker Compose
+## Rodando localmente (sem Docker)
 
 ```bash
-docker compose up --build -d
+npm install
+npm run dev -- --host 0.0.0.0 --port 8090
 ```
 
-Acesso:
-- App/API: `http://localhost:8090`
-- Rede local: `http://SEU_IP_LOCAL:8090`
-- PostgreSQL: `localhost:5435`
-
-Logs:
+## Deploy em um único container
 
 ```bash
-docker compose logs -f
+docker build -t emplacadora-mav .
+docker run --rm -p 8090:8090 -p 5435:5435 emplacadora-mav
 ```
 
-Parar:
+Ao iniciar, o container:
+1. sobe o PostgreSQL interno na porta `5435`;
+2. cria banco/usuário padrão (se ainda não existirem);
+3. aplica seed de usuário admin inicial;
+4. sobe o frontend em `8090`.
 
-```bash
-docker compose down
-```
+## Variáveis de ambiente
 
-## Estrutura funcional já provisionada
-
-- Clientes
-- Funcionários (tabela `users` com campos de acordo/comissão)
-- Veículos
-- Serviços
-- Pedidos
-- Estoque
-- Status de pedidos
-- Regras de comissão por funcionário e por serviço (`funcionario_comissao_servico`)
-
-### Regras implementadas no backend
-
-- Pedido exige cliente, veículo, funcionário responsável e valor total.
-- Comissão é calculada no momento da criação do pedido e armazenada no banco.
-- Se serviço estiver vinculado ao estoque:
-  - valida saldo antes de criar pedido;
-  - dá baixa automática no estoque na criação.
-- Em cancelamento, há devolução automática do estoque e comissão marcada como cancelada.
-- Somente ADMIN pode marcar comissão como paga.
-
-## Observação
-
-A aplicação não usa `localStorage` para dados de negócio; os dados persistem no PostgreSQL.
+Use como base o `.env.example`.

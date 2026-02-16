@@ -1,7 +1,7 @@
 FROM node:20-bookworm
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends postgresql postgresql-contrib node-express node-cookie-parser node-pg \
+  && apt-get install -y --no-install-recommends postgresql postgresql-contrib \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

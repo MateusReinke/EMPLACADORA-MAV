@@ -186,6 +186,144 @@ app.post('/api/auth/signout', (req, res) => {
   res.json({ error: null });
 });
 
+
+app.get('/api/integrations', requireIntegrationKey, (_req, res) => {
+  res.json({
+    ok: true,
+    version: API_VERSION,
+    resources: {
+      health: '/api/integrations/health',
+      orders: '/api/integrations/orders',
+      clients: '/api/integrations/clients',
+      vehicles: '/api/integrations/vehicles',
+      serviceTypes: '/api/integrations/service-types',
+      orderStatuses: '/api/integrations/order-statuses',
+      webhookTest: '/api/integrations/webhooks/test',
+    },
+  });
+});
+
+app.get('/api/integrations/health', requireIntegrationKey, async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    const auth = await getAuthDiagnostics();
+    return res.json({ ok: true, version: API_VERSION, auth });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.get('/api/integrations/orders', requireIntegrationKey, async (req, res) => {
+  try {
+    const { limit, offset } = parsePagination(req);
+    const where = mapOrderWhere({
+      statusId: req.query.status_id,
+      updatedSince: req.query.updated_since,
+    });
+
+    const query = `${orderSelectSql} ${where.sql} ORDER BY o.updated_at DESC LIMIT $${where.values.length + 1} OFFSET $${where.values.length + 2}`;
+    const params = [...where.values, limit, offset];
+
+    const [{ rows }, { rows: countRows }] = await Promise.all([
+      pool.query(query, params),
+      pool.query(`SELECT COUNT(*)::int AS total FROM orders o ${where.sql}`, where.values),
+    ]);
+
+    return res.json({
+      ok: true,
+      data: rows,
+      pagination: { limit, offset, total: countRows[0]?.total ?? 0 },
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.get('/api/integrations/orders/:id', requireIntegrationKey, async (req, res) => {
+  try {
+    const q = `${orderSelectSql} WHERE o.id = $1 LIMIT 1`;
+    const { rows } = await pool.query(q, [req.params.id]);
+    if (!rows[0]) {
+      return res.status(404).json({ ok: false, error: { message: 'Pedido não encontrado' } });
+    }
+    return res.json({ ok: true, data: rows[0] });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.post('/api/integrations/orders/:id/status', requireIntegrationKey, async (req, res) => {
+  const { status_id: statusId, message } = req.body || {};
+  if (!statusId) {
+    return res.status(400).json({ ok: false, error: { message: 'Campo status_id é obrigatório' } });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE orders SET status_id = $1, message = COALESCE($2, message), updated_at = NOW() WHERE id = $3 RETURNING *`,
+      [statusId, message ?? null, req.params.id]
+    );
+
+    if (!rows[0]) {
+      return res.status(404).json({ ok: false, error: { message: 'Pedido não encontrado' } });
+    }
+
+    return res.json({ ok: true, data: rows[0] });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.get('/api/integrations/clients', requireIntegrationKey, async (req, res) => {
+  try {
+    const { limit, offset } = parsePagination(req);
+    const { rows } = await pool.query(
+      `SELECT * FROM clients ORDER BY updated_at DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    return res.json({ ok: true, data: rows, pagination: { limit, offset } });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.get('/api/integrations/vehicles', requireIntegrationKey, async (req, res) => {
+  try {
+    const { limit, offset } = parsePagination(req);
+    const { rows } = await pool.query(
+      `SELECT * FROM vehicles ORDER BY updated_at DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    return res.json({ ok: true, data: rows, pagination: { limit, offset } });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.get('/api/integrations/service-types', requireIntegrationKey, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT st.*, sc.name AS category_name FROM service_types st LEFT JOIN service_categories sc ON sc.id = st.category_id ORDER BY st.updated_at DESC`
+    );
+    return res.json({ ok: true, data: rows });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.get('/api/integrations/order-statuses', requireIntegrationKey, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT * FROM order_statuses ORDER BY sort_order ASC, name ASC`);
+    return res.json({ ok: true, data: rows });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: { message: String(error) } });
+  }
+});
+
+app.post('/api/integrations/webhooks/test', requireIntegrationKey, async (req, res) => {
+  return res.json({ ok: true, receivedAt: new Date().toISOString(), payload: req.body ?? null });
+});
+
 app.post('/api/query', async (req, res) => {
   try {
     const {

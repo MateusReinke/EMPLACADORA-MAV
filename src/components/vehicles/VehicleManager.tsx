@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { Client } from "@/types";
 import NewVehicleForm from "@/components/forms/NewVehicleForm";
 import VehicleTable from "@/components/vehicles/VehicleTable";
 import VehicleSearch from "@/components/vehicles/VehicleSearch";
+import { db } from "@/lib/dbClient";
 
 interface Vehicle {
   id: string;
@@ -30,138 +30,94 @@ interface Vehicle {
   };
 }
 
-// Mock data for development
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    model: "Civic",
-    brand: "Honda",
-    licensePlate: "ABC-1234",
-    year: "2020",
-    renavam: "1234567890",
-    clientId: "1",
-    client: {
-      id: "1",
-      name: "João Silva",
-    },
-  },
-  {
-    id: "2",
-    model: "Corolla",
-    brand: "Toyota",
-    licensePlate: "DEF-5678",
-    year: "2021",
-    renavam: "0987654321",
-    clientId: "2",
-    client: {
-      id: "2",
-      name: "Maria Oliveira",
-    },
-  },
-  {
-    id: "3",
-    model: "Renegade",
-    brand: "Jeep",
-    licensePlate: "GHI-9012",
-    year: "2022",
-    renavam: "5678901234",
-    clientId: "1",
-    client: {
-      id: "1",
-      name: "João Silva",
-    },
-  },
-];
+const mapVehicle = (row: any, clients: Client[]): Vehicle => ({
+  id: row.id,
+  model: row.model || "",
+  brand: row.brand || "",
+  licensePlate: row.license_plate || "",
+  year: row.year || "",
+  renavam: row.renavam || "",
+  clientId: row.client_id || "",
+  client: clients.find((c) => c.id === row.client_id)
+    ? { id: row.client_id, name: clients.find((c) => c.id === row.client_id)!.name }
+    : undefined,
+});
 
-interface VehicleManagerProps {
-  initialVehicles?: Vehicle[];
-}
-
-const VehicleManager: React.FC<VehicleManagerProps> = ({ initialVehicles }) => {
+const VehicleManager: React.FC = () => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(
-    initialVehicles || mockVehicles
-  );
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const fetchedClients = await ClientsService.getClients();
+      setClients(fetchedClients);
+
+      const { data, error } = await db
+        .from("vehicles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setVehicles((data || []).map((row: any) => mapVehicle(row, fetchedClients)));
+    } catch (error) {
+      console.error("Erro ao carregar veículos:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar veículos/clientes.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const fetchedClients = await ClientsService.getClients();
-        setClients(fetchedClients);
-      } catch (error) {
-        console.error("Erro ao buscar clientes:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar a lista de clientes.",
-          variant: "destructive",
-        });
-      }
-    };
+    fetchData();
+  }, []);
 
-    fetchClients();
-  }, [toast]);
-
-  // Add/edit vehicle
-  const handleAddEditVehicle = (vehicle?: Vehicle | null) => {
+  const handleAddEditVehicle = async (vehicle?: any | null) => {
     if (!vehicle) {
       setIsDialogOpen(false);
+      await fetchData();
       return;
     }
 
-    if (isEditMode && currentVehicle) {
-      // Update existing vehicle
-      setVehicles(
-        vehicles.map((v) =>
-          v.id === currentVehicle.id ? { ...vehicle, id: currentVehicle.id } : v
-        )
-      );
-      toast({
-        title: "Veículo atualizado",
-        description: "Veículo atualizado com sucesso.",
-      });
-    } else {
-      // Add new vehicle
-      const newVehicle = {
-        ...vehicle,
-        id: Date.now().toString(), // Temporary ID
-      };
-      setVehicles([...vehicles, newVehicle]);
-      toast({
-        title: "Veículo adicionado",
-        description: "Veículo adicionado com sucesso.",
-      });
-    }
+    await fetchData();
+    toast({
+      title: isEditMode ? "Veículo atualizado" : "Veículo adicionado",
+      description: "Operação realizada com sucesso.",
+    });
     setIsDialogOpen(false);
   };
 
-  // Open modal to edit vehicle
   const handleEditVehicle = (vehicle: Vehicle) => {
     setCurrentVehicle(vehicle);
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
 
-  // Remove vehicle
-  const handleDeleteVehicle = (id: string) => {
-    setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
-    toast({
-      title: "Veículo removido",
-      description: "Veículo removido com sucesso.",
-    });
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      const { error } = await db.from("vehicles").delete().eq("id", id);
+      if (error) throw error;
+      setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+      toast({ title: "Veículo removido", description: "Veículo removido com sucesso." });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Erro", description: "Não foi possível remover o veículo.", variant: "destructive" });
+    }
   };
 
-  // Filter vehicles based on search and client filter
   const filteredVehicles = vehicles.filter((vehicle) => {
     const query = searchQuery.toLowerCase();
-
-    // Check if vehicle matches the search query
     const matchesSearch =
       vehicle.model.toLowerCase().includes(query) ||
       vehicle.brand.toLowerCase().includes(query) ||
@@ -169,7 +125,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({ initialVehicles }) => {
       vehicle.year.toLowerCase().includes(query) ||
       vehicle.client?.name.toLowerCase().includes(query);
 
-    // Apply client filter if selected
     if (clientFilter !== "all") {
       return matchesSearch && vehicle.clientId === clientFilter;
     }
@@ -177,7 +132,6 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({ initialVehicles }) => {
     return matchesSearch;
   });
 
-  // Reset form when opening to add new vehicle
   const handleNewVehicle = () => {
     setCurrentVehicle(null);
     setIsEditMode(false);
@@ -187,9 +141,7 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({ initialVehicles }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Gerenciar Veículos
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Gerenciar Veículos</h1>
         <Button className="flex gap-2" onClick={handleNewVehicle}>
           <PlusCircle className="h-4 w-4" />
           <span>Adicionar Veículo</span>
@@ -212,18 +164,12 @@ const VehicleManager: React.FC<VehicleManagerProps> = ({ initialVehicles }) => {
         clientFilter={clientFilter}
       />
 
-      {/* Modal para adicionar/editar veículo */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>
-              {isEditMode ? "Editar Veículo" : "Adicionar Novo Veículo"}
-            </DialogTitle>
+            <DialogTitle>{isEditMode ? "Editar Veículo" : "Adicionar Novo Veículo"}</DialogTitle>
           </DialogHeader>
-          <NewVehicleForm
-            onSuccess={handleAddEditVehicle}
-            initialData={currentVehicle}
-          />
+          <NewVehicleForm onSuccess={handleAddEditVehicle} initialData={currentVehicle as any} />
         </DialogContent>
       </Dialog>
     </div>

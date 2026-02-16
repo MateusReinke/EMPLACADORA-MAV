@@ -117,7 +117,7 @@ const Login = () => {
         </Card>
 
         <div className="text-center text-sm text-muted-foreground">
-          <p>Contas de demonstração:</p>
+          <p>Acessos iniciais cadastrados no banco:</p>
           <div className="flex flex-wrap justify-center gap-2 mt-2">
             <code className="bg-secondary px-2 py-1 rounded text-xs">
               admin@emplacadora.com

@@ -50,14 +50,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    db.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
+    db.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching auth session:', error);
+          setLoading(false);
+          return;
+        }
+
+        const session = data?.session ?? null;
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching auth session:', error);
         setLoading(false);
-      }
-    });
+      });
 
     const { data: { subscription } } = db.auth.onAuthStateChange(
       async (_event, session) => {
@@ -103,7 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       password,
     });
 
-    if (data.user && !error) {
+    if (!error && data?.user) {
       await fetchUserProfile(data.user.id);
     }
 

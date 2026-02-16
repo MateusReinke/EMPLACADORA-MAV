@@ -16,6 +16,7 @@ services:
       DEFAULT_ADMIN_EMAIL: admin@emplacadora.com
       DEFAULT_ADMIN_PASSWORD: 123456
       DEFAULT_ADMIN_NAME: Administrador Padrão
+      INTEGRATION_API_KEY: dev-integration-key
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped

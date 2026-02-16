@@ -50,6 +50,7 @@ curl -s http://localhost:8090/api/health
 ```
 
 A resposta deve conter `ok: true` e `auth.adminExists: true`.
+<<<<<<< HEAD
 
 
 ## Estrutura de APIs para Integrações
@@ -100,3 +101,5 @@ Se abrir `http://SEU_IP:8090` e aparecer `ERR_CONNECTION_REFUSED`:
    ```
 
 O startup agora tenta subir o PostgreSQL local, mas inicia a API mesmo se o banco local falhar, para facilitar diagnóstico via logs e `/api/health`.
+=======
+>>>>>>> main

@@ -35,6 +35,7 @@ CFG
   psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" | grep -q 1 || \
     psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U postgres -c "CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER}" || return 1
 
+<<<<<<< HEAD
   psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
     -v admin_email="$DEFAULT_ADMIN_EMAIL" \
     -v admin_password="$DEFAULT_ADMIN_PASSWORD" \
@@ -60,3 +61,6 @@ fi
 
 echo "[start.sh] Iniciando API/Web em 0.0.0.0:${APP_PORT}..."
 exec npm run start
+=======
+npm run start
+>>>>>>> main

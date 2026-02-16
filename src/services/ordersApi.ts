@@ -1,6 +1,6 @@
 
 // src/services/ordersApi.ts
-import { supabase } from "@/lib/supabaseClient";
+import { db } from "@/lib/dbClient";
 import { Order as OrderUI } from "@/types";
 
 /* ------------------------------------------------- *
@@ -97,7 +97,7 @@ const stripUndefined = <T extends object>(obj: T) =>
 export class OrdersService {
   /* ---------- CREATE ---------- */
   static async createOrder(payload: NewOrder): Promise<OrderUI> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("orders")
       .insert([payload])
       .select(
@@ -110,7 +110,7 @@ export class OrdersService {
 
   /* ---------- READ ---------- */
   static async getOrders(userId?: string, role?: string): Promise<OrderUI[]> {
-    let q = supabase
+    let q = db
       .from("orders")
       .select(
         "*, client:clients(*), serviceType:service_types(*), vehicle:vehicles(*), status:order_statuses(*), order_number"
@@ -128,7 +128,7 @@ export class OrdersService {
     orderId: string,
     payload: UpdateOrderPayload
   ): Promise<OrderUI> {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("orders")
       .update(stripUndefined(payload)) // nunca envia undefined
       .eq("id", orderId)
@@ -144,13 +144,13 @@ export class OrdersService {
 
   /* ---------- DELETE ---------- */
   static async deleteOrder(orderId: string) {
-    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+    const { error } = await db.from("orders").delete().eq("id", orderId);
     if (error) throw error;
   }
 
   /* ---------- STATUS LIST ---------- */
   static async getOrderStatuses() {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("order_statuses")
       .select("id, name, color, sort_order, active");
     if (error) throw error;

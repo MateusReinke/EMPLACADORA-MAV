@@ -122,21 +122,9 @@ const Login = () => {
             <code className="bg-secondary px-2 py-1 rounded text-xs">
               admin@emplacadora.com
             </code>
-            <code className="bg-secondary px-2 py-1 rounded text-xs">
-              vendedor@emplacadora.com
-            </code>
-            <code className="bg-secondary px-2 py-1 rounded text-xs">
-              cliente@emplacadora.com
-            </code>
-            <code className="bg-secondary px-2 py-1 rounded text-xs">
-              empresa@emplacadora.com
-            </code>
           </div>
           <p className="mt-1">
-            Senha para todas as contas:{" "}
-            <code className="bg-secondary px-2 py-1 rounded text-xs">
-              123456
-            </code>
+            Senha inicial: <code className="bg-secondary px-2 py-1 rounded text-xs">123456</code>
           </p>
         </div>
       </div>

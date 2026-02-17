@@ -29,7 +29,6 @@ interface RuleDraft {
 interface ServiceFormData {
   name: string;
   description: string;
-  required_documents: string;
   price: number;
   active: boolean;
   category_id: string;
@@ -38,7 +37,6 @@ interface ServiceFormData {
 const emptyServiceForm: ServiceFormData = {
   name: '',
   description: '',
-  required_documents: '',
   price: 0,
   active: true,
   category_id: '',
@@ -134,7 +132,6 @@ const AdminServices = () => {
     setServiceForm({
       name: service.name,
       description: service.description || '',
-      required_documents: service.required_documents || '',
       price: Number(service.price || 0),
       active: service.active,
       category_id: service.category_id,
@@ -174,7 +171,6 @@ const AdminServices = () => {
       const payload = {
         name: serviceForm.name.trim(),
         description: serviceForm.description.trim() || null,
-        required_documents: serviceForm.required_documents.trim() || null,
         price: serviceForm.price,
         active: serviceForm.active,
         category_id: serviceForm.category_id,
@@ -258,7 +254,6 @@ const AdminServices = () => {
                 <th className="text-left p-3">Nome</th>
                 <th className="text-left p-3">Categoria</th>
                 <th className="text-left p-3">Preço</th>
-                <th className="text-left p-3">Documentos necessários</th>
                 <th className="text-left p-3">Consumo de estoque</th>
                 <th className="text-left p-3">Status</th>
                 <th className="text-left p-3">Ações</th>
@@ -267,11 +262,11 @@ const AdminServices = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center">Carregando...</td>
+                  <td colSpan={6} className="p-6 text-center">Carregando...</td>
                 </tr>
               ) : filteredServices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum serviço encontrado.</td>
+                  <td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum serviço encontrado.</td>
                 </tr>
               ) : (
                 filteredServices.map((service) => {
@@ -281,7 +276,6 @@ const AdminServices = () => {
                       <td className="p-3 font-medium">{service.name}</td>
                       <td className="p-3">{categoryNameById.get(service.category_id) || '-'}</td>
                       <td className="p-3">R$ {Number(service.price || 0).toFixed(2)}</td>
-                      <td className="p-3 max-w-md whitespace-pre-wrap">{service.required_documents || '-'}</td>
                       <td className="p-3">
                         {serviceRules.length === 0
                           ? 'Sem consumo'
@@ -368,18 +362,6 @@ const AdminServices = () => {
               <Input
                 value={serviceForm.description}
                 onChange={(event) => setServiceForm((prev) => ({ ...prev, description: event.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Documentos necessários</label>
-              <textarea
-                className="w-full border rounded px-3 py-2 bg-background min-h-[110px]"
-                placeholder="Liste os documentos obrigatórios para este serviço"
-                value={serviceForm.required_documents}
-                onChange={(event) =>
-                  setServiceForm((prev) => ({ ...prev, required_documents: event.target.value }))
-                }
               />
             </div>
 

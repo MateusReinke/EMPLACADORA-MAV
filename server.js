@@ -44,7 +44,6 @@ const ALLOWED_TABLES = new Set([
   'service_inventory_rules',
   'order_statuses',
   'plate_types',
-  'vehicle_types',
   'inventory_items',
   'inventory_movements',
   'dashboard_layouts',
@@ -364,19 +363,18 @@ const ensureCoreSchema = async () => {
   `);
 
   await pool.query(`
-    INSERT INTO service_types (name, description, required_documents, active, price, category_id)
-    SELECT seed.name, seed.description, seed.required_documents, TRUE, seed.price, sc.id
+    INSERT INTO service_types (name, description, active, price, category_id)
+    SELECT seed.name, seed.description, TRUE, seed.price, sc.id
     FROM (
       VALUES
-        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 'Documento pessoal com foto, comprovante de endereço, nota fiscal do veículo, laudo de vistoria e autorização do proprietário (se aplicável).', 320.00::numeric, 'Emplacamento'),
-        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 'CRV/ATPV-e assinado, documento do comprador e vendedor, comprovante de quitação de débitos e comprovante de endereço.', 380.00::numeric, 'Transferência'),
-        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 'Boletim de ocorrência (quando aplicável), CRLV e documento do proprietário.', 260.00::numeric, 'Segunda Via'),
-        ('Regularização documental', 'Apoio na regularização de documentação veicular', 'Documentos pendentes apontados pelo DETRAN, RG/CPF ou CNPJ e comprovante de endereço atualizado.', 180.00::numeric, 'Documentação')
-    ) AS seed(name, description, required_documents, price, category_name)
+        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 320.00::numeric, 'Emplacamento'),
+        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 380.00::numeric, 'Transferência'),
+        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 260.00::numeric, 'Segunda Via'),
+        ('Regularização documental', 'Apoio na regularização de documentação veicular', 180.00::numeric, 'Documentação')
+    ) AS seed(name, description, price, category_name)
     JOIN service_categories sc ON sc.name = seed.category_name
     ON CONFLICT (name) DO UPDATE SET
       description = EXCLUDED.description,
-      required_documents = EXCLUDED.required_documents,
       active = EXCLUDED.active,
       price = EXCLUDED.price,
       category_id = EXCLUDED.category_id,

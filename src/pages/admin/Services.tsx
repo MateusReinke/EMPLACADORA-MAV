@@ -76,6 +76,8 @@ const AdminServices = () => {
   const { toast } = useToast();
 
   const [services, setServices] = useState<ServiceType[]>([]);
+  // Alias de compatibilidade para evitar regressões por renome de variável na tela
+  const serviceTypes = services;
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemOption[]>([]);
   const [rules, setRules] = useState<ServiceInventoryRule[]>([]);
@@ -118,7 +120,7 @@ const AdminServices = () => {
 
   const filteredServices = useMemo(() => {
     const query = searchTerm.toLowerCase();
-    return services.filter((service) => service.name.toLowerCase().includes(query));
+    return serviceTypes.filter((service) => service.name.toLowerCase().includes(query));
   }, [services, searchTerm]);
 
   const categoryNameById = useMemo(() => {

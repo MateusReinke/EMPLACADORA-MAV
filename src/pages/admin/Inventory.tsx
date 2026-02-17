@@ -150,7 +150,6 @@ const AdminInventory = () => {
         min_quantity: values.minQuantity,
         cost_price: values.costPrice,
         category: values.category,
-        active: true,
       };
 
       const res = isEditMode && currentItem

@@ -47,9 +47,10 @@ class QueryBuilder implements PromiseLike<any> {
   private filters: Filter[] = [];
   private sortBy?: { column: string; ascending: boolean };
   private limitN?: number;
-  private mode: 'select' | 'insert' | 'update' | 'delete' = 'select';
+  private mode: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
   private selectOptions?: { count?: 'exact'; head?: boolean };
   private payload: any;
+  private upsertOptions?: { onConflict?: string };
   private singleMode: 'none' | 'single' | 'maybeSingle' = 'none';
 
   constructor(private table: string) {}
@@ -63,6 +64,13 @@ class QueryBuilder implements PromiseLike<any> {
   insert(payload: Row[]) {
     this.mode = 'insert';
     this.payload = payload;
+    return this;
+  }
+
+  upsert(payload: Row | Row[], options?: { onConflict?: string }) {
+    this.mode = 'upsert';
+    this.payload = payload;
+    this.upsertOptions = options;
     return this;
   }
 
@@ -127,6 +135,7 @@ class QueryBuilder implements PromiseLike<any> {
         sortBy: this.sortBy,
         limitN: this.limitN,
         payload: this.payload,
+        upsertOptions: this.upsertOptions,
         singleMode: this.singleMode,
         selectOptions: this.selectOptions,
       }),

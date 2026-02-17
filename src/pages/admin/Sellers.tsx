@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { SellersService, type Seller } from '@/services/sellersApi';
 import { toast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const AdminSellers = () => {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [newSellerOpen, setNewSellerOpen] = useState(false);
+  const [newSellerName, setNewSellerName] = useState('');
+  const [newSellerEmail, setNewSellerEmail] = useState('');
+  const [newSellerPhone, setNewSellerPhone] = useState('');
+  const [savingSeller, setSavingSeller] = useState(false);
 
   const loadSellers = async () => {
     try {
@@ -21,9 +26,9 @@ const AdminSellers = () => {
     } catch (error) {
       console.error('Erro ao carregar vendedores:', error);
       toast({
-        title: "Erro",
-        description: "Falha ao carregar vendedores",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao carregar vendedores',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -34,26 +39,67 @@ const AdminSellers = () => {
     loadSellers();
   }, []);
 
-  const filteredSellers = sellers.filter(seller =>
-    seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    seller.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSellers = sellers.filter(
+    (seller) =>
+      seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      seller.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = async (id: string) => {
     try {
       await SellersService.deleteSeller(id);
-      setSellers(sellers.filter(s => s.id !== id));
+      setSellers(sellers.filter((s) => s.id !== id));
       toast({
-        title: "Sucesso",
-        description: "Vendedor removido com sucesso",
+        title: 'Sucesso',
+        description: 'Vendedor removido com sucesso',
       });
     } catch (error) {
       console.error('Erro ao deletar vendedor:', error);
       toast({
-        title: "Erro",
-        description: "Falha ao remover vendedor",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao remover vendedor',
+        variant: 'destructive',
       });
+    }
+  };
+
+  const handleCreateSeller = async () => {
+    if (!newSellerName.trim() || !newSellerEmail.trim()) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Informe ao menos nome e email do vendedor.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSavingSeller(true);
+      await SellersService.createSeller({
+        name: newSellerName.trim(),
+        email: newSellerEmail.trim(),
+        phone: newSellerPhone.trim() || undefined,
+      });
+
+      setNewSellerOpen(false);
+      setNewSellerName('');
+      setNewSellerEmail('');
+      setNewSellerPhone('');
+      await loadSellers();
+
+      toast({
+        title: 'Sucesso',
+        description: 'Vendedor criado com sucesso.',
+      });
+    } catch (error) {
+      console.error('Erro ao criar vendedor:', error);
+      toast({
+        title: 'Erro',
+        description: 'Falha ao criar vendedor.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingSeller(false);
     }
   };
 
@@ -62,12 +108,43 @@ const AdminSellers = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Gerenciar Vendedores</h1>
-          <Button className="flex gap-2">
-            <PlusCircle className="h-4 w-4" />
-            <span>Novo Vendedor</span>
-          </Button>
+
+          <Dialog open={newSellerOpen} onOpenChange={setNewSellerOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex gap-2">
+                <PlusCircle className="h-4 w-4" />
+                <span>Novo Vendedor</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo Vendedor</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <Input
+                  placeholder="Nome"
+                  value={newSellerName}
+                  onChange={(e) => setNewSellerName(e.target.value)}
+                />
+                <Input
+                  placeholder="Email"
+                  type="email"
+                  value={newSellerEmail}
+                  onChange={(e) => setNewSellerEmail(e.target.value)}
+                />
+                <Input
+                  placeholder="Telefone (opcional)"
+                  value={newSellerPhone}
+                  onChange={(e) => setNewSellerPhone(e.target.value)}
+                />
+                <Button className="w-full" onClick={handleCreateSeller} disabled={savingSeller}>
+                  {savingSeller ? 'Salvando...' : 'Criar vendedor'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-        
+
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -83,7 +160,7 @@ const AdminSellers = () => {
             <ChevronDown className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <div className="rounded-md border">
           <table className="min-w-full divide-y divide-border">
             <thead>
@@ -132,11 +209,7 @@ const AdminSellers = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap space-x-2">
                       <Button variant="outline" size="sm">Editar</Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleDelete(seller.id)}
-                      >
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(seller.id)}>
                         Remover
                       </Button>
                     </td>

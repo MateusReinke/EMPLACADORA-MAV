@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { Loader2, Plus } from "lucide-react";
 
-import { db } from "@/lib/dbClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -36,6 +35,7 @@ import { OrderStatusesService } from "@/services/orderStatusesApi";
 import { ClientsService } from "@/services/clientsApi";
 import { VehicleService } from "@/services/vehiclesApi";
 import { OrdersService } from "@/services/ordersApi";
+import { resolveClientIdForUser } from "@/services/clientProfileService";
 
 import NewVehicleForm from "@/components/forms/NewVehicleForm";
 
@@ -108,14 +108,12 @@ export default function NewOrderForm({
 
         // se for cliente, busca own clientId + veículos
         if (isClient && user?.id) {
-          const { data: me } = await db
-            .from("clients")
-            .select("id")
-            .eq("user_id", user.id)
-            .single();
-          setValue("clientId", me.id);
-          const myV = await VehicleService.getClientVehicles(me.id);
-          setVehicles(myV);
+          const myClientId = await resolveClientIdForUser(user);
+          if (myClientId) {
+            setValue("clientId", myClientId);
+            const myV = await VehicleService.getClientVehicles(myClientId);
+            setVehicles(myV);
+          }
         }
         // se for admin/vendedor, busca todos os clientes
         else if (isAdmin || isSeller) {

@@ -7,11 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ClientsService, type Client } from '@/services/clientsApi';
 import { toast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import NewClientForm from '@/components/forms/NewClientForm';
 
 const AdminClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [newClientOpen, setNewClientOpen] = useState(false);
 
   const loadClients = async () => {
     try {
@@ -59,10 +62,25 @@ const AdminClients = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Gerenciar Clientes</h1>
-          <Button className="flex gap-2">
-            <PlusCircle className="h-4 w-4" />
-            <span>Novo Cliente</span>
-          </Button>
+          <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex gap-2">
+                <PlusCircle className="h-4 w-4" />
+                <span>Novo Cliente</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Novo Cliente</DialogTitle>
+              </DialogHeader>
+              <NewClientForm
+                onSuccess={async () => {
+                  setNewClientOpen(false);
+                  await loadClients();
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
         
         <div className="flex gap-2 items-center">

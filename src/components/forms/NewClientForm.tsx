@@ -96,6 +96,15 @@ export default function NewClientForm({
     }
   };
 
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 10) {
+      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").trim();
+    }
+    return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").trim();
+  };
+
   const handleDocumentChange = (value: string) => {
     const type = form.getValues("type");
     const formatted = formatDocument(value, type);
@@ -318,7 +327,7 @@ export default function NewClientForm({
                   <FormItem>
                     <FormLabel>Telefone (opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="(11) 99999-9999" {...field} />
+                      <Input placeholder="(11) 99999-9999" value={field.value || ""} onChange={(e) => field.onChange(formatPhone(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

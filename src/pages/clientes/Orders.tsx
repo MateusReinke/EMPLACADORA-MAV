@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Search, PlusCircle, Eye, Pencil, XCircle } from "lucide-react";
+import { Search, PlusCircle, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -14,16 +14,22 @@ import NewOrderForm from "@/components/forms/NewOrderForm";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { Order } from "@/types";
+import { resolveClientIdForUser } from "@/services/clientProfileService";
 
-interface Order {
-  id: string;
-  order_number: string;
-  service: string;
-  modelo: string;
-  created_at: string;
-  valor: number;
-  status: string;
-}
+const formatCurrency = (value?: number | null) =>
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(value || 0));
+
+const statusClass = (statusName?: string) => {
+  const key = (statusName || "").toLowerCase();
+  if (key.includes("concl")) return "bg-green-100 text-green-800";
+  if (key.includes("cancel")) return "bg-red-100 text-red-800";
+  if (key.includes("andamento")) return "bg-amber-100 text-amber-800";
+  return "bg-blue-100 text-blue-800";
+};
 
 const ClientOrders = () => {
   const { user } = useAuth();
@@ -32,35 +38,36 @@ const ClientOrders = () => {
   const [clientId, setClientId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-
     const fetchOrders = async () => {
-      const { data: client, error: clientError } = await db
-        .from("clients")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
+      const resolvedClientId = await resolveClientIdForUser(user);
+      if (!resolvedClientId) return;
 
-      if (clientError || !client) return;
+      setClientId(resolvedClientId);
 
-      setClientId(client.id);
-
-      const { data: ordersData } = await db
+      const { data: ordersData, error } = await db
         .from("orders")
         .select("*")
-        .eq("client_id", client.id)
+        .eq("client_id", resolvedClientId)
         .order("created_at", { ascending: false });
 
-      if (ordersData) setOrders(ordersData);
+      if (!error) setOrders((ordersData || []) as Order[]);
     };
 
     fetchOrders();
   }, [user]);
 
-  const filtered = orders.filter(
-    (o) =>
-      o.service?.toLowerCase().includes(search.toLowerCase()) ||
-      o.modelo?.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      orders.filter((order) => {
+        const query = search.toLowerCase();
+        return (
+          order.order_number?.toLowerCase().includes(query) ||
+          order.serviceType?.name?.toLowerCase().includes(query) ||
+          order.vehicle?.model?.toLowerCase().includes(query) ||
+          order.vehicle?.license_plate?.toLowerCase().includes(query)
+        );
+      }),
+    [orders, search]
   );
 
   return (
@@ -81,7 +88,7 @@ const ClientOrders = () => {
               {clientId && (
                 <NewOrderForm
                   onSuccess={(newOrder) =>
-                    setOrders((prev) => [newOrder, ...prev])
+                    setOrders((prev) => [newOrder as Order, ...prev])
                   }
                 />
               )}
@@ -90,7 +97,7 @@ const ClientOrders = () => {
         </div>
 
         <Input
-          placeholder="Buscar por serviço ou veículo"
+          placeholder="Buscar por código, serviço, modelo ou placa"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
@@ -112,33 +119,21 @@ const ClientOrders = () => {
             <tbody className="bg-card divide-y divide-border">
               {filtered.map((order) => (
                 <tr key={order.id}>
-                  <td className="px-4 py-2 font-medium">
-                    {order.order_number}
-                  </td>
-                  <td className="px-4 py-2">{order.service ?? "-"}</td>
-                  <td className="px-4 py-2">{order.modelo}</td>
+                  <td className="px-4 py-2 font-medium">{order.order_number || order.id.slice(0, 8)}</td>
+                  <td className="px-4 py-2">{order.serviceType?.name || "-"}</td>
+                  <td className="px-4 py-2">{order.vehicle?.model || "-"}</td>
                   <td className="px-4 py-2">
-                    {new Date(order.created_at).toLocaleDateString("pt-BR")}
+                    {order.created_at
+                      ? new Date(order.created_at).toLocaleDateString("pt-BR")
+                      : "-"}
                   </td>
+                  <td className="px-4 py-2">{formatCurrency(order.value)}</td>
                   <td className="px-4 py-2">
-                    R$ {order.valor?.toFixed(2) ?? "0,00"}
-                  </td>
-                  <td className="px-4 py-2">
-                    <Badge>{order.status}</Badge>
+                    <Badge className={statusClass(order.status?.name)}>{order.status?.name || "Sem status"}</Badge>
                   </td>
                   <td className="px-4 py-2 space-x-2">
                     <Button size="sm" variant="outline">
                       <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-destructive"
-                    >
-                      <XCircle className="w-4 h-4" />
                     </Button>
                   </td>
                 </tr>

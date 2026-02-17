@@ -81,7 +81,7 @@ const buildWhere = (filters = [], startIndex = 1) => {
 };
 
 
-const ensureAuthSchema = async () => {
+const ensureCoreSchema = async () => {
   await pool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
 
   await pool.query(`
@@ -95,6 +95,157 @@ const ensureAuthSchema = async () => {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_categories (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL UNIQUE,
+      prefix TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_types (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      price NUMERIC(12,2),
+      category_id UUID REFERENCES service_categories(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_statuses (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL UNIQUE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      color TEXT NOT NULL DEFAULT '#64748b',
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS plate_types (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL,
+      color TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS clients (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      document TEXT,
+      type TEXT NOT NULL CHECK (type IN ('physical','juridical')),
+      address TEXT,
+      phone TEXT,
+      email TEXT,
+      created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS vehicles (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      license_plate TEXT,
+      brand TEXT NOT NULL,
+      model TEXT NOT NULL,
+      year TEXT NOT NULL,
+      color TEXT,
+      client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+      plate_type_id UUID REFERENCES plate_types(id) ON DELETE SET NULL,
+      renavam TEXT,
+      category TEXT NOT NULL DEFAULT 'carros',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+      created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      service_type_id UUID REFERENCES service_types(id) ON DELETE SET NULL,
+      status_id UUID REFERENCES order_statuses(id) ON DELETE SET NULL,
+      order_number TEXT,
+      value NUMERIC(12,2) DEFAULT 0,
+      vehicle_id UUID REFERENCES vehicles(id) ON DELETE SET NULL,
+      message TEXT,
+      cancel_reason TEXT,
+      estimated_delivery_date DATE,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS inventory_items (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 0,
+      min_quantity INTEGER NOT NULL DEFAULT 0,
+      cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+      category TEXT NOT NULL DEFAULT 'geral',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS inventory_movements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      inventory_item_id UUID REFERENCES inventory_items(id) ON DELETE CASCADE,
+      movement_type TEXT NOT NULL CHECK (movement_type IN ('in','out')),
+      quantity INTEGER NOT NULL,
+      responsible_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS dashboard_layouts (
+      user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      layout_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+      last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE OR REPLACE VIEW inventory_status AS
+    SELECT
+      i.id,
+      i.name,
+      i.quantity,
+      i.min_quantity,
+      i.cost_price,
+      i.category,
+      i.created_at,
+      i.updated_at,
+      CASE
+        WHEN i.quantity <= 0 THEN 'critical'
+        WHEN i.quantity <= i.min_quantity THEN 'low'
+        ELSE 'adequate'
+      END AS status
+    FROM inventory_items i
   `);
 
   await pool.query(
@@ -111,6 +262,38 @@ const ensureAuthSchema = async () => {
     `,
     [DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD]
   );
+
+  await pool.query(`
+    INSERT INTO order_statuses (name, sort_order, color)
+    VALUES
+      ('Novo', 1, '#2563eb'),
+      ('Em andamento', 2, '#f59e0b'),
+      ('Concluído', 3, '#16a34a'),
+      ('Cancelado', 4, '#dc2626')
+    ON CONFLICT (name) DO NOTHING
+  `);
+
+  await pool.query(`
+    INSERT INTO service_categories (name, prefix)
+    VALUES ('Emplacamento', 'EMP')
+    ON CONFLICT (name) DO NOTHING
+  `);
+
+  await pool.query(`
+    INSERT INTO service_types (name, description, active, price, category_id)
+    SELECT 'Primeiro emplacamento', 'Serviço padrão de primeiro emplacamento', TRUE, 0, sc.id
+    FROM service_categories sc
+    WHERE sc.name = 'Emplacamento'
+    ON CONFLICT (name) DO NOTHING
+  `);
+
+  await pool.query(`
+    INSERT INTO plate_types (code, label, color)
+    VALUES
+      ('MERCOSUL', 'Mercosul', '#2563eb'),
+      ('ANTIGA', 'Antiga', '#6b7280')
+    ON CONFLICT (code) DO NOTHING
+  `);
 };
 
 const getAuthDiagnostics = async () => {
@@ -387,6 +570,7 @@ app.post('/api/query', async (req, res) => {
       sortBy,
       limitN,
       payload,
+      upsertOptions,
       singleMode = 'none',
       selectOptions,
     } = req.body || {};
@@ -459,6 +643,40 @@ app.post('/api/query', async (req, res) => {
       return res.json({ data: inserted, error: null });
     }
 
+    if (action === 'upsert') {
+      const rowsToUpsert = Array.isArray(payload) ? payload : payload ? [payload] : [];
+      if (!rowsToUpsert.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
+
+      const conflictColumn = isSafeIdent(upsertOptions?.onConflict || '') ? upsertOptions.onConflict : null;
+      if (!conflictColumn) {
+        return res.status(400).json({ data: null, error: { message: 'onConflict é obrigatório para upsert' } });
+      }
+
+      const upserted = [];
+      for (const row of rowsToUpsert) {
+        const cols = Object.keys(row).filter(isSafeIdent);
+        const vals = cols.map((c) => row[c]);
+        const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
+        const updateCols = cols.filter((c) => c !== conflictColumn);
+        const updateSql = updateCols.length
+          ? updateCols.map((c) => `${c} = EXCLUDED.${c}`).join(', ')
+          : `${conflictColumn} = EXCLUDED.${conflictColumn}`;
+
+        const q = `
+          INSERT INTO ${table} (${cols.join(', ')})
+          VALUES (${placeholders})
+          ON CONFLICT (${conflictColumn})
+          DO UPDATE SET ${updateSql}
+          RETURNING *
+        `;
+        const r = await pool.query(q, vals);
+        upserted.push(r.rows[0]);
+      }
+
+      if (singleMode === 'single' || rowsToUpsert.length === 1) return res.json({ data: upserted[0] ?? null, error: null });
+      return res.json({ data: upserted, error: null });
+    }
+
     if (action === 'update') {
       const where = buildWhere(filters);
       const cols = Object.keys(payload || {}).filter(isSafeIdent);
@@ -501,7 +719,7 @@ const startHttpServer = () => {
 };
 const bootstrap = async () => {
   try {
-    await ensureAuthSchema();
+    await ensureCoreSchema();
     const auth = await getAuthDiagnostics();
     console.log('[server] auth bootstrap:', auth);
   } catch (error) {

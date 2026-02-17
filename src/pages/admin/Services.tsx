@@ -33,7 +33,28 @@ interface ServiceFormData {
   price: number;
   active: boolean;
   category_id: string;
+  required_documents: string[];
 }
+
+const COMMON_REQUIRED_DOCUMENTS = [
+  'CNH',
+  'RG',
+  'CPF',
+  'CRLV',
+  'Comprovante de residência',
+  'Comprovante de compra',
+  'Nota fiscal do veículo',
+  'Procuração',
+  'Laudo de vistoria',
+];
+
+const parseRequiredDocuments = (value?: string | null): string[] => {
+  if (!value) return [];
+  return value
+    .split(/[\n,;]+/)
+    .map((document) => document.trim())
+    .filter(Boolean);
+};
 
 const emptyServiceForm: ServiceFormData = {
   name: '',
@@ -41,6 +62,7 @@ const emptyServiceForm: ServiceFormData = {
   price: 0,
   active: true,
   category_id: '',
+  required_documents: [],
 };
 
 const emptyRule = (): RuleDraft => ({
@@ -136,6 +158,7 @@ const AdminServices = () => {
       price: Number(service.price || 0),
       active: service.active,
       category_id: service.category_id,
+      required_documents: parseRequiredDocuments(service.required_documents),
     });
 
     const serviceRules = (rulesByServiceId.get(service.id) || []).map((rule) => ({
@@ -175,6 +198,7 @@ const AdminServices = () => {
         price: serviceForm.price,
         active: serviceForm.active,
         category_id: serviceForm.category_id,
+        required_documents: serviceForm.required_documents.join(', ') || null,
       };
 
       let serviceId = editingServiceId;
@@ -262,6 +286,7 @@ const AdminServices = () => {
                 <th className="text-left p-3">Nome</th>
                 <th className="text-left p-3">Categoria</th>
                 <th className="text-left p-3">Preço</th>
+                <th className="text-left p-3">Documentos necessários</th>
                 <th className="text-left p-3">Consumo de estoque</th>
                 <th className="text-left p-3">Status</th>
                 <th className="text-left p-3">Ações</th>
@@ -270,20 +295,24 @@ const AdminServices = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center">Carregando...</td>
+                  <td colSpan={7} className="p-6 text-center">Carregando...</td>
                 </tr>
               ) : filteredServices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum serviço encontrado.</td>
+                  <td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum serviço encontrado.</td>
                 </tr>
               ) : (
                 filteredServices.map((service) => {
                   const serviceRules = rulesByServiceId.get(service.id) || [];
+                  const documents = parseRequiredDocuments(service.required_documents);
                   return (
                     <tr key={service.id} className="border-t">
                       <td className="p-3 font-medium">{service.name}</td>
                       <td className="p-3">{categoryNameById.get(service.category_id) || '-'}</td>
                       <td className="p-3">R$ {Number(service.price || 0).toFixed(2)}</td>
+                      <td className="p-3">
+                        {documents.length ? documents.join(', ') : 'Não definido'}
+                      </td>
                       <td className="p-3">
                         {serviceRules.length === 0
                           ? 'Sem consumo'
@@ -371,6 +400,36 @@ const AdminServices = () => {
                 value={serviceForm.description}
                 onChange={(event) => setServiceForm((prev) => ({ ...prev, description: event.target.value }))}
               />
+            </div>
+
+            <div className="space-y-2 border rounded p-3">
+              <h3 className="font-semibold">Documentos necessários</h3>
+              <p className="text-sm text-muted-foreground">
+                Selecione os documentos exigidos para este serviço.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {COMMON_REQUIRED_DOCUMENTS.map((document) => {
+                  const checked = serviceForm.required_documents.includes(document);
+                  return (
+                    <label key={document} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) => {
+                          const isChecked = event.target.checked;
+                          setServiceForm((prev) => ({
+                            ...prev,
+                            required_documents: isChecked
+                              ? [...prev.required_documents, document]
+                              : prev.required_documents.filter((item) => item !== document),
+                          }));
+                        }}
+                      />
+                      {document}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-2">

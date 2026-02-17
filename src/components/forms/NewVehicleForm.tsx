@@ -345,12 +345,15 @@ export default function NewVehicleForm({
       </Select>
 
       {/* 7) Inputs Placa e Renavam */}
-      <Input
-        placeholder="Placa (AAA1A11)"
-        value={licensePlate}
-        maxLength={7}
-        onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
-      />
+      <div className="space-y-1">
+        <Input
+          placeholder="Placa (AAA1A11)"
+          value={licensePlate}
+          maxLength={7}
+          onChange={(e) => setLicensePlate(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())}
+        />
+        <p className="text-xs text-muted-foreground">Digite apenas letras e números. Exemplo Mercosul: BRA2E19.</p>
+      </div>
       {!simplified && (
         <Input
           placeholder="Renavam (opcional)"

@@ -41,14 +41,19 @@ import { Order } from "@/types";
 import NewVehicleForm from "@/components/forms/NewVehicleForm";
 
 // --- validação com Zod ---
-const orderSchema = z.object({
-  serviceTypeId: z.string().nonempty("Selecione um serviço"),
-  clientId: z.string().optional(),
-  vehicleId: z.string().nonempty("Selecione um veículo"),
-  observations: z.string().optional(),
-  expectedDeliveryDate: z.date().optional(),
-  statusId: z.string().optional(),
-});
+const orderSchema = z
+  .object({
+    serviceTypeId: z.string().nonempty("Selecione um serviço"),
+    clientId: z.string().optional(),
+    vehicleId: z.string().nonempty("Selecione um veículo"),
+    observations: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+    expectedDeliveryDate: z.date().optional(),
+    statusId: z.string().optional(),
+  })
+  .refine((data) => !!data.clientId, {
+    path: ["clientId"],
+    message: "Selecione um cliente para continuar",
+  });
 type OrderFormValues = z.infer<typeof orderSchema>;
 
 export default function NewOrderForm({
@@ -134,6 +139,7 @@ export default function NewOrderForm({
 
   // recarrega veículos ao trocar cliente
   useEffect(() => {
+    setValue("vehicleId", "");
     if (!selectedClientId) return;
     (async () => {
       try {
@@ -316,6 +322,7 @@ export default function NewOrderForm({
               <FormLabel>Observações</FormLabel>
               <FormControl>
                 <Textarea {...field} placeholder="Observações adicionais" />
+                <p className="text-xs text-muted-foreground mt-1">{(field.value || "").length}/500 caracteres</p>
               </FormControl>
               <FormMessage>{errors.observations?.message}</FormMessage>
             </FormItem>
@@ -332,6 +339,7 @@ export default function NewOrderForm({
               <FormControl>
                 <Input
                   type="date"
+                  min={format(new Date(), "yyyy-MM-dd")}
                   value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                   onChange={(e) =>
                     field.onChange(

@@ -89,6 +89,7 @@ const ensureCoreSchema = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
+      phone TEXT,
       password TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('admin','seller','physical','juridical')),
       active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -96,6 +97,8 @@ const ensureCoreSchema = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_categories (
@@ -573,6 +576,7 @@ app.post('/api/query', async (req, res) => {
       upsertOptions,
       singleMode = 'none',
       selectOptions,
+      returnMode = 'representation',
     } = req.body || {};
 
     if (!ALLOWED_TABLES.has(table)) {
@@ -639,6 +643,9 @@ app.post('/api/query', async (req, res) => {
         inserted.push(r.rows[0]);
       }
 
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single') return res.json({ data: inserted[0] ?? null, error: null });
       return res.json({ data: inserted, error: null });
     }
@@ -673,6 +680,9 @@ app.post('/api/query', async (req, res) => {
         upserted.push(r.rows[0]);
       }
 
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single' || rowsToUpsert.length === 1) return res.json({ data: upserted[0] ?? null, error: null });
       return res.json({ data: upserted, error: null });
     }
@@ -687,6 +697,9 @@ app.post('/api/query', async (req, res) => {
       const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
       const r = await pool.query(q, [...values, ...where.values]);
       const rows = r.rows;
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single') {
         if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' } });
         return res.json({ data: rows[0], error: null });

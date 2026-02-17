@@ -7,6 +7,7 @@ export interface Seller {
   email: string;
   phone?: string;
   role: string;
+  active?: boolean;
   created_at: string;
   updated_at: string;
   clientsCount?: number;
@@ -63,6 +64,8 @@ export class SellersService {
         {
           ...payload,
           role: "seller",
+          password: "123456",
+          active: true,
         },
       ])
       .select()
@@ -75,7 +78,7 @@ export class SellersService {
   /** Atualizar vendedor */
   static async updateSeller(
     id: string,
-    payload: Partial<Pick<Seller, "name" | "email" | "phone">>
+    payload: Partial<Pick<Seller, "name" | "email" | "phone" | "active">>
   ): Promise<Seller> {
     const { data, error } = await db
       .from("users")
@@ -90,7 +93,21 @@ export class SellersService {
 
   /** Deletar vendedor (soft delete seria melhor) */
   static async deleteSeller(id: string): Promise<void> {
-    const { error } = await db.from("users").delete().eq("id", id);
+    const { error } = await db
+      .from("users")
+      .update({ active: false })
+      .eq("id", id);
     if (error) throw error;
+  }
+
+  static async reactivateSeller(id: string): Promise<Seller> {
+    const { data, error } = await db
+      .from("users")
+      .update({ active: true })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   }
 }

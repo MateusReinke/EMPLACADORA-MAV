@@ -9,6 +9,7 @@ export interface Client {
   document: string;
   phone?: string;
   email?: string;
+  address?: string;
   type: "physical" | "juridical";
   active?: boolean;
   created_by: string;

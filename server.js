@@ -117,6 +117,7 @@ const ensureCoreSchema = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL UNIQUE,
       description TEXT,
+      required_documents TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       price NUMERIC(12,2),
       category_id UUID REFERENCES service_categories(id) ON DELETE SET NULL,
@@ -124,6 +125,8 @@ const ensureCoreSchema = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE service_types ADD COLUMN IF NOT EXISTS required_documents TEXT`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_statuses (

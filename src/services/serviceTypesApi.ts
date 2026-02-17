@@ -10,6 +10,7 @@ export interface ServiceType {
   id: string;
   name: string;
   description?: string;
+  required_documents?: string;
   price: number;
   active: boolean;
   category_id: string;

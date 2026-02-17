@@ -42,6 +42,7 @@ export interface ServiceType {
   id: string;
   name: string;
   description?: string | null;
+  required_documents?: string | null;
   active?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null; // Assumindo que você tem trigger para ela

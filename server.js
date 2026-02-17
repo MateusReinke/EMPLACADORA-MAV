@@ -382,6 +382,65 @@ const orderSelectSql = `
   LEFT JOIN vehicles v ON v.id = o.vehicle_id
   LEFT JOIN order_statuses os ON os.id = o.status_id
 `;
+
+
+const restoreOrderInventory = async (client, orderId, responsibleId, reason) => {
+  const { rows: outstandingRows } = await client.query(
+    `
+      SELECT
+        inventory_item_id,
+        SUM(
+          CASE
+            WHEN movement_type = 'out' THEN quantity
+            WHEN movement_type = 'in' THEN -quantity
+            ELSE 0
+          END
+        )::int AS outstanding
+      FROM inventory_movements
+      WHERE order_id = $1
+      GROUP BY inventory_item_id
+      HAVING SUM(
+        CASE
+          WHEN movement_type = 'out' THEN quantity
+          WHEN movement_type = 'in' THEN -quantity
+          ELSE 0
+        END
+      ) > 0
+    `,
+    [orderId]
+  );
+
+  for (const row of outstandingRows) {
+    const restoreQty = Number(row.outstanding || 0);
+    if (restoreQty <= 0) continue;
+
+    const { rows: itemRows } = await client.query(
+      'SELECT quantity FROM inventory_items WHERE id = $1 FOR UPDATE',
+      [row.inventory_item_id]
+    );
+
+    if (!itemRows[0]) continue;
+
+    const nextQuantity = Number(itemRows[0].quantity || 0) + restoreQty;
+
+    await client.query(
+      'UPDATE inventory_items SET quantity = $1, updated_at = NOW() WHERE id = $2',
+      [nextQuantity, row.inventory_item_id]
+    );
+
+    await client.query(
+      `INSERT INTO inventory_movements (
+        inventory_item_id,
+        movement_type,
+        quantity,
+        responsible_id,
+        order_id,
+        notes
+      ) VALUES ($1, 'in', $2, $3, $4, $5)`,
+      [row.inventory_item_id, restoreQty, responsibleId || null, orderId, reason]
+    );
+  }
+};
 const getSessionUser = async (req) => {
   const token = req.cookies?.vp_session;
   if (!token) return null;
@@ -782,6 +841,65 @@ app.post('/api/query', async (req, res) => {
       const values = cols.map((c) => payload[c]);
       const whereSql = where.sql ? ` ${where.sql.replace(/\$(\d+)/g, (_, n) => `$${Number(n) + cols.length}`)}` : '';
       const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
+
+      if (table === 'orders') {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+
+          const { rows: beforeRows } = await client.query(
+            `SELECT id, status_id, created_by FROM orders ${where.sql}`,
+            where.values
+          );
+
+          const r = await client.query(q, [...values, ...where.values]);
+          const rows = r.rows;
+
+          if (payload?.status_id) {
+            const { rows: targetStatusRows } = await client.query(
+              'SELECT name FROM order_statuses WHERE id = $1 LIMIT 1',
+              [payload.status_id]
+            );
+
+            const targetName = String(targetStatusRows[0]?.name || '').toLowerCase();
+            const isCancelTarget = targetName.includes('cancel');
+
+            if (isCancelTarget) {
+              const beforeById = new Map(beforeRows.map((row) => [row.id, row]));
+              for (const updatedOrder of rows) {
+                const beforeOrder = beforeById.get(updatedOrder.id);
+                if (!beforeOrder) continue;
+                if (beforeOrder.status_id === updatedOrder.status_id) continue;
+
+                await restoreOrderInventory(
+                  client,
+                  updatedOrder.id,
+                  updatedOrder.created_by || beforeOrder.created_by || null,
+                  'Reposição automática por cancelamento do pedido'
+                );
+              }
+            }
+          }
+
+          await client.query('COMMIT');
+
+          if (returnMode === 'minimal') {
+            return res.json({ data: null, error: null });
+          }
+          if (singleMode === 'single') {
+            if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' } });
+            return res.json({ data: rows[0], error: null });
+          }
+          if (singleMode === 'maybeSingle') return res.json({ data: rows[0] ?? null, error: null });
+          return res.json({ data: rows, error: null });
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
+
       const r = await pool.query(q, [...values, ...where.values]);
       const rows = r.rows;
       if (returnMode === 'minimal') {
@@ -797,6 +915,37 @@ app.post('/api/query', async (req, res) => {
 
     if (action === 'delete') {
       const where = buildWhere(filters);
+
+      if (table === 'orders') {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+
+          const { rows: orderRows } = await client.query(
+            `SELECT id, created_by FROM orders ${where.sql}`,
+            where.values
+          );
+
+          for (const orderRow of orderRows) {
+            await restoreOrderInventory(
+              client,
+              orderRow.id,
+              orderRow.created_by || null,
+              'Reposição automática por exclusão do pedido'
+            );
+          }
+
+          await client.query(`DELETE FROM ${table} ${where.sql}`, where.values);
+          await client.query('COMMIT');
+          return res.json({ data: [], error: null });
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
+
       await pool.query(`DELETE FROM ${table} ${where.sql}`, where.values);
       return res.json({ data: [], error: null });
     }

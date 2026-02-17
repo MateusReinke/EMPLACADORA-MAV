@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -233,12 +234,19 @@ const AdminServices = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Gerenciar Serviços</h1>
-          <Button onClick={openCreateDialog} className="gap-2">
-            <PlusCircle className="h-4 w-4" /> Novo Serviço
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="Gerenciar Serviços"
+          description="Organize o catálogo com valores, regras de consumo e disponibilidade operacional."
+          stats={[
+            { label: 'Total', value: String(serviceTypes.length) },
+            { label: 'Ativos', value: String(serviceTypes.filter((service) => service.active).length) },
+          ]}
+          action={
+            <Button onClick={openCreateDialog} className="gap-2">
+              <PlusCircle className="h-4 w-4" /> Novo Serviço
+            </Button>
+          }
+        />
 
         <Input
           placeholder="Buscar serviço por nome..."

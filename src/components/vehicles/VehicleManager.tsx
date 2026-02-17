@@ -53,6 +53,7 @@ const VehicleManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
+  const [newVehicleClientId, setNewVehicleClientId] = useState<string | undefined>(undefined);
 
   const fetchData = async () => {
     setLoading(true);
@@ -100,6 +101,7 @@ const VehicleManager: React.FC = () => {
 
   const handleEditVehicle = (vehicle: Vehicle) => {
     setCurrentVehicle(vehicle);
+    setNewVehicleClientId(vehicle.clientId);
     setIsEditMode(true);
     setIsDialogOpen(true);
   };
@@ -133,7 +135,17 @@ const VehicleManager: React.FC = () => {
   });
 
   const handleNewVehicle = () => {
+    if (clientFilter === "all") {
+      toast({
+        title: "Selecione um cliente",
+        description: "Para cadastrar um veículo no admin, selecione um cliente no filtro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setCurrentVehicle(null);
+    setNewVehicleClientId(clientFilter);
     setIsEditMode(false);
     setIsDialogOpen(true);
   };
@@ -169,7 +181,11 @@ const VehicleManager: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{isEditMode ? "Editar Veículo" : "Adicionar Novo Veículo"}</DialogTitle>
           </DialogHeader>
-          <NewVehicleForm onSuccess={handleAddEditVehicle} initialData={currentVehicle as any} />
+          <NewVehicleForm
+            onSuccess={handleAddEditVehicle}
+            initialData={currentVehicle as any}
+            clientId={newVehicleClientId}
+          />
         </DialogContent>
       </Dialog>
     </div>

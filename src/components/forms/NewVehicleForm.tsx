@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
 import LicensePlate from "@/components/LicensePlate";
+import { resolveClientIdForUser } from "@/services/clientProfileService";
 
 // Endpoints FIPE por categoria
 const FIPE_BASE = {
@@ -163,15 +164,10 @@ export default function NewVehicleForm({
     }
     setSubmitting(true);
     try {
-      // Use provided clientId or get from user
+      // Use provided clientId or try resolve from authenticated user
       let targetClientId = clientId;
-      if (!targetClientId && user?.id) {
-        const { data: cli } = await db
-          .from("clients")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-        targetClientId = cli?.id;
+      if (!targetClientId && user) {
+        targetClientId = await resolveClientIdForUser(user);
       }
 
       if (!targetClientId) {
@@ -198,7 +194,7 @@ export default function NewVehicleForm({
           .select()
           .single();
       } else {
-        res = await db.from("vehicles").insert(payload).select().single();
+        res = await db.from("vehicles").insert([payload]).select().single();
       }
       if (res.error) throw res.error;
 

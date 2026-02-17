@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Search, ChevronDown, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -89,18 +90,25 @@ const AdminClients = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Gerenciar Clientes</h1>
-          <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex gap-2"><PlusCircle className="h-4 w-4" /><span>Novo Cliente</span></Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>Novo Cliente</DialogTitle></DialogHeader>
-              <NewClientForm onSuccess={async () => { setNewClientOpen(false); await loadClients(); }} />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <AdminPageHeader
+          title="Gerenciar Clientes"
+          description="Controle de cadastro, status e dados cadastrais dos clientes com filtros rápidos."
+          stats={[
+            { label: 'Total', value: String(clients.length) },
+            { label: 'Ativos', value: String(clients.filter((c) => c.active).length) },
+          ]}
+          action={
+            <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex gap-2"><PlusCircle className="h-4 w-4" /><span>Novo Cliente</span></Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader><DialogTitle>Novo Cliente</DialogTitle></DialogHeader>
+                <NewClientForm onSuccess={async () => { setNewClientOpen(false); await loadClients(); }} />
+              </DialogContent>
+            </Dialog>
+          }
+        />
 
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">

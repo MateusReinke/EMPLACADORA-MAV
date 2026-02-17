@@ -149,6 +149,18 @@ const ensureCoreSchema = async () => {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS vehicle_types (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL,
+      wheel_count INTEGER,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS clients (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
@@ -180,6 +192,8 @@ const ensureCoreSchema = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS vehicle_type_id UUID REFERENCES vehicle_types(id) ON DELETE SET NULL`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
@@ -283,27 +297,22 @@ const ensureCoreSchema = async () => {
   );
 
   await pool.query(`
-    INSERT INTO order_statuses (name, sort_order, color)
+    INSERT INTO order_statuses (name, sort_order, color, active)
     VALUES
-      ('Novo', 1, '#2563eb'),
-      ('Em andamento', 2, '#f59e0b'),
-      ('Concluído', 3, '#16a34a'),
-      ('Cancelado', 4, '#dc2626')
-    ON CONFLICT (name) DO NOTHING
-  `);
-
-  await pool.query(`
-    INSERT INTO service_categories (name, prefix)
-    VALUES ('Emplacamento', 'EMP')
-    ON CONFLICT (name) DO NOTHING
-  `);
-
-  await pool.query(`
-    INSERT INTO service_types (name, description, active, price, category_id)
-    SELECT 'Primeiro emplacamento', 'Serviço padrão de primeiro emplacamento', TRUE, 0, sc.id
-    FROM service_categories sc
-    WHERE sc.name = 'Emplacamento'
-    ON CONFLICT (name) DO NOTHING
+      ('Novo', 1, '#2563eb', TRUE),
+      ('Aguardando documentação', 2, '#f97316', TRUE),
+      ('Documentação pendente', 3, '#ea580c', TRUE),
+      ('Em análise DETRAN', 4, '#f59e0b', TRUE),
+      ('Aguardando pagamento', 5, '#eab308', TRUE),
+      ('Em produção', 6, '#0ea5e9', TRUE),
+      ('Pronto para retirada', 7, '#14b8a6', TRUE),
+      ('Concluído', 8, '#16a34a', TRUE),
+      ('Cancelado', 9, '#dc2626', TRUE)
+    ON CONFLICT (name) DO UPDATE SET
+      sort_order = EXCLUDED.sort_order,
+      color = EXCLUDED.color,
+      active = EXCLUDED.active,
+      updated_at = NOW()
   `);
 
   await pool.query(`
@@ -312,6 +321,90 @@ const ensureCoreSchema = async () => {
       ('MERCOSUL', 'Mercosul', '#2563eb'),
       ('ANTIGA', 'Antiga', '#6b7280')
     ON CONFLICT (code) DO NOTHING
+  `);
+
+  await pool.query(`
+    INSERT INTO vehicle_types (code, label, wheel_count, active)
+    VALUES
+      ('CARRO', 'Carro', 4, TRUE),
+      ('MOTO', 'Moto', 2, TRUE),
+      ('CAMINHAO', 'Caminhão', 6, TRUE),
+      ('ONIBUS', 'Ônibus', 6, TRUE)
+    ON CONFLICT (code) DO UPDATE SET
+      label = EXCLUDED.label,
+      wheel_count = EXCLUDED.wheel_count,
+      active = EXCLUDED.active,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    INSERT INTO service_categories (name, prefix)
+    VALUES
+      ('Emplacamento', 'EMP'),
+      ('Transferência', 'TRF'),
+      ('Segunda Via', '2VIA'),
+      ('Documentação', 'DOC')
+    ON CONFLICT (name) DO UPDATE SET
+      prefix = EXCLUDED.prefix,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    INSERT INTO inventory_items (name, quantity, min_quantity, cost_price, category)
+    VALUES
+      ('Placa Mercosul Carro', 200, 20, 40, 'placas'),
+      ('Placa Mercosul Moto', 150, 15, 35, 'placas'),
+      ('Lacre', 500, 50, 2, 'insumos'),
+      ('Tarjeta', 300, 30, 4, 'insumos')
+    ON CONFLICT DO NOTHING
+  `);
+
+  await pool.query(`
+    INSERT INTO service_types (name, description, active, price, category_id)
+    SELECT seed.name, seed.description, TRUE, seed.price, sc.id
+    FROM (
+      VALUES
+        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 320.00::numeric, 'Emplacamento'),
+        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 380.00::numeric, 'Transferência'),
+        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 260.00::numeric, 'Segunda Via'),
+        ('Regularização documental', 'Apoio na regularização de documentação veicular', 180.00::numeric, 'Documentação')
+    ) AS seed(name, description, price, category_name)
+    JOIN service_categories sc ON sc.name = seed.category_name
+    ON CONFLICT (name) DO UPDATE SET
+      description = EXCLUDED.description,
+      active = EXCLUDED.active,
+      price = EXCLUDED.price,
+      category_id = EXCLUDED.category_id,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    DELETE FROM service_inventory_rules
+    WHERE service_type_id IN (
+      SELECT id FROM service_types WHERE name IN (
+        'Primeiro emplacamento',
+        'Transferência de propriedade',
+        'Segunda via de placa'
+      )
+    )
+  `);
+
+  await pool.query(`
+    INSERT INTO service_inventory_rules (service_type_id, inventory_item_id, vehicle_category, quantity_required, active)
+    SELECT st.id, ii.id, rules.vehicle_category, rules.quantity_required, TRUE
+    FROM (
+      VALUES
+        ('Primeiro emplacamento', 'Placa Mercosul Carro', 'carro', 2),
+        ('Primeiro emplacamento', 'Placa Mercosul Moto', 'moto', 1),
+        ('Primeiro emplacamento', 'Lacre', 'all', 1),
+        ('Transferência de propriedade', 'Placa Mercosul Carro', 'carro', 2),
+        ('Transferência de propriedade', 'Placa Mercosul Moto', 'moto', 1),
+        ('Transferência de propriedade', 'Lacre', 'all', 1),
+        ('Segunda via de placa', 'Placa Mercosul Carro', 'carro', 2),
+        ('Segunda via de placa', 'Placa Mercosul Moto', 'moto', 1)
+    ) AS rules(service_name, item_name, vehicle_category, quantity_required)
+    JOIN service_types st ON st.name = rules.service_name
+    JOIN inventory_items ii ON ii.name = rules.item_name
   `);
 };
 

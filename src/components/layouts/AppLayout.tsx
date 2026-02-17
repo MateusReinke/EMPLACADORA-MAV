@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
+import mavLogo from '@/assets/mav-emplacamento-logo.svg';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -214,7 +215,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       >
         {/* Logo and collapse button */}
         <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
-          {!collapsed && <span className="font-bold text-lg">VehiclePlate</span>}
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <img src={mavLogo} alt="MAV EMPACAMENTO" className="h-10 w-auto rounded" />
+              <span className="font-bold text-sm leading-tight">MAV EMPACAMENTO</span>
+            </div>
+          )}
           {!isMobile && (
             <Button
               variant="ghost"

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Search, Plus, Minus, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -278,17 +279,24 @@ const AdminInventory = () => {
   return (
     <AppLayout>
       <div className="space-y-4">
-        <div className="flex justify-between items-center gap-2 flex-wrap">
-          <h1 className="text-2xl font-bold">Estoque</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => openMovementDialog()}>
-              <Plus className="w-4 h-4 mr-2" /> Nova Movimentação
-            </Button>
-            <Button onClick={handleAddItem}>
-              <PlusCircle className="w-4 h-4 mr-2" /> Novo Item
-            </Button>
-          </div>
-        </div>
+        <AdminPageHeader
+          title="Estoque"
+          description="Gerencie itens, reposições e movimentações com foco em prevenção de ruptura."
+          stats={[
+            { label: 'Itens', value: String(inventory.length) },
+            { label: 'Baixo estoque', value: String(inventory.filter((item) => item.status === 'low').length) },
+          ]}
+          action={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => openMovementDialog()}>
+                <Plus className="w-4 h-4 mr-2" /> Nova Movimentação
+              </Button>
+              <Button onClick={handleAddItem}>
+                <PlusCircle className="w-4 h-4 mr-2" /> Novo Item
+              </Button>
+            </div>
+          }
+        />
 
         <div className="relative max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

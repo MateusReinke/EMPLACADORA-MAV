@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import mavLogo from "@/assets/mav-emplacamento-logo.svg";
 
 const Login = () => {
   const [email, setEmail] = useState<string>("");
@@ -68,7 +69,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-primary">VehiclePlate</h1>
+          <img src={mavLogo} alt="MAV EMPACAMENTO" className="mx-auto mb-4 h-24 w-auto" />
+          <h1 className="text-4xl font-bold text-primary">MAV EMPACAMENTO</h1>
           <p className="mt-2 text-muted-foreground">
             Sistema de Gestão para Emplacadoras
           </p>

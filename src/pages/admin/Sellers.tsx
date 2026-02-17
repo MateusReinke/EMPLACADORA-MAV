@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Search, ChevronDown, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -124,31 +125,37 @@ const AdminSellers = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Gerenciar Funcionários (Vendedores)</h1>
-
-          <Dialog open={newSellerOpen} onOpenChange={setNewSellerOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex gap-2">
-                <PlusCircle className="h-4 w-4" />
-                <span>Novo Funcionário</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Novo Funcionário</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <Input placeholder="Nome" value={newSellerName} onChange={(e) => setNewSellerName(e.target.value)} />
-                <Input placeholder="Email" type="email" value={newSellerEmail} onChange={(e) => setNewSellerEmail(e.target.value)} />
-                <Input placeholder="Telefone (opcional)" value={newSellerPhone} onChange={(e) => setNewSellerPhone(e.target.value)} />
-                <Button className="w-full" onClick={handleCreateSeller} disabled={savingSeller}>
-                  {savingSeller ? 'Salvando...' : 'Criar funcionário'}
+        <AdminPageHeader
+          title="Gerenciar Funcionários (Vendedores)"
+          description="Acompanhe a equipe comercial e ajuste o status de atuação de cada vendedor."
+          stats={[
+            { label: 'Total', value: String(sellers.length) },
+            { label: 'Ativos', value: String(sellers.filter((s) => s.active !== false).length) },
+          ]}
+          action={
+            <Dialog open={newSellerOpen} onOpenChange={setNewSellerOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex gap-2">
+                  <PlusCircle className="h-4 w-4" />
+                  <span>Novo Funcionário</span>
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Novo Funcionário</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <Input placeholder="Nome" value={newSellerName} onChange={(e) => setNewSellerName(e.target.value)} />
+                  <Input placeholder="Email" type="email" value={newSellerEmail} onChange={(e) => setNewSellerEmail(e.target.value)} />
+                  <Input placeholder="Telefone (opcional)" value={newSellerPhone} onChange={(e) => setNewSellerPhone(e.target.value)} />
+                  <Button className="w-full" onClick={handleCreateSeller} disabled={savingSeller}>
+                    {savingSeller ? 'Salvando...' : 'Criar funcionário'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          }
+        />
 
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">

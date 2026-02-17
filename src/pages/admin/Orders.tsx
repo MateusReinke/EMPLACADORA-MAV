@@ -1,6 +1,7 @@
 // src/pages/admin/Orders.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { getErrorMessage } from "@/lib/utils";
@@ -192,6 +193,14 @@ const OrdersPage: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <AdminPageHeader
+          title="Pedidos"
+          description="Monitore pedidos em tempo real, filtre por cliente/serviço e acompanhe produtividade do time."
+          stats={[
+            { label: 'Total', value: String(orders.length) },
+            { label: 'Filtrados', value: String(filteredOrders.length) },
+          ]}
+        />
         {/* HEADER */}
         <OrdersHeader
           isDialogOpen={isDialogOpen}

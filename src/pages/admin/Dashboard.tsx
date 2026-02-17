@@ -39,6 +39,7 @@ import {
   DatabaseZap, // Ícone alternativo
 } from "lucide-react";
 import AppLayout from "@/components/layouts/AppLayout";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardService } from "@/services/dashboardApi";
 import { DashboardLayoutService } from "@/services/dashboardLayoutService";
@@ -1173,8 +1174,15 @@ const AdminDashboard = () => {
   return (
     <AppLayout>
       <div className="space-y-6 p-4 md:p-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* ... (Título e botões Editar/Adicionar Widget) ... */}
+        <div className="space-y-4">
+          <AdminPageHeader
+            title="Dashboard Administrativo"
+            description="Tenha visão consolidada de indicadores financeiros, serviços e performance da operação."
+            stats={[
+              { label: "Widgets", value: String(widgets.length) },
+              { label: "Modo edição", value: isEditingLayout ? "Ligado" : "Desligado" },
+            ]}
+          />
           <div className="flex gap-2 flex-wrap">
             <Button
               variant={isEditingLayout ? "default" : "outline"}

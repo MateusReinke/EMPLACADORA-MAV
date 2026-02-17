@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import mavLogo from '@/assets/mav-emplacamento-logo.svg';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -46,7 +47,8 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="text-center max-w-md space-y-6">
-        <h1 className="text-4xl font-bold text-primary">VehiclePlate</h1>
+        <img src={mavLogo} alt="MAV EMPACAMENTO" className="mx-auto h-24 w-auto" />
+        <h1 className="text-4xl font-bold text-primary">MAV EMPACAMENTO</h1>
         <p className="text-xl text-muted-foreground">Sistema de Gestão para Emplacadoras</p>
         
         {loading ? (

@@ -1,39 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import { Button } from "@/components/ui/button";
-import {
-  PlusCircle,
-  Car,
-  TrendingUp,
-  ClipboardList,
-  Wallet,
-} from "lucide-react";
+import { PlusCircle, Car, TrendingUp, ClipboardList, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { db } from "@/lib/dbClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { Order } from "@/types";
+import { resolveClientIdForUser } from "@/services/clientProfileService";
+import { Badge } from "@/components/ui/badge";
 
 export default function ClientDashboard() {
   const { user } = useAuth();
   const [clientId, setClientId] = useState<string | null>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Buscar client_id pelo user_id
   useEffect(() => {
-    if (!user) return;
-    db
-      .from("clients")
-      .select("id")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data, error }) => {
-        if (!error && data) setClientId(data.id);
-      });
+    const loadClientId = async () => {
+      const resolvedClientId = await resolveClientIdForUser(user);
+      setClientId(resolvedClientId);
+    };
+
+    loadClientId();
   }, [user]);
 
-  // Buscar veículos e pedidos do cliente
   useEffect(() => {
     if (!clientId) return;
+
     Promise.all([
       db.from("vehicles").select("*").eq("client_id", clientId),
       db
@@ -43,18 +36,20 @@ export default function ClientDashboard() {
         .order("created_at", { ascending: false }),
     ]).then(([vRes, oRes]) => {
       if (!vRes.error) setVehicles(vRes.data || []);
-      if (!oRes.error) setOrders(oRes.data || []);
+      if (!oRes.error) setOrders((oRes.data || []) as Order[]);
     });
   }, [clientId]);
 
-  const pedidosAtivos = orders.filter((o) => o.status !== "concluido");
-  const pedidosConcluidos = orders.filter((o) => o.status === "concluido");
-  const valorTotal = orders.reduce((acc, o) => acc + (o.valor || 0), 0);
+  const pedidosConcluidos = useMemo(
+    () => orders.filter((o) => o.status?.name?.toLowerCase() === "concluído").length,
+    [orders]
+  );
+  const pedidosAtivos = orders.length - pedidosConcluidos;
+  const valorTotal = orders.reduce((acc, o) => acc + Number(o.value || 0), 0);
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Cabeçalho */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Meu Dashboard</h1>
           <Button asChild>
@@ -65,7 +60,6 @@ export default function ClientDashboard() {
           </Button>
         </div>
 
-        {/* Resumo */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <ResumoCard
             title="Meus Veículos"
@@ -76,22 +70,21 @@ export default function ClientDashboard() {
           <ResumoCard
             title="Pedidos Ativos"
             icon={<ClipboardList className="h-5 w-5 text-muted-foreground" />}
-            value={pedidosAtivos.length}
+            value={pedidosAtivos}
             link="/client/orders"
           />
           <ResumoCard
             title="Concluídos"
             icon={<TrendingUp className="h-5 w-5 text-muted-foreground" />}
-            value={pedidosConcluidos.length}
+            value={pedidosConcluidos}
           />
           <ResumoCard
             title="Valor Total"
             icon={<Wallet className="h-5 w-5 text-muted-foreground" />}
-            value={`R$ ${valorTotal.toFixed(2)}`}
+            value={new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorTotal)}
           />
         </div>
 
-        {/* Últimos veículos */}
         <div className="p-6 bg-card text-card-foreground rounded-lg border shadow">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Meus Veículos</h3>
@@ -103,49 +96,30 @@ export default function ClientDashboard() {
             </Button>
           </div>
           <div className="space-y-4">
-            {vehicles.slice(0, 3).map((v, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center border-b pb-3"
-              >
+            {vehicles.slice(0, 3).map((v) => (
+              <div key={v.id} className="flex justify-between items-center border-b pb-3">
                 <div>
                   <p className="font-medium">{v.model}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {v.license_plate} • {v.year}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{v.license_plate} • {v.year}</p>
                 </div>
-                <Button variant="ghost" size="sm">
-                  Detalhes
-                </Button>
+                <Button variant="ghost" size="sm">Detalhes</Button>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Últimos pedidos */}
         <div className="p-6 bg-card text-card-foreground rounded-lg border shadow">
           <h3 className="text-lg font-semibold mb-4">Pedidos Recentes</h3>
           <div className="space-y-4">
-            {orders.slice(0, 3).map((p, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center border-b pb-3"
-              >
+            {orders.slice(0, 3).map((order) => (
+              <div key={order.id} className="flex justify-between items-center border-b pb-3">
                 <div>
-                  <p className="font-medium">{p.servico}</p>
+                  <p className="font-medium">{order.serviceType?.name || "Serviço"}</p>
                   <p className="text-sm text-muted-foreground">
-                    {p.modelo} • {p.placa}
+                    {order.vehicle?.model || "Veículo"} • {order.vehicle?.license_plate || "-"}
                   </p>
                 </div>
-                <span
-                  className={`bg-${statusColor(
-                    p.status
-                  )}-100 text-${statusColor(
-                    p.status
-                  )}-800 text-xs px-2 py-1 rounded-full capitalize`}
-                >
-                  {p.status}
-                </span>
+                <Badge className={statusClass(order.status?.name)}>{order.status?.name || "Sem status"}</Badge>
               </div>
             ))}
           </div>
@@ -155,7 +129,6 @@ export default function ClientDashboard() {
   );
 }
 
-// Card de resumo reutilizável
 const ResumoCard = ({
   title,
   icon,
@@ -181,9 +154,10 @@ const ResumoCard = ({
   </div>
 );
 
-// Mapeia status para cor
-const statusColor = (status: string) => {
-  if (status === "concluido") return "green";
-  if (status === "em andamento") return "amber";
-  return "blue";
+const statusClass = (statusName?: string) => {
+  const key = (statusName || "").toLowerCase();
+  if (key.includes("concl")) return "bg-green-100 text-green-800";
+  if (key.includes("cancel")) return "bg-red-100 text-red-800";
+  if (key.includes("andamento")) return "bg-amber-100 text-amber-800";
+  return "bg-blue-100 text-blue-800";
 };

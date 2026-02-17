@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layouts/AppLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { getErrorMessage } from "@/lib/utils";
 
 import { OrdersService } from "@/services/ordersApi";
 import { OrderStatus, OrderStatusesService } from "@/services/orderStatusesApi";
@@ -64,11 +65,10 @@ const OrdersPage: React.FC = () => {
             return a.name.localeCompare(b.name);
           })
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast({
           title: "Erro ao carregar dados",
-          description:
-            err.message || "Não foi possível carregar os pedidos e status.",
+          description: getErrorMessage(err, "Não foi possível carregar os pedidos e status."),
           variant: "destructive",
         });
       } finally {
@@ -159,10 +159,10 @@ const OrdersPage: React.FC = () => {
 
       setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
       toast({ title: "Status atualizado com sucesso!" });
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({
         title: "Erro ao atualizar status",
-        description: e.message || String(e),
+        description: getErrorMessage(e, "Não foi possível atualizar o status do pedido."),
         variant: "destructive",
       });
     }
@@ -176,10 +176,10 @@ const OrdersPage: React.FC = () => {
       await OrdersService.deleteOrder(deleteModal.orderId);
       setOrders((prev) => prev.filter((o) => o.id !== deleteModal.orderId));
       toast({ title: "Pedido removido com sucesso" });
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({
         title: "Erro ao remover pedido",
-        description: e.message || String(e),
+        description: getErrorMessage(e, "Não foi possível remover o pedido."),
         variant: "destructive",
       });
     } finally {

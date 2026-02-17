@@ -41,8 +41,13 @@ const ALLOWED_TABLES = new Set([
   'orders',
   'service_categories',
   'service_types',
+  'service_inventory_rules',
+  'service_required_documents',
+  'service_documents',
   'order_statuses',
   'plate_types',
+  'vehicle_types',
+  'inventory_items',
   'inventory_movements',
   'dashboard_layouts',
   'inventory_status',
@@ -89,6 +94,7 @@ const ensureCoreSchema = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
+      phone TEXT,
       password TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('admin','seller','physical','juridical')),
       active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -96,6 +102,8 @@ const ensureCoreSchema = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_categories (
@@ -112,6 +120,7 @@ const ensureCoreSchema = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL UNIQUE,
       description TEXT,
+      required_documents TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       price NUMERIC(12,2),
       category_id UUID REFERENCES service_categories(id) ON DELETE SET NULL,
@@ -119,6 +128,8 @@ const ensureCoreSchema = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE service_types ADD COLUMN IF NOT EXISTS required_documents TEXT`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_statuses (
@@ -138,6 +149,18 @@ const ensureCoreSchema = async () => {
       code TEXT NOT NULL UNIQUE,
       label TEXT NOT NULL,
       color TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS vehicle_types (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL,
+      wheel_count INTEGER,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
@@ -176,6 +199,8 @@ const ensureCoreSchema = async () => {
     )
   `);
 
+  await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS vehicle_type_id UUID REFERENCES vehicle_types(id) ON DELETE SET NULL`);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -205,6 +230,44 @@ const ensureCoreSchema = async () => {
       category TEXT NOT NULL DEFAULT 'geral',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_inventory_rules (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      service_type_id UUID NOT NULL REFERENCES service_types(id) ON DELETE CASCADE,
+      inventory_item_id UUID NOT NULL REFERENCES inventory_items(id) ON DELETE RESTRICT,
+      vehicle_category TEXT NOT NULL CHECK (vehicle_category IN ('carro','moto','all')),
+      quantity_required INTEGER NOT NULL CHECK (quantity_required > 0),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_documents (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_required_documents (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      service_type_id UUID NOT NULL REFERENCES service_types(id) ON DELETE CASCADE,
+      document_id UUID NOT NULL REFERENCES service_documents(id) ON DELETE CASCADE,
+      required BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(service_type_id, document_id)
     )
   `);
 
@@ -264,27 +327,22 @@ const ensureCoreSchema = async () => {
   );
 
   await pool.query(`
-    INSERT INTO order_statuses (name, sort_order, color)
+    INSERT INTO order_statuses (name, sort_order, color, active)
     VALUES
-      ('Novo', 1, '#2563eb'),
-      ('Em andamento', 2, '#f59e0b'),
-      ('Concluído', 3, '#16a34a'),
-      ('Cancelado', 4, '#dc2626')
-    ON CONFLICT (name) DO NOTHING
-  `);
-
-  await pool.query(`
-    INSERT INTO service_categories (name, prefix)
-    VALUES ('Emplacamento', 'EMP')
-    ON CONFLICT (name) DO NOTHING
-  `);
-
-  await pool.query(`
-    INSERT INTO service_types (name, description, active, price, category_id)
-    SELECT 'Primeiro emplacamento', 'Serviço padrão de primeiro emplacamento', TRUE, 0, sc.id
-    FROM service_categories sc
-    WHERE sc.name = 'Emplacamento'
-    ON CONFLICT (name) DO NOTHING
+      ('Novo', 1, '#2563eb', TRUE),
+      ('Aguardando documentação', 2, '#f97316', TRUE),
+      ('Documentação pendente', 3, '#ea580c', TRUE),
+      ('Em análise DETRAN', 4, '#f59e0b', TRUE),
+      ('Aguardando pagamento', 5, '#eab308', TRUE),
+      ('Em produção', 6, '#0ea5e9', TRUE),
+      ('Pronto para retirada', 7, '#14b8a6', TRUE),
+      ('Concluído', 8, '#16a34a', TRUE),
+      ('Cancelado', 9, '#dc2626', TRUE)
+    ON CONFLICT (name) DO UPDATE SET
+      sort_order = EXCLUDED.sort_order,
+      color = EXCLUDED.color,
+      active = EXCLUDED.active,
+      updated_at = NOW()
   `);
 
   await pool.query(`
@@ -293,6 +351,146 @@ const ensureCoreSchema = async () => {
       ('MERCOSUL', 'Mercosul', '#2563eb'),
       ('ANTIGA', 'Antiga', '#6b7280')
     ON CONFLICT (code) DO NOTHING
+  `);
+
+  await pool.query(`
+    INSERT INTO vehicle_types (code, label, wheel_count, active)
+    VALUES
+      ('CARRO', 'Carro', 4, TRUE),
+      ('MOTO', 'Moto', 2, TRUE),
+      ('CAMINHAO', 'Caminhão', 6, TRUE),
+      ('ONIBUS', 'Ônibus', 6, TRUE)
+    ON CONFLICT (code) DO UPDATE SET
+      label = EXCLUDED.label,
+      wheel_count = EXCLUDED.wheel_count,
+      active = EXCLUDED.active,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    INSERT INTO service_categories (name, prefix)
+    VALUES
+      ('Emplacamento', 'EMP'),
+      ('Transferência', 'TRF'),
+      ('Segunda Via', '2VIA'),
+      ('Documentação', 'DOC')
+    ON CONFLICT (name) DO UPDATE SET
+      prefix = EXCLUDED.prefix,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    INSERT INTO inventory_items (name, quantity, min_quantity, cost_price, category)
+    VALUES
+      ('Placa Mercosul Carro', 200, 20, 40, 'placas'),
+      ('Placa Mercosul Moto', 150, 15, 35, 'placas'),
+      ('Lacre', 500, 50, 2, 'insumos'),
+      ('Tarjeta', 300, 30, 4, 'insumos')
+    ON CONFLICT DO NOTHING
+  `);
+
+
+  await pool.query(`
+    INSERT INTO service_documents (name, description, active)
+    VALUES
+      ('Documento pessoal com foto', 'RG ou CNH do titular/procurador', TRUE),
+      ('CPF ou CNPJ', 'Cadastro da pessoa física ou jurídica', TRUE),
+      ('Comprovante de endereço', 'Comprovante recente em nome do cliente', TRUE),
+      ('Nota fiscal do veículo', 'NF-e de compra ou documento equivalente', TRUE),
+      ('CRV/ATPV-e', 'Documento de transferência quando aplicável', TRUE),
+      ('Boletim de ocorrência', 'Necessário para perda/roubo em casos específicos', TRUE),
+      ('Laudo de vistoria', 'Laudo de vistoria aprovado no órgão competente', TRUE)
+    ON CONFLICT (name) DO UPDATE SET
+      description = EXCLUDED.description,
+      active = EXCLUDED.active,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    INSERT INTO service_types (name, description, required_documents, active, price, category_id)
+    SELECT seed.name, seed.description, seed.required_documents, TRUE, seed.price, sc.id
+    FROM (
+      VALUES
+        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 'Documento pessoal com foto, comprovante de endereço, nota fiscal do veículo, laudo de vistoria e autorização do proprietário (se aplicável).', 320.00::numeric, 'Emplacamento'),
+        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 'CRV/ATPV-e assinado, documento do comprador e vendedor, comprovante de quitação de débitos e comprovante de endereço.', 380.00::numeric, 'Transferência'),
+        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 'Boletim de ocorrência (quando aplicável), CRLV e documento do proprietário.', 260.00::numeric, 'Segunda Via'),
+        ('Regularização documental', 'Apoio na regularização de documentação veicular', 'Documentos pendentes apontados pelo DETRAN, RG/CPF ou CNPJ e comprovante de endereço atualizado.', 180.00::numeric, 'Documentação')
+    ) AS seed(name, description, required_documents, price, category_name)
+    JOIN service_categories sc ON sc.name = seed.category_name
+    ON CONFLICT (name) DO UPDATE SET
+      description = EXCLUDED.description,
+      required_documents = EXCLUDED.required_documents,
+      active = EXCLUDED.active,
+      price = EXCLUDED.price,
+      category_id = EXCLUDED.category_id,
+      updated_at = NOW()
+  `);
+
+  await pool.query(`
+    DELETE FROM service_inventory_rules
+    WHERE service_type_id IN (
+      SELECT id FROM service_types WHERE name IN (
+        'Primeiro emplacamento',
+        'Transferência de propriedade',
+        'Segunda via de placa'
+      )
+    )
+  `);
+
+
+  await pool.query(`
+    DELETE FROM service_required_documents
+    WHERE service_type_id IN (
+      SELECT id FROM service_types WHERE name IN (
+        'Primeiro emplacamento',
+        'Transferência de propriedade',
+        'Segunda via de placa',
+        'Regularização documental'
+      )
+    )
+  `);
+
+  await pool.query(`
+    INSERT INTO service_required_documents (service_type_id, document_id, required)
+    SELECT st.id, sd.id, rules.required
+    FROM (
+      VALUES
+        ('Primeiro emplacamento', 'Documento pessoal com foto', TRUE),
+        ('Primeiro emplacamento', 'CPF ou CNPJ', TRUE),
+        ('Primeiro emplacamento', 'Comprovante de endereço', TRUE),
+        ('Primeiro emplacamento', 'Nota fiscal do veículo', TRUE),
+        ('Primeiro emplacamento', 'Laudo de vistoria', TRUE),
+        ('Transferência de propriedade', 'Documento pessoal com foto', TRUE),
+        ('Transferência de propriedade', 'CPF ou CNPJ', TRUE),
+        ('Transferência de propriedade', 'Comprovante de endereço', TRUE),
+        ('Transferência de propriedade', 'CRV/ATPV-e', TRUE),
+        ('Segunda via de placa', 'Documento pessoal com foto', TRUE),
+        ('Segunda via de placa', 'CPF ou CNPJ', TRUE),
+        ('Segunda via de placa', 'Boletim de ocorrência', FALSE),
+        ('Regularização documental', 'Documento pessoal com foto', TRUE),
+        ('Regularização documental', 'CPF ou CNPJ', TRUE),
+        ('Regularização documental', 'Comprovante de endereço', TRUE)
+    ) AS rules(service_name, document_name, required)
+    JOIN service_types st ON st.name = rules.service_name
+    JOIN service_documents sd ON sd.name = rules.document_name
+  `);
+
+  await pool.query(`
+    INSERT INTO service_inventory_rules (service_type_id, inventory_item_id, vehicle_category, quantity_required, active)
+    SELECT st.id, ii.id, rules.vehicle_category, rules.quantity_required, TRUE
+    FROM (
+      VALUES
+        ('Primeiro emplacamento', 'Placa Mercosul Carro', 'carro', 2),
+        ('Primeiro emplacamento', 'Placa Mercosul Moto', 'moto', 1),
+        ('Primeiro emplacamento', 'Lacre', 'all', 1),
+        ('Transferência de propriedade', 'Placa Mercosul Carro', 'carro', 2),
+        ('Transferência de propriedade', 'Placa Mercosul Moto', 'moto', 1),
+        ('Transferência de propriedade', 'Lacre', 'all', 1),
+        ('Segunda via de placa', 'Placa Mercosul Carro', 'carro', 2),
+        ('Segunda via de placa', 'Placa Mercosul Moto', 'moto', 1)
+    ) AS rules(service_name, item_name, vehicle_category, quantity_required)
+    JOIN service_types st ON st.name = rules.service_name
+    JOIN inventory_items ii ON ii.name = rules.item_name
   `);
 };
 
@@ -363,6 +561,65 @@ const orderSelectSql = `
   LEFT JOIN vehicles v ON v.id = o.vehicle_id
   LEFT JOIN order_statuses os ON os.id = o.status_id
 `;
+
+
+const restoreOrderInventory = async (client, orderId, responsibleId, reason) => {
+  const { rows: outstandingRows } = await client.query(
+    `
+      SELECT
+        inventory_item_id,
+        SUM(
+          CASE
+            WHEN movement_type = 'out' THEN quantity
+            WHEN movement_type = 'in' THEN -quantity
+            ELSE 0
+          END
+        )::int AS outstanding
+      FROM inventory_movements
+      WHERE order_id = $1
+      GROUP BY inventory_item_id
+      HAVING SUM(
+        CASE
+          WHEN movement_type = 'out' THEN quantity
+          WHEN movement_type = 'in' THEN -quantity
+          ELSE 0
+        END
+      ) > 0
+    `,
+    [orderId]
+  );
+
+  for (const row of outstandingRows) {
+    const restoreQty = Number(row.outstanding || 0);
+    if (restoreQty <= 0) continue;
+
+    const { rows: itemRows } = await client.query(
+      'SELECT quantity FROM inventory_items WHERE id = $1 FOR UPDATE',
+      [row.inventory_item_id]
+    );
+
+    if (!itemRows[0]) continue;
+
+    const nextQuantity = Number(itemRows[0].quantity || 0) + restoreQty;
+
+    await client.query(
+      'UPDATE inventory_items SET quantity = $1, updated_at = NOW() WHERE id = $2',
+      [nextQuantity, row.inventory_item_id]
+    );
+
+    await client.query(
+      `INSERT INTO inventory_movements (
+        inventory_item_id,
+        movement_type,
+        quantity,
+        responsible_id,
+        order_id,
+        notes
+      ) VALUES ($1, 'in', $2, $3, $4, $5)`,
+      [row.inventory_item_id, restoreQty, responsibleId || null, orderId, reason]
+    );
+  }
+};
 const getSessionUser = async (req) => {
   const token = req.cookies?.vp_session;
   if (!token) return null;
@@ -573,6 +830,7 @@ app.post('/api/query', async (req, res) => {
       upsertOptions,
       singleMode = 'none',
       selectOptions,
+      returnMode = 'representation',
     } = req.body || {};
 
     if (!ALLOWED_TABLES.has(table)) {
@@ -635,10 +893,84 @@ app.post('/api/query', async (req, res) => {
         const vals = cols.map((c) => row[c]);
         const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
         const q = `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-        const r = await pool.query(q, vals);
-        inserted.push(r.rows[0]);
+
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const r = await client.query(q, vals);
+          const insertedRow = r.rows[0];
+
+          if (table === 'orders' && insertedRow?.service_type_id && insertedRow?.vehicle_id) {
+            const { rows: vehicleRows } = await client.query(
+              'SELECT category FROM vehicles WHERE id = $1 LIMIT 1',
+              [insertedRow.vehicle_id]
+            );
+
+            const rawCategory = String(vehicleRows[0]?.category || '').toLowerCase();
+            const normalizedCategory = rawCategory.includes('moto') ? 'moto' : 'carro';
+
+            const { rows: rules } = await client.query(
+              `SELECT inventory_item_id, quantity_required
+               FROM service_inventory_rules
+               WHERE service_type_id = $1
+                 AND active = true
+                 AND (vehicle_category = $2 OR vehicle_category = 'all')`,
+              [insertedRow.service_type_id, normalizedCategory]
+            );
+
+            for (const rule of rules) {
+              const { rows: itemRows } = await client.query(
+                'SELECT quantity, name FROM inventory_items WHERE id = $1 FOR UPDATE',
+                [rule.inventory_item_id]
+              );
+
+              const currentQty = Number(itemRows[0]?.quantity || 0);
+              const nextQty = currentQty - Number(rule.quantity_required || 0);
+
+              if (nextQty < 0) {
+                throw new Error(
+                  `Estoque insuficiente para ${itemRows[0]?.name || 'item'} ao criar pedido.`
+                );
+              }
+
+              await client.query(
+                'UPDATE inventory_items SET quantity = $1, updated_at = NOW() WHERE id = $2',
+                [nextQty, rule.inventory_item_id]
+              );
+
+              await client.query(
+                `INSERT INTO inventory_movements (
+                  inventory_item_id,
+                  movement_type,
+                  quantity,
+                  responsible_id,
+                  order_id,
+                  notes
+                ) VALUES ($1, 'out', $2, $3, $4, $5)`,
+                [
+                  rule.inventory_item_id,
+                  rule.quantity_required,
+                  insertedRow.created_by || null,
+                  insertedRow.id,
+                  `Consumo automático do serviço ${insertedRow.service_type_id} (${normalizedCategory})`,
+                ]
+              );
+            }
+          }
+
+          await client.query('COMMIT');
+          inserted.push(insertedRow);
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
       }
 
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single') return res.json({ data: inserted[0] ?? null, error: null });
       return res.json({ data: inserted, error: null });
     }
@@ -673,6 +1005,9 @@ app.post('/api/query', async (req, res) => {
         upserted.push(r.rows[0]);
       }
 
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single' || rowsToUpsert.length === 1) return res.json({ data: upserted[0] ?? null, error: null });
       return res.json({ data: upserted, error: null });
     }
@@ -685,8 +1020,70 @@ app.post('/api/query', async (req, res) => {
       const values = cols.map((c) => payload[c]);
       const whereSql = where.sql ? ` ${where.sql.replace(/\$(\d+)/g, (_, n) => `$${Number(n) + cols.length}`)}` : '';
       const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
+
+      if (table === 'orders') {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+
+          const { rows: beforeRows } = await client.query(
+            `SELECT id, status_id, created_by FROM orders ${where.sql}`,
+            where.values
+          );
+
+          const r = await client.query(q, [...values, ...where.values]);
+          const rows = r.rows;
+
+          if (payload?.status_id) {
+            const { rows: targetStatusRows } = await client.query(
+              'SELECT name FROM order_statuses WHERE id = $1 LIMIT 1',
+              [payload.status_id]
+            );
+
+            const targetName = String(targetStatusRows[0]?.name || '').toLowerCase();
+            const isCancelTarget = targetName.includes('cancel');
+
+            if (isCancelTarget) {
+              const beforeById = new Map(beforeRows.map((row) => [row.id, row]));
+              for (const updatedOrder of rows) {
+                const beforeOrder = beforeById.get(updatedOrder.id);
+                if (!beforeOrder) continue;
+                if (beforeOrder.status_id === updatedOrder.status_id) continue;
+
+                await restoreOrderInventory(
+                  client,
+                  updatedOrder.id,
+                  updatedOrder.created_by || beforeOrder.created_by || null,
+                  'Reposição automática por cancelamento do pedido'
+                );
+              }
+            }
+          }
+
+          await client.query('COMMIT');
+
+          if (returnMode === 'minimal') {
+            return res.json({ data: null, error: null });
+          }
+          if (singleMode === 'single') {
+            if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' } });
+            return res.json({ data: rows[0], error: null });
+          }
+          if (singleMode === 'maybeSingle') return res.json({ data: rows[0] ?? null, error: null });
+          return res.json({ data: rows, error: null });
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
+
       const r = await pool.query(q, [...values, ...where.values]);
       const rows = r.rows;
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single') {
         if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' } });
         return res.json({ data: rows[0], error: null });
@@ -697,6 +1094,37 @@ app.post('/api/query', async (req, res) => {
 
     if (action === 'delete') {
       const where = buildWhere(filters);
+
+      if (table === 'orders') {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+
+          const { rows: orderRows } = await client.query(
+            `SELECT id, created_by FROM orders ${where.sql}`,
+            where.values
+          );
+
+          for (const orderRow of orderRows) {
+            await restoreOrderInventory(
+              client,
+              orderRow.id,
+              orderRow.created_by || null,
+              'Reposição automática por exclusão do pedido'
+            );
+          }
+
+          await client.query(`DELETE FROM ${table} ${where.sql}`, where.values);
+          await client.query('COMMIT');
+          return res.json({ data: [], error: null });
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
+
       await pool.query(`DELETE FROM ${table} ${where.sql}`, where.values);
       return res.json({ data: [], error: null });
     }

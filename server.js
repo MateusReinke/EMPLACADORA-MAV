@@ -42,11 +42,8 @@ const ALLOWED_TABLES = new Set([
   'service_categories',
   'service_types',
   'service_inventory_rules',
-  'service_required_documents',
-  'service_documents',
   'order_statuses',
   'plate_types',
-  'vehicle_types',
   'inventory_items',
   'inventory_movements',
   'dashboard_layouts',
@@ -247,30 +244,6 @@ const ensureCoreSchema = async () => {
     )
   `);
 
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS service_documents (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name TEXT NOT NULL UNIQUE,
-      description TEXT,
-      active BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS service_required_documents (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      service_type_id UUID NOT NULL REFERENCES service_types(id) ON DELETE CASCADE,
-      document_id UUID NOT NULL REFERENCES service_documents(id) ON DELETE CASCADE,
-      required BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE(service_type_id, document_id)
-    )
-  `);
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS inventory_movements (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -389,42 +362,25 @@ const ensureCoreSchema = async () => {
     ON CONFLICT DO NOTHING
   `);
 
-
   await pool.query(`
-    INSERT INTO service_documents (name, description, active)
-    VALUES
-      ('Documento pessoal com foto', 'RG ou CNH do titular/procurador', TRUE),
-      ('CPF ou CNPJ', 'Cadastro da pessoa física ou jurídica', TRUE),
-      ('Comprovante de endereço', 'Comprovante recente em nome do cliente', TRUE),
-      ('Nota fiscal do veículo', 'NF-e de compra ou documento equivalente', TRUE),
-      ('CRV/ATPV-e', 'Documento de transferência quando aplicável', TRUE),
-      ('Boletim de ocorrência', 'Necessário para perda/roubo em casos específicos', TRUE),
-      ('Laudo de vistoria', 'Laudo de vistoria aprovado no órgão competente', TRUE)
-    ON CONFLICT (name) DO UPDATE SET
-      description = EXCLUDED.description,
-      active = EXCLUDED.active,
-      updated_at = NOW()
-  `);
-
-  await pool.query(`
-    INSERT INTO service_types (name, description, required_documents, active, price, category_id)
-    SELECT seed.name, seed.description, seed.required_documents, TRUE, seed.price, sc.id
+    INSERT INTO service_types (name, description, active, price, category_id)
+    SELECT seed.name, seed.description, TRUE, seed.price, sc.id
     FROM (
       VALUES
-        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 'Documento pessoal com foto, comprovante de endereço, nota fiscal do veículo, laudo de vistoria e autorização do proprietário (se aplicável).', 320.00::numeric, 'Emplacamento'),
-        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 'CRV/ATPV-e assinado, documento do comprador e vendedor, comprovante de quitação de débitos e comprovante de endereço.', 380.00::numeric, 'Transferência'),
-        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 'Boletim de ocorrência (quando aplicável), CRLV e documento do proprietário.', 260.00::numeric, 'Segunda Via'),
-        ('Regularização documental', 'Apoio na regularização de documentação veicular', 'Documentos pendentes apontados pelo DETRAN, RG/CPF ou CNPJ e comprovante de endereço atualizado.', 180.00::numeric, 'Documentação')
-    ) AS seed(name, description, required_documents, price, category_name)
+        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 320.00::numeric, 'Emplacamento'),
+        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 380.00::numeric, 'Transferência'),
+        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 260.00::numeric, 'Segunda Via'),
+        ('Regularização documental', 'Apoio na regularização de documentação veicular', 180.00::numeric, 'Documentação')
+    ) AS seed(name, description, price, category_name)
     JOIN service_categories sc ON sc.name = seed.category_name
     ON CONFLICT (name) DO UPDATE SET
       description = EXCLUDED.description,
-      required_documents = EXCLUDED.required_documents,
       active = EXCLUDED.active,
       price = EXCLUDED.price,
       category_id = EXCLUDED.category_id,
       updated_at = NOW()
   `);
+
 
   await pool.query(`
     DELETE FROM service_inventory_rules
@@ -435,44 +391,6 @@ const ensureCoreSchema = async () => {
         'Segunda via de placa'
       )
     )
-  `);
-
-
-  await pool.query(`
-    DELETE FROM service_required_documents
-    WHERE service_type_id IN (
-      SELECT id FROM service_types WHERE name IN (
-        'Primeiro emplacamento',
-        'Transferência de propriedade',
-        'Segunda via de placa',
-        'Regularização documental'
-      )
-    )
-  `);
-
-  await pool.query(`
-    INSERT INTO service_required_documents (service_type_id, document_id, required)
-    SELECT st.id, sd.id, rules.required
-    FROM (
-      VALUES
-        ('Primeiro emplacamento', 'Documento pessoal com foto', TRUE),
-        ('Primeiro emplacamento', 'CPF ou CNPJ', TRUE),
-        ('Primeiro emplacamento', 'Comprovante de endereço', TRUE),
-        ('Primeiro emplacamento', 'Nota fiscal do veículo', TRUE),
-        ('Primeiro emplacamento', 'Laudo de vistoria', TRUE),
-        ('Transferência de propriedade', 'Documento pessoal com foto', TRUE),
-        ('Transferência de propriedade', 'CPF ou CNPJ', TRUE),
-        ('Transferência de propriedade', 'Comprovante de endereço', TRUE),
-        ('Transferência de propriedade', 'CRV/ATPV-e', TRUE),
-        ('Segunda via de placa', 'Documento pessoal com foto', TRUE),
-        ('Segunda via de placa', 'CPF ou CNPJ', TRUE),
-        ('Segunda via de placa', 'Boletim de ocorrência', FALSE),
-        ('Regularização documental', 'Documento pessoal com foto', TRUE),
-        ('Regularização documental', 'CPF ou CNPJ', TRUE),
-        ('Regularização documental', 'Comprovante de endereço', TRUE)
-    ) AS rules(service_name, document_name, required)
-    JOIN service_types st ON st.name = rules.service_name
-    JOIN service_documents sd ON sd.name = rules.document_name
   `);
 
   await pool.query(`

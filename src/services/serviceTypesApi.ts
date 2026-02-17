@@ -31,37 +31,17 @@ export interface ServiceInventoryRule {
   id: string;
   service_type_id: string;
   inventory_item_id: string;
-  vehicle_category: "carro" | "moto" | "all";
+  vehicle_category: 'carro' | 'moto' | 'all';
   quantity_required: number;
   active: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface ServiceDocument {
-  id: string;
-  name: string;
-  description?: string;
-  active: boolean;
-}
-
-export interface ServiceRequiredDocument {
-  id: string;
-  service_type_id: string;
-  document_id: string;
-  required: boolean;
-  document?: ServiceDocument;
-}
-
-export interface OrderStatusItem {
-  id: string;
-  name: string;
-  sort_order: number;
-  color: string;
-  active: boolean;
-}
-
-export type ServiceInventoryRuleInput = Omit<ServiceInventoryRule, "id" | "created_at" | "updated_at">;
+export type ServiceInventoryRuleInput = Omit<
+  ServiceInventoryRule,
+  'id' | 'created_at' | 'updated_at'
+>;
 
 export class CategoryService {
   static async getCategories(): Promise<ServiceCategory[]> {
@@ -73,7 +53,7 @@ export class CategoryService {
     return (data || []) as ServiceCategory[];
   }
 
-  static async createCategory(payload: { name: string; prefix?: string }): Promise<ServiceCategory> {
+  static async createCategory(name: string): Promise<ServiceCategory> {
     const { data, error } = await db
       .from("service_categories")
       .insert([{ name: payload.name, prefix: payload.prefix || null }])
@@ -146,7 +126,11 @@ export class ApiService {
   static async createServiceType(
     svc: Omit<ServiceType, "id" | "created_at" | "updated_at" | "category">
   ): Promise<ServiceType> {
-    const { data, error } = await db.from("service_types").insert([svc]).select("*").single();
+    const { data, error } = await db
+      .from("service_types")
+      .insert([svc])
+      .select("*")
+      .single();
     if (error) throw error;
     return data as ServiceType;
   }
@@ -177,8 +161,15 @@ export class ApiService {
   }
 
   static async getServiceInventoryRules(serviceTypeId?: string): Promise<ServiceInventoryRule[]> {
-    let query = db.from("service_inventory_rules").select("*").order("created_at", { ascending: true });
-    if (serviceTypeId) query = query.eq("service_type_id", serviceTypeId);
+    let query = db
+      .from("service_inventory_rules")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (serviceTypeId) {
+      query = query.eq("service_type_id", serviceTypeId);
+    }
+
     const { data, error } = await query;
     if (error) throw error;
     return (data || []) as ServiceInventoryRule[];
@@ -186,80 +177,27 @@ export class ApiService {
 
   static async saveServiceInventoryRules(
     serviceTypeId: string,
-    rules: Omit<ServiceInventoryRuleInput, "service_type_id">[]
+    rules: Omit<ServiceInventoryRuleInput, 'service_type_id'>[]
   ): Promise<void> {
     const { error: deleteError } = await db
       .from("service_inventory_rules")
       .delete()
       .eq("service_type_id", serviceTypeId);
+
     if (deleteError) throw deleteError;
 
     if (!rules.length) return;
-    const payload = rules.map((rule) => ({ ...rule, service_type_id: serviceTypeId, active: rule.active ?? true }));
-    const { error: insertError } = await db.from("service_inventory_rules").insert(payload as ServiceInventoryRuleInput[]);
-    if (insertError) throw insertError;
-  }
 
-  static async getDocuments(): Promise<ServiceDocument[]> {
-    const { data, error } = await db
-      .from("service_documents")
-      .select("*")
-      .order("name", { ascending: true });
-    if (error) throw error;
-    return (data || []) as ServiceDocument[];
-  }
-
-  static async createDocument(payload: { name: string; description?: string; active?: boolean }): Promise<ServiceDocument> {
-    const { data, error } = await db
-      .from("service_documents")
-      .insert([{ name: payload.name, description: payload.description || null, active: payload.active ?? true }])
-      .select()
-      .single();
-    if (error) throw error;
-    return data as ServiceDocument;
-  }
-
-  static async updateDocument(id: string, payload: Partial<ServiceDocument>): Promise<ServiceDocument> {
-    const { data, error } = await db.from("service_documents").update(payload).eq("id", id).select().single();
-    if (error) throw error;
-    return data as ServiceDocument;
-  }
-
-  static async deleteDocument(id: string): Promise<void> {
-    const { error } = await db.from("service_documents").delete().eq("id", id);
-    if (error) throw error;
-  }
-
-  static async getServiceRequiredDocuments(serviceTypeId?: string): Promise<ServiceRequiredDocument[]> {
-    let query = db
-      .from("service_required_documents")
-      .select("*")
-      .order("created_at", { ascending: true });
-    if (serviceTypeId) query = query.eq("service_type_id", serviceTypeId);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []) as ServiceRequiredDocument[];
-  }
-
-  static async saveServiceRequiredDocuments(
-    serviceTypeId: string,
-    docs: Array<{ document_id: string; required: boolean }>
-  ): Promise<void> {
-    const { error: deleteError } = await db
-      .from("service_required_documents")
-      .delete()
-      .eq("service_type_id", serviceTypeId);
-    if (deleteError) throw deleteError;
-
-    if (!docs.length) return;
-
-    const payload = docs.map((doc) => ({
+    const payload = rules.map((rule) => ({
+      ...rule,
       service_type_id: serviceTypeId,
-      document_id: doc.document_id,
-      required: doc.required,
+      active: rule.active ?? true,
     }));
 
-    const { error: insertError } = await db.from("service_required_documents").insert(payload);
+    const { error: insertError } = await db
+      .from("service_inventory_rules")
+      .insert(payload as ServiceInventoryRuleInput[]);
+
     if (insertError) throw insertError;
   }
 

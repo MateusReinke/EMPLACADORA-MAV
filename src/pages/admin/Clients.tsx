@@ -58,7 +58,6 @@ const AdminClients = () => {
         type: editingClient.type,
         phone: editingClient.phone,
         email: editingClient.email,
-        address: editingClient.address,
         active: editingClient.active,
       });
       setEditingClient(null);
@@ -149,80 +148,14 @@ const AdminClients = () => {
       </div>
 
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent>
           <DialogHeader><DialogTitle>Editar Cliente</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium">Nome</label>
-                <Input
-                  placeholder="Nome"
-                  value={editingClient?.name || ''}
-                  onChange={(e) => setEditingClient((prev) => prev ? { ...prev, name: e.target.value } : prev)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tipo</label>
-                <select
-                  className="w-full border rounded px-3 py-2 bg-background"
-                  value={editingClient?.type || 'physical'}
-                  onChange={(e) =>
-                    setEditingClient((prev) => prev ? { ...prev, type: e.target.value as 'physical' | 'juridical' } : prev)
-                  }
-                >
-                  <option value="physical">Pessoa Física</option>
-                  <option value="juridical">Pessoa Jurídica</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">CPF/CNPJ</label>
-                <Input
-                  placeholder="CPF/CNPJ"
-                  value={editingClient?.document || ''}
-                  onChange={(e) => setEditingClient((prev) => prev ? { ...prev, document: e.target.value } : prev)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Telefone</label>
-                <Input
-                  placeholder="Telefone"
-                  value={editingClient?.phone || ''}
-                  onChange={(e) => setEditingClient((prev) => prev ? { ...prev, phone: e.target.value } : prev)}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  placeholder="Email"
-                  value={editingClient?.email || ''}
-                  onChange={(e) => setEditingClient((prev) => prev ? { ...prev, email: e.target.value } : prev)}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium">Endereço</label>
-                <Input
-                  placeholder="Rua, número, bairro, cidade"
-                  value={editingClient?.address || ''}
-                  onChange={(e) => setEditingClient((prev) => prev ? { ...prev, address: e.target.value } : prev)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <select
-                  className="w-full border rounded px-3 py-2 bg-background"
-                  value={editingClient?.active ? 'active' : 'inactive'}
-                  onChange={(e) =>
-                    setEditingClient((prev) => prev ? { ...prev, active: e.target.value === 'active' } : prev)
-                  }
-                >
-                  <option value="active">Ativo</option>
-                  <option value="inactive">Inativo</option>
-                </select>
-              </div>
-            </div>
-            <Button className="w-full" onClick={handleUpdateClient} disabled={savingClient}>
-              {savingClient ? 'Salvando...' : 'Salvar alterações'}
-            </Button>
+          <div className="space-y-3">
+            <Input placeholder="Nome" value={editingClient?.name || ''} onChange={(e) => setEditingClient((prev) => prev ? { ...prev, name: e.target.value } : prev)} />
+            <Input placeholder="CPF/CNPJ" value={editingClient?.document || ''} onChange={(e) => setEditingClient((prev) => prev ? { ...prev, document: e.target.value } : prev)} />
+            <Input placeholder="Telefone" value={editingClient?.phone || ''} onChange={(e) => setEditingClient((prev) => prev ? { ...prev, phone: e.target.value } : prev)} />
+            <Input placeholder="Email" value={editingClient?.email || ''} onChange={(e) => setEditingClient((prev) => prev ? { ...prev, email: e.target.value } : prev)} />
+            <Button className="w-full" onClick={handleUpdateClient} disabled={savingClient}>{savingClient ? 'Salvando...' : 'Salvar alterações'}</Button>
           </div>
         </DialogContent>
       </Dialog>

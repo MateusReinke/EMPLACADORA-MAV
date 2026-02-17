@@ -48,6 +48,7 @@ class QueryBuilder implements PromiseLike<any> {
   private sortBy?: { column: string; ascending: boolean };
   private limitN?: number;
   private mode: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
+  private returnMode: 'minimal' | 'representation' = 'representation';
   private selectOptions?: { count?: 'exact'; head?: boolean };
   private payload: any;
   private upsertOptions?: { onConflict?: string };
@@ -56,6 +57,11 @@ class QueryBuilder implements PromiseLike<any> {
   constructor(private table: string) {}
 
   select(_columns?: string, options?: { count?: 'exact'; head?: boolean }) {
+    if (this.mode === 'insert' || this.mode === 'update' || this.mode === 'upsert') {
+      this.returnMode = 'representation';
+      return this;
+    }
+
     this.mode = 'select';
     this.selectOptions = options;
     return this;
@@ -64,6 +70,7 @@ class QueryBuilder implements PromiseLike<any> {
   insert(payload: Row[]) {
     this.mode = 'insert';
     this.payload = payload;
+    this.returnMode = 'minimal';
     return this;
   }
 
@@ -71,12 +78,14 @@ class QueryBuilder implements PromiseLike<any> {
     this.mode = 'upsert';
     this.payload = payload;
     this.upsertOptions = options;
+    this.returnMode = 'minimal';
     return this;
   }
 
   update(payload: Row) {
     this.mode = 'update';
     this.payload = payload;
+    this.returnMode = 'minimal';
     return this;
   }
 
@@ -138,6 +147,7 @@ class QueryBuilder implements PromiseLike<any> {
         upsertOptions: this.upsertOptions,
         singleMode: this.singleMode,
         selectOptions: this.selectOptions,
+        returnMode: this.returnMode,
       }),
     });
   }

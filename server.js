@@ -41,8 +41,10 @@ const ALLOWED_TABLES = new Set([
   'orders',
   'service_categories',
   'service_types',
+  'service_inventory_rules',
   'order_statuses',
   'plate_types',
+  'inventory_items',
   'inventory_movements',
   'dashboard_layouts',
   'inventory_status',
@@ -89,6 +91,7 @@ const ensureCoreSchema = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
+      phone TEXT,
       password TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('admin','seller','physical','juridical')),
       active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -96,6 +99,8 @@ const ensureCoreSchema = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_categories (
@@ -203,6 +208,20 @@ const ensureCoreSchema = async () => {
       min_quantity INTEGER NOT NULL DEFAULT 0,
       cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,
       category TEXT NOT NULL DEFAULT 'geral',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_inventory_rules (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      service_type_id UUID NOT NULL REFERENCES service_types(id) ON DELETE CASCADE,
+      inventory_item_id UUID NOT NULL REFERENCES inventory_items(id) ON DELETE RESTRICT,
+      vehicle_category TEXT NOT NULL CHECK (vehicle_category IN ('carro','moto','all')),
+      quantity_required INTEGER NOT NULL CHECK (quantity_required > 0),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
@@ -573,6 +592,7 @@ app.post('/api/query', async (req, res) => {
       upsertOptions,
       singleMode = 'none',
       selectOptions,
+      returnMode = 'representation',
     } = req.body || {};
 
     if (!ALLOWED_TABLES.has(table)) {
@@ -635,10 +655,84 @@ app.post('/api/query', async (req, res) => {
         const vals = cols.map((c) => row[c]);
         const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
         const q = `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-        const r = await pool.query(q, vals);
-        inserted.push(r.rows[0]);
+
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const r = await client.query(q, vals);
+          const insertedRow = r.rows[0];
+
+          if (table === 'orders' && insertedRow?.service_type_id && insertedRow?.vehicle_id) {
+            const { rows: vehicleRows } = await client.query(
+              'SELECT category FROM vehicles WHERE id = $1 LIMIT 1',
+              [insertedRow.vehicle_id]
+            );
+
+            const rawCategory = String(vehicleRows[0]?.category || '').toLowerCase();
+            const normalizedCategory = rawCategory.includes('moto') ? 'moto' : 'carro';
+
+            const { rows: rules } = await client.query(
+              `SELECT inventory_item_id, quantity_required
+               FROM service_inventory_rules
+               WHERE service_type_id = $1
+                 AND active = true
+                 AND (vehicle_category = $2 OR vehicle_category = 'all')`,
+              [insertedRow.service_type_id, normalizedCategory]
+            );
+
+            for (const rule of rules) {
+              const { rows: itemRows } = await client.query(
+                'SELECT quantity, name FROM inventory_items WHERE id = $1 FOR UPDATE',
+                [rule.inventory_item_id]
+              );
+
+              const currentQty = Number(itemRows[0]?.quantity || 0);
+              const nextQty = currentQty - Number(rule.quantity_required || 0);
+
+              if (nextQty < 0) {
+                throw new Error(
+                  `Estoque insuficiente para ${itemRows[0]?.name || 'item'} ao criar pedido.`
+                );
+              }
+
+              await client.query(
+                'UPDATE inventory_items SET quantity = $1, updated_at = NOW() WHERE id = $2',
+                [nextQty, rule.inventory_item_id]
+              );
+
+              await client.query(
+                `INSERT INTO inventory_movements (
+                  inventory_item_id,
+                  movement_type,
+                  quantity,
+                  responsible_id,
+                  order_id,
+                  notes
+                ) VALUES ($1, 'out', $2, $3, $4, $5)`,
+                [
+                  rule.inventory_item_id,
+                  rule.quantity_required,
+                  insertedRow.created_by || null,
+                  insertedRow.id,
+                  `Consumo automático do serviço ${insertedRow.service_type_id} (${normalizedCategory})`,
+                ]
+              );
+            }
+          }
+
+          await client.query('COMMIT');
+          inserted.push(insertedRow);
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
       }
 
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single') return res.json({ data: inserted[0] ?? null, error: null });
       return res.json({ data: inserted, error: null });
     }
@@ -673,6 +767,9 @@ app.post('/api/query', async (req, res) => {
         upserted.push(r.rows[0]);
       }
 
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single' || rowsToUpsert.length === 1) return res.json({ data: upserted[0] ?? null, error: null });
       return res.json({ data: upserted, error: null });
     }
@@ -687,6 +784,9 @@ app.post('/api/query', async (req, res) => {
       const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
       const r = await pool.query(q, [...values, ...where.values]);
       const rows = r.rows;
+      if (returnMode === 'minimal') {
+        return res.json({ data: null, error: null });
+      }
       if (singleMode === 'single') {
         if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' } });
         return res.json({ data: rows[0], error: null });

@@ -1,17 +1,43 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AppLayout from '@/components/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, Plus, Minus } from 'lucide-react';
+import { PlusCircle, Search, Plus, Minus, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/components/ui/use-toast';
 import { db } from '@/lib/dbClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface InventoryItemRow {
+  id: string;
+  name: string;
+  quantity: number | string;
+  min_quantity: number | string;
+  cost_price: number | string;
+  category: string;
+}
+
+interface InventoryMovementRow {
+  id: string;
+  created_at: string;
+  inventory_item_id: string;
+  movement_type: 'in' | 'out';
+  quantity: number | string;
+  notes?: string | null;
+}
 
 interface InventoryItem {
   id: string;
@@ -33,24 +59,30 @@ interface InventoryHistory {
 }
 
 const itemFormSchema = z.object({
-  name: z.string().min(2),
-  quantity: z.coerce.number().min(0),
-  minQuantity: z.coerce.number().min(0),
-  costPrice: z.coerce.number().min(0),
-  category: z.string().min(1),
+  name: z.string().min(2, 'Nome obrigatório'),
+  quantity: z.coerce.number().min(0, 'Quantidade inválida'),
+  minQuantity: z.coerce.number().min(0, 'Mínimo inválido'),
+  costPrice: z.coerce.number().min(0, 'Custo inválido'),
+  category: z.string().min(1, 'Categoria obrigatória'),
 });
 
 const movementFormSchema = z.object({
-  itemId: z.string().min(1),
+  itemId: z.string().min(1, 'Selecione um item'),
   movement: z.enum(['in', 'out']),
-  quantity: z.coerce.number().min(1),
+  quantity: z.coerce.number().min(1, 'Quantidade deve ser maior que zero'),
   notes: z.string().optional(),
 });
 
-const statusFrom = (q: number, min: number): InventoryItem['status'] => {
-  if (q <= 0) return 'critical';
-  if (q <= min) return 'low';
+const statusFrom = (quantity: number, minQuantity: number): InventoryItem['status'] => {
+  if (quantity <= 0) return 'critical';
+  if (quantity <= minQuantity) return 'low';
   return 'adequate';
+};
+
+const statusLabel: Record<InventoryItem['status'], string> = {
+  adequate: 'Adequado',
+  low: 'Baixo',
+  critical: 'Crítico',
 };
 
 const AdminInventory = () => {
@@ -78,32 +110,44 @@ const AdminInventory = () => {
   const fetchInventory = async () => {
     setLoading(true);
     try {
-      const [{ data: items, error: e1 }, { data: movements, error: e2 }] = await Promise.all([
+      const [{ data: items, error: itemError }, { data: movements, error: movementError }] = await Promise.all([
         db.from('inventory_items').select('*').order('created_at', { ascending: false }),
         db.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(20),
       ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
 
-      const itemMap = new Map((items || []).map((i: any) => [i.id, i.name]));
-      setInventory((items || []).map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        quantity: Number(i.quantity || 0),
-        minQuantity: Number(i.min_quantity || 0),
-        costPrice: Number(i.cost_price || 0),
-        category: i.category || '',
-        status: statusFrom(Number(i.quantity || 0), Number(i.min_quantity || 0)),
-      })));
+      if (itemError) throw itemError;
+      if (movementError) throw movementError;
 
-      setHistory((movements || []).map((m: any) => ({
-        id: m.id,
-        created_at: m.created_at,
-        item_name: itemMap.get(m.inventory_item_id) || 'Item',
-        movement_type: m.movement_type,
-        quantity: Number(m.quantity || 0),
-        notes: m.notes || '',
-      })));
+      const typedItems = (items ?? []) as InventoryItemRow[];
+      const typedMovements = (movements ?? []) as InventoryMovementRow[];
+      const itemMap = new Map(typedItems.map((item) => [item.id, item.name]));
+
+      setInventory(
+        typedItems.map((item) => {
+          const quantity = Number(item.quantity || 0);
+          const minQuantity = Number(item.min_quantity || 0);
+          return {
+            id: item.id,
+            name: item.name,
+            quantity,
+            minQuantity,
+            costPrice: Number(item.cost_price || 0),
+            category: item.category || '',
+            status: statusFrom(quantity, minQuantity),
+          };
+        })
+      );
+
+      setHistory(
+        typedMovements.map((movement) => ({
+          id: movement.id,
+          created_at: movement.created_at,
+          item_name: itemMap.get(movement.inventory_item_id) || 'Item removido',
+          movement_type: movement.movement_type,
+          quantity: Number(movement.quantity || 0),
+          notes: movement.notes || '',
+        }))
+      );
     } catch (error) {
       console.error(error);
       toast({ title: 'Erro', description: 'Falha ao carregar estoque.', variant: 'destructive' });
@@ -112,12 +156,18 @@ const AdminInventory = () => {
     }
   };
 
-  useEffect(() => { fetchInventory(); }, []);
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
-  const filteredInventory = useMemo(() => inventory.filter((item) => {
-    const q = searchQuery.toLowerCase();
-    return item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q);
-  }), [inventory, searchQuery]);
+  const filteredInventory = useMemo(
+    () =>
+      inventory.filter((item) => {
+        const query = searchQuery.toLowerCase();
+        return item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query);
+      }),
+    [inventory, searchQuery]
+  );
 
   const handleAddItem = () => {
     setIsEditMode(false);
@@ -134,12 +184,15 @@ const AdminInventory = () => {
   };
 
   const handleDeleteItem = async (id: string) => {
-    const { error } = await db.from('inventory_items').delete().eq('id', id);
-    if (error) {
+    try {
+      const { error } = await db.from('inventory_items').delete().eq('id', id);
+      if (error) throw error;
+      await fetchInventory();
+      toast({ title: 'Sucesso', description: 'Item excluído com sucesso.' });
+    } catch (error) {
+      console.error(error);
       toast({ title: 'Erro', description: 'Não foi possível excluir item.', variant: 'destructive' });
-      return;
     }
-    await fetchInventory();
   };
 
   const onSubmitItem = async (values: z.infer<typeof itemFormSchema>) => {
@@ -152,11 +205,13 @@ const AdminInventory = () => {
         category: values.category,
       };
 
-      const res = isEditMode && currentItem
-        ? await db.from('inventory_items').update(payload).eq('id', currentItem.id)
-        : await db.from('inventory_items').insert([payload]);
+      const result =
+        isEditMode && currentItem
+          ? await db.from('inventory_items').update(payload).eq('id', currentItem.id)
+          : await db.from('inventory_items').insert([payload]);
 
-      if (res.error) throw res.error;
+      if (result.error) throw result.error;
+
       setItemDialogOpen(false);
       await fetchInventory();
       toast({ title: 'Sucesso', description: 'Item salvo com sucesso.' });
@@ -166,41 +221,54 @@ const AdminInventory = () => {
     }
   };
 
-  const openMovementDialog = (item: InventoryItem) => {
-    setCurrentItem(item);
-    movementForm.reset({ itemId: item.id, movement: 'in', quantity: 1, notes: '' });
+  const openMovementDialog = (item?: InventoryItem) => {
+    setCurrentItem(item ?? null);
+    movementForm.reset({
+      itemId: item?.id || '',
+      movement: 'in',
+      quantity: 1,
+      notes: '',
+    });
     setMovementDialogOpen(true);
   };
 
   const onSubmitMovement = async (values: z.infer<typeof movementFormSchema>) => {
     try {
-      const item = inventory.find((i) => i.id === values.itemId);
-      if (!item) return;
+      const item = inventory.find((inventoryItem) => inventoryItem.id === values.itemId);
+      if (!item) {
+        toast({ title: 'Erro', description: 'Item selecionado não encontrado.', variant: 'destructive' });
+        return;
+      }
 
       const delta = values.movement === 'in' ? values.quantity : -values.quantity;
       const nextQuantity = item.quantity + delta;
+
       if (nextQuantity < 0) {
         toast({ title: 'Erro', description: 'Quantidade insuficiente para saída.', variant: 'destructive' });
         return;
       }
 
-      const [u, m] = await Promise.all([
+      const [updateItemResult, insertMovementResult] = await Promise.all([
         db.from('inventory_items').update({ quantity: nextQuantity }).eq('id', item.id),
-        db.from('inventory_movements').insert([{
-          inventory_item_id: item.id,
-          movement_type: values.movement,
-          quantity: values.quantity,
-          responsible_id: user?.id,
-          notes: values.notes || null,
-        }]),
+        db
+          .from('inventory_movements')
+          .insert([
+            {
+              inventory_item_id: item.id,
+              movement_type: values.movement,
+              quantity: values.quantity,
+              responsible_id: user?.id,
+              notes: values.notes || null,
+            },
+          ]),
       ]);
 
-      if (u.error) throw u.error;
-      if (m.error) throw m.error;
+      if (updateItemResult.error) throw updateItemResult.error;
+      if (insertMovementResult.error) throw insertMovementResult.error;
 
       setMovementDialogOpen(false);
       await fetchInventory();
-      toast({ title: 'Movimentação registrada' });
+      toast({ title: 'Sucesso', description: 'Movimentação registrada com sucesso.' });
     } catch (error) {
       console.error(error);
       toast({ title: 'Erro', description: 'Falha ao registrar movimentação.', variant: 'destructive' });
@@ -210,14 +278,26 @@ const AdminInventory = () => {
   return (
     <AppLayout>
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-2 flex-wrap">
           <h1 className="text-2xl font-bold">Estoque</h1>
-          <Button onClick={handleAddItem}><PlusCircle className="w-4 h-4 mr-2" /> Novo Item</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => openMovementDialog()}>
+              <Plus className="w-4 h-4 mr-2" /> Nova Movimentação
+            </Button>
+            <Button onClick={handleAddItem}>
+              <PlusCircle className="w-4 h-4 mr-2" /> Novo Item
+            </Button>
+          </div>
         </div>
 
         <div className="relative max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Buscar item/categoria" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Input
+            className="pl-9"
+            placeholder="Buscar item/categoria"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
         </div>
 
         <Tabs defaultValue="items">
@@ -231,24 +311,60 @@ const AdminInventory = () => {
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="p-2 text-left">Item</th><th className="p-2 text-left">Categoria</th><th className="p-2 text-left">Qtd</th><th className="p-2 text-left">Mín</th><th className="p-2 text-left">Custo</th><th className="p-2 text-left">Ações</th>
+                    <th className="p-2 text-left">Item</th>
+                    <th className="p-2 text-left">Categoria</th>
+                    <th className="p-2 text-left">Status</th>
+                    <th className="p-2 text-left">Qtd</th>
+                    <th className="p-2 text-left">Mín</th>
+                    <th className="p-2 text-left">Custo</th>
+                    <th className="p-2 text-left">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? <tr><td className="p-4" colSpan={6}>Carregando...</td></tr> : filteredInventory.map((item) => (
-                    <tr key={item.id} className="border-t">
-                      <td className="p-2">{item.name}</td>
-                      <td className="p-2">{item.category}</td>
-                      <td className="p-2">{item.quantity}</td>
-                      <td className="p-2">{item.minQuantity}</td>
-                      <td className="p-2">R$ {item.costPrice.toFixed(2)}</td>
-                      <td className="p-2 flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openMovementDialog(item)}><Plus className="w-4 h-4 mr-1" /> Mov</Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditItem(item)}>Editar</Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteItem(item.id)}>Excluir</Button>
+                  {loading ? (
+                    <tr>
+                      <td className="p-4" colSpan={7}>
+                        Carregando...
                       </td>
                     </tr>
-                  ))}
+                  ) : filteredInventory.length === 0 ? (
+                    <tr>
+                      <td className="p-8 text-center text-muted-foreground" colSpan={7}>
+                        <div className="flex items-center justify-center gap-2">
+                          <Package className="w-4 h-4" /> Nenhum item encontrado.
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredInventory.map((item) => (
+                      <tr key={item.id} className="border-t">
+                        <td className="p-2">{item.name}</td>
+                        <td className="p-2">{item.category}</td>
+                        <td className="p-2">
+                          <Badge
+                            variant={item.status === 'adequate' ? 'default' : 'destructive'}
+                            className={item.status === 'low' ? 'bg-yellow-500 text-black' : ''}
+                          >
+                            {statusLabel[item.status]}
+                          </Badge>
+                        </td>
+                        <td className="p-2">{item.quantity}</td>
+                        <td className="p-2">{item.minQuantity}</td>
+                        <td className="p-2">R$ {item.costPrice.toFixed(2)}</td>
+                        <td className="p-2 flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openMovementDialog(item)}>
+                            <Plus className="w-4 h-4 mr-1" /> Mov
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEditItem(item)}>
+                            Editar
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteItem(item.id)}>
+                            Excluir
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -257,17 +373,33 @@ const AdminInventory = () => {
           <TabsContent value="history">
             <div className="rounded border overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-muted/50"><tr><th className="p-2 text-left">Data</th><th className="p-2 text-left">Item</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Qtd</th><th className="p-2 text-left">Obs</th></tr></thead>
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-2 text-left">Data</th>
+                    <th className="p-2 text-left">Item</th>
+                    <th className="p-2 text-left">Tipo</th>
+                    <th className="p-2 text-left">Qtd</th>
+                    <th className="p-2 text-left">Obs</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {history.map((h) => (
-                    <tr key={h.id} className="border-t">
-                      <td className="p-2">{new Date(h.created_at).toLocaleString('pt-BR')}</td>
-                      <td className="p-2">{h.item_name}</td>
-                      <td className="p-2">{h.movement_type === 'in' ? 'Entrada' : 'Saída'}</td>
-                      <td className="p-2">{h.quantity}</td>
-                      <td className="p-2">{h.notes || '-'}</td>
+                  {history.length === 0 ? (
+                    <tr>
+                      <td className="p-8 text-center text-muted-foreground" colSpan={5}>
+                        Nenhuma movimentação registrada.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    history.map((entry) => (
+                      <tr key={entry.id} className="border-t">
+                        <td className="p-2">{new Date(entry.created_at).toLocaleString('pt-BR')}</td>
+                        <td className="p-2">{entry.item_name}</td>
+                        <td className="p-2">{entry.movement_type === 'in' ? 'Entrada' : 'Saída'}</td>
+                        <td className="p-2">{entry.quantity}</td>
+                        <td className="p-2">{entry.notes || '-'}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -276,15 +408,79 @@ const AdminInventory = () => {
 
         <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>{isEditMode ? 'Editar item' : 'Novo item'}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{isEditMode ? 'Editar item' : 'Novo item'}</DialogTitle>
+            </DialogHeader>
             <Form {...itemForm}>
               <form onSubmit={itemForm.handleSubmit(onSubmitItem)} className="space-y-3">
-                <FormField control={itemForm.control} name="name" render={({ field }) => <FormItem><FormLabel>Nome</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={itemForm.control} name="category" render={({ field }) => <FormItem><FormLabel>Categoria</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={itemForm.control} name="quantity" render={({ field }) => <FormItem><FormLabel>Quantidade</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={itemForm.control} name="minQuantity" render={({ field }) => <FormItem><FormLabel>Quantidade mínima</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={itemForm.control} name="costPrice" render={({ field }) => <FormItem><FormLabel>Custo</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <Button type="submit" className="w-full">Salvar</Button>
+                <FormField
+                  control={itemForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={itemForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={itemForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={itemForm.control}
+                  name="minQuantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade mínima</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={itemForm.control}
+                  name="costPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custo</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full">
+                  Salvar
+                </Button>
               </form>
             </Form>
           </DialogContent>
@@ -292,13 +488,92 @@ const AdminInventory = () => {
 
         <Dialog open={movementDialogOpen} onOpenChange={setMovementDialogOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Movimentação</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Movimentação</DialogTitle>
+            </DialogHeader>
             <Form {...movementForm}>
               <form onSubmit={movementForm.handleSubmit(onSubmitMovement)} className="space-y-3">
-                <FormField control={movementForm.control} name="movement" render={({ field }) => <FormItem><FormLabel>Tipo</FormLabel><FormControl><div className="flex gap-2"><Button type="button" variant={field.value === 'in' ? 'default' : 'outline'} onClick={() => field.onChange('in')}><Plus className="w-4 h-4 mr-1" />Entrada</Button><Button type="button" variant={field.value === 'out' ? 'default' : 'outline'} onClick={() => field.onChange('out')}><Minus className="w-4 h-4 mr-1" />Saída</Button></div></FormControl><FormMessage /></FormItem>} />
-                <FormField control={movementForm.control} name="quantity" render={({ field }) => <FormItem><FormLabel>Quantidade</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={movementForm.control} name="notes" render={({ field }) => <FormItem><FormLabel>Observações</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>} />
-                <Button type="submit" className="w-full">Registrar</Button>
+                <FormField
+                  control={movementForm.control}
+                  name="itemId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Item</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um item" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {inventory.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={movementForm.control}
+                  name="movement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo</FormLabel>
+                      <FormControl>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={field.value === 'in' ? 'default' : 'outline'}
+                            onClick={() => field.onChange('in')}
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Entrada
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={field.value === 'out' ? 'default' : 'outline'}
+                            onClick={() => field.onChange('out')}
+                          >
+                            <Minus className="w-4 h-4 mr-1" /> Saída
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={movementForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={movementForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full">
+                  Registrar
+                </Button>
               </form>
             </Form>
           </DialogContent>

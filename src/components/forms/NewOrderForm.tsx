@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 
 import { ApiService } from "@/services/serviceTypesApi";
 import { OrderStatusesService } from "@/services/orderStatusesApi";
@@ -36,6 +36,7 @@ import { ClientsService } from "@/services/clientsApi";
 import { VehicleService } from "@/services/vehiclesApi";
 import { OrdersService } from "@/services/ordersApi";
 import { resolveClientIdForUser } from "@/services/clientProfileService";
+import { Order } from "@/types";
 
 import NewVehicleForm from "@/components/forms/NewVehicleForm";
 
@@ -53,7 +54,7 @@ type OrderFormValues = z.infer<typeof orderSchema>;
 export default function NewOrderForm({
   onSuccess,
 }: {
-  onSuccess?: (order: any) => void;
+  onSuccess?: (order: Order) => void;
 }) {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -120,11 +121,11 @@ export default function NewOrderForm({
           const allC = await ClientsService.getClients();
           setClients(allC);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
         toast({
           title: "Erro ao carregar dados",
-          description: err.message,
+          description: getErrorMessage(err, "Não foi possível carregar os dados do pedido."),
           variant: "destructive",
         });
       }
@@ -138,18 +139,18 @@ export default function NewOrderForm({
       try {
         const v = await VehicleService.getClientVehicles(selectedClientId);
         setVehicles(v);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
         toast({
           title: "Erro ao carregar veículos",
-          description: err.message,
+          description: getErrorMessage(err, "Não foi possível carregar os veículos."),
           variant: "destructive",
         });
       }
     })();
   }, [selectedClientId, toast]);
 
-  const onVehicleSuccess = (nv?: any) => {
+  const onVehicleSuccess = (nv?: { id: string; model: string; license_plate: string } | null) => {
     if (nv) {
       setVehicles((pv) => [...pv, nv]);
       setValue("vehicleId", nv.id);
@@ -176,11 +177,11 @@ export default function NewOrderForm({
       toast({ title: "Pedido criado com sucesso!" });
       onSuccess?.(created);
       reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast({
         title: "Erro ao criar pedido",
-        description: err.message,
+        description: getErrorMessage(err, "Não foi possível criar o pedido."),
         variant: "destructive",
       });
     }

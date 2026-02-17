@@ -262,8 +262,8 @@ const AdminServices = () => {
           title="Gerenciar Serviços"
           description="Organize o catálogo com valores, regras de consumo e disponibilidade operacional."
           stats={[
-            { label: 'Total', value: String(services.length) },
-            { label: 'Ativos', value: String(services.filter((service) => service.active).length) },
+            { label: 'Total', value: String(serviceTypes.length) },
+            { label: 'Ativos', value: String(serviceTypes.filter((service) => service.active).length) },
           ]}
           action={
             <Button onClick={openCreateDialog} className="gap-2">

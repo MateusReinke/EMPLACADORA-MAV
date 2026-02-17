@@ -90,7 +90,7 @@ export class ApiService {
   ): Promise<ServiceType> {
     const { data, error } = await db
       .from("service_types")
-      .update({ ...updated, updated_at: new Date().toISOString() })
+      .update(updated)
       .eq("id", id)
       .select("*")
       .single();

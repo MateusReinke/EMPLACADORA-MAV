@@ -4,6 +4,7 @@ import { db } from "@/lib/dbClient";
 export interface ServiceCategory {
   id: string;
   name: string;
+  prefix?: string;
 }
 
 export interface ServiceType {
@@ -55,11 +56,60 @@ export class CategoryService {
   static async createCategory(name: string): Promise<ServiceCategory> {
     const { data, error } = await db
       .from("service_categories")
-      .insert([{ name }])
+      .insert([{ name: payload.name, prefix: payload.prefix || null }])
       .select()
       .single();
     if (error) throw error;
     return data as ServiceCategory;
+  }
+
+  static async updateCategory(id: string, payload: Partial<ServiceCategory>): Promise<ServiceCategory> {
+    const { data, error } = await db
+      .from("service_categories")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ServiceCategory;
+  }
+
+  static async deleteCategory(id: string): Promise<void> {
+    const { error } = await db.from("service_categories").delete().eq("id", id);
+    if (error) throw error;
+  }
+}
+
+export class OrderStatusService {
+  static async getStatuses(): Promise<OrderStatusItem[]> {
+    const { data, error } = await db
+      .from("order_statuses")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data || []) as OrderStatusItem[];
+  }
+
+  static async createStatus(payload: Omit<OrderStatusItem, "id">): Promise<OrderStatusItem> {
+    const { data, error } = await db.from("order_statuses").insert([payload]).select().single();
+    if (error) throw error;
+    return data as OrderStatusItem;
+  }
+
+  static async updateStatus(id: string, payload: Partial<OrderStatusItem>): Promise<OrderStatusItem> {
+    const { data, error } = await db
+      .from("order_statuses")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as OrderStatusItem;
+  }
+
+  static async deleteStatus(id: string): Promise<void> {
+    const { error } = await db.from("order_statuses").delete().eq("id", id);
+    if (error) throw error;
   }
 }
 
@@ -85,10 +135,7 @@ export class ApiService {
     return data as ServiceType;
   }
 
-  static async updateServiceType(
-    id: string,
-    updated: Partial<ServiceType>
-  ): Promise<ServiceType> {
+  static async updateServiceType(id: string, updated: Partial<ServiceType>): Promise<ServiceType> {
     const { data, error } = await db
       .from("service_types")
       .update(updated)

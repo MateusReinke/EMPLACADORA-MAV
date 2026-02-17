@@ -381,6 +381,7 @@ const ensureCoreSchema = async () => {
       updated_at = NOW()
   `);
 
+
   await pool.query(`
     DELETE FROM service_inventory_rules
     WHERE service_type_id IN (

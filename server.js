@@ -44,7 +44,6 @@ const ALLOWED_TABLES = new Set([
   'service_inventory_rules',
   'order_statuses',
   'plate_types',
-  'vehicle_types',
   'inventory_items',
   'inventory_movements',
   'dashboard_layouts',

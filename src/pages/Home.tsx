@@ -1,74 +1,84 @@
 import { Link } from "react-router-dom";
 import {
-  CheckCircle2,
+  BadgeCheck,
+  Bot,
+  Building2,
+  Car,
   ChevronRight,
   Clock3,
-  FileText,
-  Headset,
+  FileCheck2,
+  FileSearch,
   MapPin,
-  MessageCircle,
-  Phone,
   ShieldCheck,
   Sparkles,
-  Users,
+  Star,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
-const services = [
+const navItems = [
+  { label: "Serviços", href: "#servicos" },
+  { label: "Fluxo", href: "#fluxo" },
+  { label: "FAQ", href: "#faq" },
+];
+
+const serviceCards = [
   {
     title: "Primeiro Emplacamento",
-    description: "Cuidamos de toda a documentação e etapas junto aos órgãos competentes para veículos novos.",
-    points: ["Checklist completo", "Acompanhamento por status", "Entrega com previsibilidade"],
-    icon: FileText,
+    description:
+      "Processo completo para veículos novos, com orientação de ponta a ponta.",
+    bullets: ["Conferência documental", "Abertura e acompanhamento", "Finalização com agilidade"],
+    icon: Car,
   },
   {
-    title: "Transferência e Regularização",
-    description: "Transferência de propriedade, mudança de município e regularização documental sem dor de cabeça.",
-    points: ["Validação prévia", "Redução de retrabalho", "Suporte especializado"],
+    title: "Transferência de Propriedade",
+    description:
+      "Suporte para transferência entre municípios e regularização de pendências.",
+    bullets: ["Checklist prévio", "Emissão de guias", "Status atualizado em tempo real"],
+    icon: FileCheck2,
+  },
+  {
+    title: "Licenciamento e Regularização",
+    description:
+      "Rotina completa para manter veículos e frotas em conformidade legal.",
+    bullets: ["Atendimento PF e PJ", "Controle por veículo", "Histórico organizado"],
     icon: ShieldCheck,
-  },
-  {
-    title: "Gestão para Frotas e Empresas",
-    description: "Fluxo dedicado para pessoa jurídica, com controle por veículo e acompanhamento centralizado.",
-    points: ["Atendimento PJ", "Visão por lote", "Comunicação ativa"],
-    icon: Users,
   },
 ];
 
 const faqs = [
   {
-    q: "Quanto tempo leva para concluir um emplacamento?",
-    a: "O prazo varia conforme o tipo de processo e a situação documental. Após a triagem, informamos o cronograma com estimativa realista.",
+    question: "Quanto tempo leva um processo de emplacamento?",
+    answer:
+      "Depende do tipo de serviço e documentação. Após a triagem inicial, informamos o prazo estimado e cada etapa.",
   },
   {
-    q: "Posso acompanhar o andamento do meu pedido?",
-    a: "Sim. Você acompanha o progresso por etapas, com atualizações de status para ter visibilidade do processo do início ao fim.",
+    question: "Vocês atendem empresas com frota?",
+    answer:
+      "Sim. Temos fluxo dedicado para pessoa jurídica com acompanhamento por lote e status por veículo.",
   },
   {
-    q: "Vocês atendem pessoa física e jurídica?",
-    a: "Atendemos ambos os perfis, inclusive empresas com volume recorrente e necessidades de gestão de frota.",
-  },
-  {
-    q: "Quais documentos são necessários?",
-    a: "Depende do serviço contratado. Nossa equipe faz a conferência e envia um checklist personalizado para evitar pendências.",
+    question: "Consigo acompanhar o pedido online?",
+    answer:
+      "Sim. Clientes, vendedores e administradores podem visualizar o andamento dos pedidos no sistema.",
   },
 ];
 
 const Home = () => {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
+    <main className="min-h-screen bg-background" itemScope itemType="https://schema.org/ProfessionalService">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-between">
           <img src={mavLogo} alt="MAV Emplacadora" className="h-10 w-auto" />
-          <nav className="hidden items-center gap-2 md:flex">
-            <a href="#servicos" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">Serviços</a>
-            <a href="#faq" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">FAQ</a>
-            <a href="#contato" className="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">Contato</a>
+
+          <nav className="hidden items-center gap-3 md:flex">
+            {navItems.map((item) => (
+              <a key={item.label} href={item.href} className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
+                {item.label}
+              </a>
+            ))}
             <Button asChild size="sm">
               <Link to="/login">
                 Área de Gestão
@@ -81,46 +91,44 @@ const Home = () => {
 
       <section className="relative overflow-hidden py-20 lg:py-28">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
-        <div className="container relative grid gap-10 lg:grid-cols-2 lg:items-center">
+        <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6 text-center lg:text-left">
-            <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-              Solução profissional para emplacadoras
+            <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+              Gestão moderna para emplacadoras
             </span>
             <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Home page profissional para apresentar seus serviços com <span className="text-primary">autoridade</span>
+              Emplacamento com processo claro, <span className="text-primary">controle total</span> e atendimento ágil
             </h1>
-            <p className="text-base text-muted-foreground sm:text-lg">
-              Estrutura completa com serviços, FAQ, botões de contato e formulário para captação de novos clientes — tudo em um visual moderno e confiável.
+            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              A MAV centraliza operação, clientes e pedidos em uma experiência completa para sua equipe trabalhar com mais velocidade e previsibilidade.
             </p>
-            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+
+            <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
               <Button asChild size="lg">
-                <a href="#contato">Solicitar atendimento</a>
+                <a href="#servicos">Conhecer serviços</a>
               </Button>
-              <Button asChild variant="outline" size="lg">
-                <a href="#servicos">Ver serviços</a>
+              <Button asChild size="lg" variant="outline">
+                <a href="mailto:contato@mavemplacadora.com">Falar com especialista</a>
               </Button>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground lg:justify-start">
-              <span className="rounded-full border bg-card px-3 py-1">Atendimento especializado</span>
-              <span className="rounded-full border bg-card px-3 py-1">Processo transparente</span>
-              <span className="rounded-full border bg-card px-3 py-1">Suporte por WhatsApp</span>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
+              <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Atendimento PF e PJ</span>
+              <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Acompanhamento por etapas</span>
+              <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Gestão por perfil de usuário</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-primary/20 bg-card/90 p-6 shadow-xl">
-            <h2 className="text-xl font-bold">Por que escolher a MAV?</h2>
-            <div className="mt-4 space-y-4">
-              <div className="flex items-start gap-3 rounded-lg bg-background p-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-primary" />
-                <p className="text-sm text-muted-foreground">Fluxo claro desde a triagem documental até a finalização do processo.</p>
+          <div className="mx-auto w-full max-w-md rounded-3xl border border-primary/20 bg-card/80 p-6 shadow-2xl shadow-primary/20 backdrop-blur">
+            <img src={mavLogo} alt="Logo MAV" className="mx-auto h-32 w-auto drop-shadow-2xl" />
+            <div className="mt-6 space-y-4">
+              <div className="flex items-start gap-3 rounded-xl bg-background/80 p-3">
+                <BadgeCheck className="mt-0.5 h-5 w-5 text-primary" />
+                <p className="text-sm text-muted-foreground">Triagem documental para reduzir retrabalho e aumentar previsibilidade.</p>
               </div>
-              <div className="flex items-start gap-3 rounded-lg bg-background p-3">
-                <Clock3 className="mt-0.5 h-5 w-5 text-primary" />
-                <p className="text-sm text-muted-foreground">Mais agilidade operacional com etapas padronizadas e comunicação ativa.</p>
-              </div>
-              <div className="flex items-start gap-3 rounded-lg bg-background p-3">
-                <Headset className="mt-0.5 h-5 w-5 text-primary" />
-                <p className="text-sm text-muted-foreground">Equipe pronta para atender clientes PF, PJ e gestão de frotas.</p>
+              <div className="flex items-start gap-3 rounded-xl bg-background/80 p-3">
+                <Star className="mt-0.5 h-5 w-5 text-primary" />
+                <p className="text-sm text-muted-foreground">Fluxo padronizado para entregas com mais qualidade e velocidade.</p>
               </div>
             </div>
           </div>
@@ -130,25 +138,27 @@ const Home = () => {
       <section id="servicos" className="bg-card/40 py-20">
         <div className="container">
           <div className="mb-12 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary">Serviços</p>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Soluções completas em documentação veicular</h2>
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços essenciais para sua operação</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+              Estrutura inspirada no seu exemplo, adaptada para o contexto de emplacamento e documentação.
+            </p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => {
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
-                <article key={service.title} className="rounded-2xl border border-border bg-background p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
-                  <div className="mb-3 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
+                <article key={service.title} className="group relative overflow-hidden rounded-2xl border border-border/80 bg-background/70 p-5 text-left transition-all duration-300 hover:border-primary/40">
+                  <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-semibold">{service.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{service.description}</p>
-                  <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                    {service.points.map((point) => (
-                      <li key={point} className="flex items-start gap-2">
-                        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        {point}
-                      </li>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Serviço</p>
+                  <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
+                  <ul className="mt-4 space-y-2 text-sm">
+                    {service.bullets.map((bullet) => (
+                      <li key={bullet} className="rounded-lg border bg-background/80 px-3 py-2">• {bullet}</li>
                     ))}
                   </ul>
                 </article>
@@ -158,91 +168,83 @@ const Home = () => {
         </div>
       </section>
 
-      <section id="faq" className="py-20">
-        <div className="container max-w-4xl">
-          <div className="mb-8 text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary">FAQ</p>
-            <h2 className="mt-2 text-3xl font-bold">Perguntas frequentes</h2>
+      <section id="fluxo" className="py-20">
+        <div className="container grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+              <MapPin className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="mb-1 text-lg font-semibold">Coleta e conferência inicial</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">Recebemos os dados, validamos os documentos e iniciamos o processo com checklist técnico.</p>
+            </div>
           </div>
-          <div className="rounded-2xl border bg-card p-4 sm:p-6">
-            <Accordion type="single" collapsible>
-              {faqs.map((item) => (
-                <AccordionItem key={item.q} value={item.q}>
-                  <AccordionTrigger className="text-left">{item.q}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">{item.a}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+              <FileSearch className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="mb-1 text-lg font-semibold">Acompanhamento por etapa</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">Cada pedido evolui com status visível para clientes e equipe, evitando ruídos de comunicação.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+              <Clock3 className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="mb-1 text-lg font-semibold">Entrega com prazo definido</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">Fluxo operacional padronizado para previsibilidade e melhor experiência de atendimento.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="contato" className="bg-card/50 py-20">
-        <div className="container grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary">Contato</p>
-            <h2 className="text-3xl font-bold">Fale com nossa equipe</h2>
-            <p className="text-muted-foreground">
-              Entre em contato para solicitar orçamento, tirar dúvidas ou iniciar seu processo.
-            </p>
-
-            <div className="space-y-3">
-              <a href="tel:+5511999999999" className="flex items-center gap-3 rounded-xl border bg-background p-3 transition hover:border-primary/40">
-                <Phone className="h-5 w-5 text-primary" />
-                <span className="text-sm">(11) 99999-9999</span>
-              </a>
-              <a href="mailto:contato@mavemplacadora.com" className="flex items-center gap-3 rounded-xl border bg-background p-3 transition hover:border-primary/40">
-                <MessageCircle className="h-5 w-5 text-primary" />
-                <span className="text-sm">contato@mavemplacadora.com</span>
-              </a>
-              <a
-                href="https://wa.me/5511999999999?text=Olá%2C%20quero%20informa%C3%A7%C3%B5es%20sobre%20servi%C3%A7os%20de%20emplacamento."
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Chamar no WhatsApp
-              </a>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MapPin className="h-4 w-4 text-primary" />
-              Atendimento presencial e online.
-            </div>
+      <section id="faq" className="bg-card/50 py-20">
+        <div className="container max-w-4xl">
+          <div className="mb-10 text-center">
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">FAQ</span>
+            <h2 className="mt-2 text-3xl font-bold">Perguntas frequentes</h2>
           </div>
-
-          <form className="rounded-2xl border bg-background p-6 shadow-sm">
-            <h3 className="text-lg font-semibold">Solicite um contato</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Preencha o formulário e retornaremos rapidamente.</p>
-            <div className="mt-5 grid gap-4">
-              <Input placeholder="Seu nome" name="name" />
-              <Input placeholder="Seu e-mail" type="email" name="email" />
-              <Input placeholder="Seu telefone" name="phone" />
-              <Input placeholder="Serviço de interesse" name="service" />
-              <Textarea placeholder="Descreva sua necessidade" name="message" className="min-h-28" />
-              <Button type="submit" className="w-full">Enviar solicitação</Button>
-            </div>
-          </form>
+          <div className="space-y-4">
+            {faqs.map((faq) => (
+              <article key={faq.question} className="rounded-2xl border border-border bg-card p-5" itemScope itemType="https://schema.org/Question">
+                <h3 className="font-semibold" itemProp="name">{faq.question}</h3>
+                <p className="mt-2 text-sm text-muted-foreground" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer">
+                  <span itemProp="text">{faq.answer}</span>
+                </p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
       <footer className="border-t border-border py-8">
         <div className="container flex flex-col items-center gap-4">
-          <img src={mavLogo} alt="MAV Emplacadora" className="h-10 w-auto opacity-70" />
+          <img src={mavLogo} alt="MAV" className="h-12 w-auto opacity-70" />
           <p className="text-center text-sm text-muted-foreground">© 2026 MAV Emplacadora. Todos os direitos reservados.</p>
         </div>
       </footer>
 
-      <a
-        href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20quero%20falar%20com%20a%20MAV%20Emplacadora."
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90"
-      >
-        <MessageCircle className="h-4 w-4" />
-        WhatsApp
-      </a>
+      <div className="fixed bottom-6 right-6 z-50 flex max-w-[280px] items-end gap-3">
+        <button className="w-full rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur" aria-label="Abrir atendimento inteligente">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Assistente MAV</p>
+              <p className="text-xs text-muted-foreground">Clique para iniciar atendimento</p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div className="pointer-events-none fixed bottom-6 left-6 hidden items-center gap-2 rounded-full border border-border/80 bg-card/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur md:flex">
+        <Building2 className="h-4 w-4 text-primary" />
+        Plataforma para gestão de emplacamento
+        <Sparkles className="h-4 w-4 text-primary" />
+      </div>
     </main>
   );
 };

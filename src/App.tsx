@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Import pages como default
 import Login from "./pages/Login";
+import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages (certifique-se que todos exportam default)
@@ -246,8 +247,7 @@ const App = () => (
               element={<Navigate to="/client/settings" replace />}
             />
 
-            {/* Redirect root based on role */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Home />} />
 
             {/* 404 Page */}
             <Route path="*" element={<NotFound />} />

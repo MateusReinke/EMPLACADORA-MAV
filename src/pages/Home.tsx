@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BadgeCheck,
@@ -12,11 +13,14 @@ import {
   Sparkles,
   Star,
   MessageCircle,
+  Instagram,
   Newspaper,
   Megaphone,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
+import mercosulLogo from "@/assets/logo-mercosul-blanco.svg";
+import brazilFlag from "@/assets/brazil-flag.svg";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -90,7 +94,38 @@ const updates = [
   "Publicação semanal de conteúdos sobre documentação e regularização.",
 ];
 
+const heroSlides = [
+  {
+    badge: "MAV Emplacadora",
+    title: "Especialistas em emplacamento e regularização veicular",
+    description:
+      "Atendimento completo para primeiro emplacamento, transferência, licenciamento e rotinas de frota com apoio técnico do início ao fim.",
+  },
+  {
+    badge: "Novidade",
+    title: "Acompanhamento de pedidos em tempo real",
+    description:
+      "Clientes e equipes acompanham o status de cada processo por etapa, reduzindo dúvidas e acelerando decisões.",
+  },
+  {
+    badge: "SEO e Conteúdo",
+    title: "Conteúdo útil para atrair mais cliques orgânicos",
+    description:
+      "Publicações com dúvidas reais de emplacamento aumentam relevância no Google e fortalecem a confiança de novos clientes.",
+  },
+];
+
 const Home = () => {
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % heroSlides.length);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <main className="min-h-screen bg-background" itemScope itemType="https://schema.org/ProfessionalService">
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
@@ -120,15 +155,37 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
         <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6 text-center lg:text-left">
-            <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              Gestão moderna para emplacadoras
-            </span>
-            <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Emplacamento com processo claro, <span className="text-primary">controle total</span> e atendimento ágil
-            </h1>
-            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              A MAV centraliza operação, clientes e pedidos em uma experiência completa para sua equipe trabalhar com mais velocidade e previsibilidade.
-            </p>
+            <div className="relative min-h-[250px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-6">
+              {heroSlides.map((slide, index) => (
+                <article
+                  key={slide.title}
+                  className={`absolute inset-0 flex flex-col justify-center p-6 text-center transition-all duration-700 lg:text-left ${
+                    index === activeSlide
+                      ? "translate-x-0 opacity-100"
+                      : index < activeSlide
+                        ? "-translate-x-full opacity-0"
+                        : "translate-x-full opacity-0"
+                  }`}
+                >
+                  <span className="inline-flex w-fit items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+                    {slide.badge}
+                  </span>
+                  <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">{slide.title}</h1>
+                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">{slide.description}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center gap-2 lg:justify-start">
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.title}
+                  onClick={() => setActiveSlide(index)}
+                  className={`h-2.5 rounded-full transition-all ${index === activeSlide ? "w-8 bg-primary" : "w-2.5 bg-primary/30"}`}
+                  aria-label={`Selecionar slide ${index + 1}`}
+                />
+              ))}
+            </div>
 
             <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
               <Button asChild size="lg">
@@ -136,6 +193,12 @@ const Home = () => {
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href="https://instagram.com/mavemplacadora" target="_blank" rel="noreferrer">
+                  <Instagram className="mr-2 h-4 w-4" />
+                  Direct no Instagram
+                </a>
               </Button>
             </div>
 
@@ -205,7 +268,7 @@ const Home = () => {
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
             <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços essenciais para sua operação</h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Estrutura inspirada no seu exemplo, adaptada para o contexto de emplacamento e documentação.
+              Cards em padrão visual de placa Mercosul para reforçar identidade e credibilidade na apresentação dos serviços.
             </p>
           </div>
 
@@ -213,12 +276,19 @@ const Home = () => {
             {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
-                <article key={service.title} className="group relative overflow-hidden rounded-2xl border border-border/80 bg-background/70 p-5 text-left transition-all duration-300 hover:border-primary/40">
+                <article key={service.title} className="group relative overflow-hidden rounded-3xl border-2 border-border/70 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:border-primary/40">
+                  <div className="-mx-5 -mt-5 mb-5 rounded-t-2xl bg-[#003399] px-4 py-2 text-white">
+                    <div className="flex items-center justify-between gap-2">
+                      <img src={mercosulLogo} alt="Logo Mercosul" className="h-5 w-auto" />
+                      <p className="text-center text-xs font-bold uppercase tracking-wider">Brasil • Serviços MAV</p>
+                      <img src={brazilFlag} alt="Bandeira do Brasil" className="h-5 w-auto" />
+                    </div>
+                  </div>
                   <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Serviço</p>
-                  <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Padrão Mercosul</p>
+                  <h3 className="mt-1 text-lg font-bold text-[#003399]">{service.title}</h3>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
                   <ul className="mt-4 space-y-2 text-sm">
                     {service.bullets.map((bullet) => (

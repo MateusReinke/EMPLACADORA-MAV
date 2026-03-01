@@ -139,15 +139,6 @@ const Home = () => {
               </Button>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-              <Button asChild variant="secondary">
-                <Link to="/login?perfil=colaborador">Login Colaborador</Link>
-              </Button>
-              <Button asChild variant="default">
-                <Link to="/login?perfil=gestao">Login Vendedor/Admin</Link>
-              </Button>
-            </div>
-
             <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
               <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Atendimento PF e PJ</span>
               <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Acompanhamento por etapas</span>

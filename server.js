@@ -1054,48 +1054,6 @@ app.post('/api/query', async (req, res) => {
 });
 
 
-app.get('/', (_req, res) => {
-  res.type('html').send(`<!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MAV Emplacadora</title>
-    <style>
-      :root { color-scheme: light; }
-      body { font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
-      .wrap { max-width: 960px; margin: 0 auto; padding: 48px 20px; }
-      .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; box-shadow: 0 4px 20px rgba(15,23,42,.06); }
-      h1 { margin-top: 0; font-size: 2rem; }
-      p { line-height: 1.6; color: #334155; }
-      ul { color: #334155; }
-      .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-      .btn { display: inline-block; text-decoration: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; }
-      .btn-primary { background: #0f172a; color: #fff; }
-      .btn-outline { border: 1px solid #cbd5e1; color: #0f172a; }
-    </style>
-  </head>
-  <body>
-    <main class="wrap">
-      <section class="card">
-        <h1>MAV Emplacadora</h1>
-        <p>Bem-vindo! A MAV oferece atendimento especializado para processos de documentação e emplacamento veicular, com agilidade e transparência em todas as etapas.</p>
-        <ul>
-          <li>Primeiro emplacamento</li>
-          <li>Transferência e regularização documental</li>
-          <li>Acompanhamento de pedidos e status</li>
-          <li>Atendimento para clientes PF e PJ</li>
-        </ul>
-        <div class="cta">
-          <a class="btn btn-primary" href="/login">Acessar sistema</a>
-          <a class="btn btn-outline" href="mailto:contato@mavemplacadora.com">Falar com a equipe</a>
-        </div>
-      </section>
-    </main>
-  </body>
-</html>`);
-});
-
 app.use(express.static(path.join(__dirname, 'dist')));
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 // Import pages como default
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages (certifique-se que todos exportam default)
@@ -248,6 +249,8 @@ const App = () => (
             />
 
             <Route path="/" element={<Home />} />
+            <Route path="/index" element={<Index />} />
+            <Route path="/home" element={<Home />} />
 
             {/* 404 Page */}
             <Route path="*" element={<NotFound />} />

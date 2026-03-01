@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import {
   BadgeCheck,
-  Bot,
   Building2,
   Car,
   ChevronRight,
@@ -12,14 +11,18 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  MessageCircle,
+  Newspaper,
+  Megaphone,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Serviços", href: "#servicos" },
+  { label: "Artigos", href: "#artigos" },
+  { label: "Novidades", href: "#novidades" },
   { label: "Fluxo", href: "#fluxo" },
   { label: "FAQ", href: "#faq" },
 ];
@@ -66,6 +69,27 @@ const faqs = [
   },
 ];
 
+const articleCards = [
+  {
+    title: "Como organizar documentos para evitar atrasos",
+    summary: "Checklist prático para pessoa física e jurídica enviar tudo certo na primeira tentativa.",
+  },
+  {
+    title: "Transferência de propriedade: erros mais comuns",
+    summary: "Veja os pontos que mais causam retrabalho e como acelerar a aprovação do processo.",
+  },
+  {
+    title: "Emplacamento para frotas: como ganhar escala",
+    summary: "Boas práticas para empresas com múltiplos veículos manterem controle e previsibilidade.",
+  },
+];
+
+const updates = [
+  "Novo canal de atendimento via WhatsApp com resposta mais rápida.",
+  "Painel de acompanhamento de pedidos em tempo real para clientes.",
+  "Publicação semanal de conteúdos sobre documentação e regularização.",
+];
+
 const Home = () => {
   return (
     <main className="min-h-screen bg-background" itemScope itemType="https://schema.org/ProfessionalService">
@@ -108,7 +132,7 @@ const Home = () => {
                 <a href="#servicos">Conhecer serviços</a>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="mailto:contato@mavemplacadora.com">Falar com especialista</a>
+                <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
               </Button>
             </div>
 
@@ -132,6 +156,43 @@ const Home = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="artigos" className="bg-card/40 py-20">
+        <div className="container">
+          <div className="mb-10 text-center">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
+              <Newspaper className="h-4 w-4" /> Artigos
+            </span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Conteúdo para orientar seu processo</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {articleCards.map((article) => (
+              <article key={article.title} className="rounded-2xl border border-border bg-card p-6">
+                <h3 className="text-lg font-semibold">{article.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{article.summary}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="novidades" className="py-20">
+        <div className="container max-w-4xl rounded-3xl border border-primary/20 bg-primary/5 p-8">
+          <div className="mb-6 text-center">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
+              <Megaphone className="h-4 w-4" /> Novidades
+            </span>
+            <h2 className="mt-2 text-3xl font-bold">O que está novo na MAV</h2>
+          </div>
+          <ul className="space-y-3">
+            {updates.map((item) => (
+              <li key={item} className="rounded-xl border border-border bg-background/80 px-4 py-3 text-sm">
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -226,18 +287,17 @@ const Home = () => {
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50 flex max-w-[280px] items-end gap-3">
-        <button className="w-full rounded-2xl border border-primary/30 bg-card/95 p-4 text-left shadow-2xl shadow-primary/20 backdrop-blur" aria-label="Abrir atendimento inteligente">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Bot className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Assistente MAV</p>
-              <p className="text-xs text-muted-foreground">Clique para iniciar atendimento</p>
-            </div>
-          </div>
-        </button>
+      <div className="fixed bottom-6 right-6 z-50">
+        <a
+          href="https://wa.me/5500000000000"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-green-700"
+          aria-label="Abrir WhatsApp"
+        >
+          <MessageCircle className="h-5 w-5" />
+          WhatsApp
+        </a>
       </div>
 
       <div className="pointer-events-none fixed bottom-6 left-6 hidden items-center gap-2 rounded-full border border-border/80 bg-card/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur md:flex">

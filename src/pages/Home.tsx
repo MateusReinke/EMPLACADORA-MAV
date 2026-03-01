@@ -103,9 +103,12 @@ const Home = () => {
                 {item.label}
               </a>
             ))}
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/login?perfil=colaborador">Login Colaborador</Link>
+            </Button>
             <Button asChild size="sm">
-              <Link to="/login">
-                Área de Gestão
+              <Link to="/login?perfil=gestao">
+                Login Vendedor/Admin
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>

@@ -408,7 +408,57 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[0.42fr_0.58fr]">
+          <div className="space-y-5 lg:hidden">
+            {serviceCards.map((service, index) => {
+              const Icon = service.icon;
+
+              return (
+                <article key={service.title} className="rounded-3xl border border-white/10 bg-[#030b1f] p-5 text-white shadow-xl shadow-[#020817]/70">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg border border-white/20 bg-[#0a1a3a] p-2 text-white">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-300">{service.category}</p>
+                      <h3 className="text-lg font-bold leading-tight">{service.title}</h3>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm leading-relaxed text-slate-300">{service.description}</p>
+
+                  <div className="mt-4 grid gap-2">
+                    {service.bullets.map((bullet) => (
+                      <div key={bullet} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-slate-100">
+                        {bullet}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 space-y-2 border-t border-white/10 pt-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">Etapas</p>
+                    {service.steps.map((step, stepIndex) => (
+                      <div key={step} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0b1633] px-3 py-2.5 text-sm">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300 text-xs font-bold text-slate-900">
+                          {stepIndex + 1}
+                        </span>
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {index === 0 && (
+                    <Button asChild className="mt-5 w-full rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a]">
+                      <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">
+                        <WhatsAppIcon className="mr-2 h-5 w-5" />
+                        Falar com especialista no WhatsApp
+                      </a>
+                    </Button>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hidden gap-6 lg:grid lg:grid-cols-[0.42fr_0.58fr]">
             <aside className="rounded-3xl border border-white/10 bg-[#07142e] p-4 shadow-2xl shadow-[#020817]/60 lg:max-h-[560px] lg:overflow-y-auto">
               <div className="flex gap-3 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible">
               {serviceCards.map((service, index) => {
@@ -470,7 +520,10 @@ const Home = () => {
               </div>
 
               <Button asChild className="mt-7 w-full rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a] sm:mt-8 sm:w-fit">
-                <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Solicitar atendimento da MAV</a>
+                <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">
+                  <WhatsAppIcon className="mr-2 h-5 w-5" />
+                  Solicitar atendimento da MAV
+                </a>
               </Button>
             </article>
           </div>
@@ -562,8 +615,8 @@ const Home = () => {
           className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d] sm:px-6 sm:py-3 sm:text-base"
           aria-label="Abrir WhatsApp"
         >
-          <MessageCircle className="h-5 w-5" />
-          <span className="hidden sm:inline">WhatsApp</span>
+          <WhatsAppIcon className="h-5 w-5" />
+          <span>WhatsApp</span>
         </a>
       </div>
 

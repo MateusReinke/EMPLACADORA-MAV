@@ -8,7 +8,6 @@ import {
   Clock3,
   FileCheck2,
   FileSearch,
-  Instagram,
   MapPin,
   Megaphone,
   MessageCircle,
@@ -102,10 +101,10 @@ const heroSlides = [
       "Clientes e equipes acompanham o status de cada processo por etapa, reduzindo dúvidas e acelerando decisões.",
   },
   {
-    badge: "SEO e Conteúdo",
-    title: "Conteúdo útil para atrair mais cliques orgânicos",
+    badge: "Relacionamento",
+    title: "Comunicação clara durante todo o atendimento",
     description:
-      "Publicações com dúvidas reais de emplacamento aumentam relevância no Google e fortalecem a confiança de novos clientes.",
+      "Atualizações de status, orientação objetiva e suporte em cada etapa para que o cliente acompanhe tudo com segurança.",
   },
 ];
 
@@ -216,13 +215,7 @@ const Home = () => {
                 <a href="#servicos">Conhecer serviços</a>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href="https://instagram.com/mavemplacadora" target="_blank" rel="noreferrer">
-                  <Instagram className="mr-2 h-4 w-4" />
-                  Direct no Instagram
-                </a>
+                <a href="#fluxo">Ver como funciona</a>
               </Button>
             </div>
 
@@ -296,7 +289,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
@@ -315,7 +308,7 @@ const Home = () => {
                   <h3 className="mt-1 text-lg font-bold text-[#003399]">{service.title}</h3>
                   <ul className="mt-4 space-y-2 text-sm">
                     {service.bullets.map((bullet) => (
-                      <li key={bullet} className="rounded-lg border bg-background/80 px-3 py-2">• {bullet}</li>
+                      <li key={bullet} className="rounded-lg border border-slate-300 bg-slate-700 px-3 py-2 text-slate-100">• {bullet}</li>
                     ))}
                   </ul>
                   <p className="mt-4 rounded-xl bg-primary/5 px-3 py-3 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
@@ -389,7 +382,7 @@ const Home = () => {
           href="https://wa.me/5500000000000"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:bg-green-700"
+          className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d]"
           aria-label="Abrir WhatsApp"
         >
           <MessageCircle className="h-5 w-5" />

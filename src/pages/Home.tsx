@@ -11,7 +11,6 @@ import {
   Menu,
   MessageCircle,
   Instagram,
-  Newspaper,
   ShieldCheck,
   Sparkles,
   Star,
@@ -25,8 +24,7 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Serviços", href: "#servicos" },
-  { label: "Artigos", href: "#artigos" },
-  { label: "Fluxo", href: "#fluxo" },
+  { label: "Fluxo de atendimento", href: "#servicos" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -96,64 +94,8 @@ const faqs = [
   },
 ];
 
-const articleCards = [
-  {
-    title: "Documentos para emplacamento sem atraso",
-    summary: "Guia rápido com os principais documentos para acelerar a aprovação na primeira análise.",
-  },
-  {
-    title: "Transferência veicular: principais cuidados",
-    summary: "Pontos críticos que mais geram pendências e como evitar atrasos no processo.",
-  },
-  {
-    title: "Gestão de frota com mais previsibilidade",
-    summary: "Boas práticas para organizar prazos, licenciamento e regularização de múltiplos veículos.",
-  },
-];
 
 
-const mercosulSteps = [
-  {
-    step: "1",
-    title: "Solicite a placa no Poupatempo",
-    description: "Acesse o site ou app do Poupatempo e peça a alteração da placa para o padrão Mercosul.",
-    color: "bg-[#facc15]",
-    border: "border-[#facc15]/70",
-    icon: FileSearch,
-  },
-  {
-    step: "2",
-    title: "Faça o laudo de vistoria",
-    description: "Leve o veículo para uma empresa credenciada de vistoria para confirmar as condições e emitir o laudo.",
-    color: "bg-[#ef4444]",
-    border: "border-[#ef4444]/70",
-    icon: Car,
-  },
-  {
-    step: "3",
-    title: "Conclua a etapa administrativa",
-    description: "Finalize o pedido no portal do Poupatempo, anexando o laudo e seguindo as instruções indicadas.",
-    color: "bg-[#38bdf8]",
-    border: "border-[#38bdf8]/70",
-    icon: Clock3,
-  },
-  {
-    step: "4",
-    title: "Aguarde a atualização do documento",
-    description: "Em até 7 dias úteis, o documento atualizado aparecerá na sua carteira digital constando a placa nova.",
-    color: "bg-[#fb923c]",
-    border: "border-[#fb923c]/70",
-    icon: FileCheck2,
-  },
-  {
-    step: "5",
-    title: "Emplaque na MAV",
-    description: "Com o documento (CRLV) atualizado, traga seu veículo até nossa loja para emplacar ou agende pelo WhatsApp.",
-    color: "bg-[#84cc16]",
-    border: "border-[#84cc16]/70",
-    icon: MessageCircle,
-  },
-];
 
 const heroSlides = [
   {
@@ -319,7 +261,7 @@ const Home = () => {
               <img src={mavLogo} alt="MAV Emplacadora" className="h-14 w-auto" />
             </div>
 
-            <div className="relative min-h-[250px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-4 sm:min-h-[250px] sm:p-6">
+            <div className="relative min-h-[300px] overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-background/80 via-background/70 to-primary/10 p-4 sm:min-h-[300px] sm:p-6">
               {heroSlides.map((slide, index) => (
                 <article
                   key={slide.title}
@@ -356,7 +298,7 @@ const Home = () => {
                 <a href="#servicos">Conhecer serviços</a>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="#fluxo">Ver como funciona</a>
+                <a href="#servicos">Ver fluxo de atendimento</a>
               </Button>
             </div>
 
@@ -383,32 +325,13 @@ const Home = () => {
         </div>
       </section>
 
-      <section id="artigos" className="reveal-on-scroll bg-card/40 py-20" data-reveal>
-        <div className="container">
-          <div className="mb-10 text-center">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
-              <Newspaper className="h-4 w-4" /> Artigos
-            </span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Conteúdo para orientar seu processo</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {articleCards.map((article) => (
-              <article key={article.title} className="reveal-on-scroll rounded-2xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md" data-reveal>
-                <h3 className="text-lg font-semibold">{article.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{article.summary}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section id="servicos" className="reveal-on-scroll bg-card/40 py-20" data-reveal>
         <div className="container">
           <div className="mb-12 text-center">
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Cobertura de serviços</span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Escolha o serviço e veja o detalhamento</h2>
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Escolha o serviço e acompanhe o fluxo completo</h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Reestruturamos a área para um layout com menu lateral e painel de detalhes, como referência visual enviada.
+              Visual mais organizado para apresentar serviços, etapas e ganho de previsibilidade em um só painel.
             </p>
           </div>
 
@@ -534,47 +457,6 @@ const Home = () => {
         </div>
       </section>
 
-      <section id="fluxo" className="reveal-on-scroll py-20" data-reveal>
-        <div className="container">
-          <div className="mb-10 text-center">
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Como trocar a placa cinza pela Mercosul</h2>
-            <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">
-              Criamos um passo a passo simples para orientar o cliente desde a solicitação no Poupatempo até o emplacamento final com a MAV.
-            </p>
-          </div>
-          <div className="mx-auto flex max-w-5xl flex-col gap-5">
-            {mercosulSteps.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <article
-                  key={item.step}
-                  className={`reveal-on-scroll flex items-start gap-4 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${item.border}`}
-                  data-reveal
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 bg-background text-sm font-bold text-foreground">
-                    {item.step}
-                  </div>
-                  <div className="flex-1">
-                    <div className={`mb-3 inline-flex rounded-full px-4 py-1.5 text-sm font-semibold text-slate-900 ${item.color}`}>
-                      {item.title}
-                    </div>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
-                  </div>
-                  <div className="hidden rounded-xl border border-border bg-background p-2 text-foreground/80 sm:block">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                </article>
-              );
-            })}
-            <div className="rounded-2xl bg-[#1f3262] px-6 py-4 text-sm font-semibold text-white sm:text-base">
-              Precisa de ajuda para concluir as etapas? Fale com a MAV no WhatsApp e agende seu emplacamento.
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="faq" className="reveal-on-scroll bg-card/50 py-20" data-reveal>
         <div className="container max-w-4xl">
           <div className="mb-10 text-center">
@@ -606,21 +488,19 @@ const Home = () => {
           href="https://www.instagram.com/mavemplacamento"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02] sm:px-6 sm:py-3 sm:text-base"
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02]"
           aria-label="Abrir Instagram"
         >
           <Instagram className="h-5 w-5" />
-          <span className="hidden sm:inline">Instagram</span>
         </a>
         <a
           href="https://wa.me/5500000000000"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d] sm:px-6 sm:py-3 sm:text-base"
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#16a34a] text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d]"
           aria-label="Abrir WhatsApp"
         >
           <WhatsAppIcon className="h-5 w-5" />
-          <span>WhatsApp</span>
         </a>
       </div>
 

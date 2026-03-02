@@ -176,6 +176,13 @@ const heroSlides = [
   },
 ];
 
+const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true" className={className}>
+    <path d="M19.11 17.12c-.25-.13-1.48-.73-1.71-.82-.23-.09-.4-.13-.57.13-.17.26-.65.82-.8.99-.15.17-.29.2-.54.07-.25-.13-1.05-.39-2.01-1.24-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.01-.39.11-.52.11-.11.25-.29.37-.43.12-.14.16-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.21-.5-.43-.43-.57-.43h-.49c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.43 1.03 2.6c.13.17 1.77 2.69 4.29 3.77.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.48-.61 1.69-1.2.21-.59.21-1.09.15-1.2-.06-.11-.23-.17-.48-.3z"/>
+    <path d="M16 3C8.83 3 3 8.83 3 16c0 2.29.6 4.53 1.74 6.5L3 29l6.67-1.7A12.95 12.95 0 0 0 16 29c7.17 0 13-5.83 13-13S23.17 3 16 3zm0 23.66c-1.95 0-3.86-.53-5.52-1.52l-.4-.24-3.96 1.01 1.06-3.86-.26-.4A10.58 10.58 0 0 1 5.33 16C5.33 10.3 10.3 5.33 16 5.33S26.67 10.3 26.67 16 21.7 26.66 16 26.66z"/>
+  </svg>
+);
+
 const Home = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeService, setActiveService] = useState(0);
@@ -304,11 +311,11 @@ const Home = () => {
         )}
       </header>
 
-      <section className="reveal-on-scroll relative overflow-hidden py-20 lg:py-28" data-reveal>
+      <section className="reveal-on-scroll relative overflow-hidden py-12 lg:py-24" data-reveal>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
         <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6 text-center lg:text-left">
-            <div className="relative min-h-[250px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-6">
+            <div className="relative min-h-[230px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-5 sm:min-h-[250px] sm:p-6">
               {heroSlides.map((slide, index) => (
                 <article
                   key={slide.title}
@@ -323,8 +330,8 @@ const Home = () => {
                   <span className="inline-flex w-fit items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                     {slide.badge}
                   </span>
-                  <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">{slide.title}</h1>
-                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">{slide.description}</p>
+                  <h1 className="mt-3 text-[2rem] font-black leading-tight sm:text-4xl lg:text-5xl">{slide.title}</h1>
+                  <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-lg">{slide.description}</p>
                 </article>
               ))}
             </div>
@@ -340,7 +347,7 @@ const Home = () => {
               ))}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+            <div className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row sm:flex-wrap lg:justify-start">
               <Button asChild size="lg">
                 <a href="#servicos">Conhecer serviços</a>
               </Button>
@@ -423,10 +430,11 @@ const Home = () => {
                       <div className="rounded-lg border border-white/20 bg-[#0a1a3a] p-2 text-white">
                         <Icon className="h-4 w-4" />
                       </div>
-                      <div>
-                        <p className="text-base font-semibold text-white">{service.title}</p>
-                        <p className="text-xs uppercase tracking-wider text-slate-300">{service.category}</p>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold leading-snug text-white sm:text-base">{service.title}</p>
+                        <p className="text-[11px] uppercase tracking-wider text-slate-300">{service.category}</p>
                       </div>
+                      {isActive && <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Ativo</span>}
                     </div>
                   </button>
                 );
@@ -434,14 +442,14 @@ const Home = () => {
               </div>
             </aside>
 
-            <article className="rounded-3xl border border-white/10 bg-[#030b1f] p-6 text-white shadow-2xl shadow-[#020817]/70 sm:p-8">
+            <article className="rounded-3xl border border-white/10 bg-[#030b1f] p-5 text-white shadow-2xl shadow-[#020817]/70 sm:p-8">
               <span className="inline-flex items-center rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                 {serviceCards[activeService].category}
               </span>
               <h3 className="mt-4 text-2xl font-bold sm:text-3xl">{serviceCards[activeService].title}</h3>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">{serviceCards[activeService].description}</p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-2.5 sm:grid-cols-2 sm:gap-3">
                 {serviceCards[activeService].bullets.map((bullet) => (
                   <div key={bullet} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-100">
                     {bullet}
@@ -461,7 +469,7 @@ const Home = () => {
                 ))}
               </div>
 
-              <Button asChild className="mt-8 rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a]">
+              <Button asChild className="mt-7 w-full rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a] sm:mt-8 sm:w-fit">
                 <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Solicitar atendimento da MAV</a>
               </Button>
             </article>

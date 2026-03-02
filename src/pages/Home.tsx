@@ -5,10 +5,7 @@ import {
   Building2,
   Car,
   ChevronRight,
-  Clock3,
   FileCheck2,
-  FileSearch,
-  MapPin,
   Megaphone,
   MessageCircle,
   Instagram,
@@ -36,18 +33,24 @@ const serviceCards = [
     title: "Primeiro Emplacamento",
     description: "Conduzimos todo o processo do veículo zero com conferência, abertura e finalização sem complicação.",
     bullets: ["Checklist documental", "Abertura de processo", "Acompanhamento até entrega"],
+    steps: ["Envio e validação dos documentos", "Abertura do processo no órgão", "Emissão e instalação da placa"],
+    badgeColor: "bg-[#facc15]",
     icon: Car,
   },
   {
     title: "Transferência de Propriedade",
     description: "Atendimento completo para transferência com orientação clara e redução de retrabalho nas etapas críticas.",
     bullets: ["Triagem de pendências", "Emissão de guias", "Atualização de status"],
+    steps: ["Conferência de débitos e impedimentos", "Apoio na vistoria e documentação", "Finalização da transferência no sistema"],
+    badgeColor: "bg-[#fb7185]",
     icon: FileCheck2,
   },
   {
     title: "Licenciamento e Regularização",
     description: "Mantemos veículos e frotas em conformidade com fluxo previsível, histórico e controle por atendimento.",
     bullets: ["Suporte PF e PJ", "Controle por veículo", "Histórico organizado"],
+    steps: ["Levantamento das pendências", "Pagamento e atualização de taxas", "Liberação e confirmação do status"],
+    badgeColor: "bg-[#4ade80]",
     icon: ShieldCheck,
   },
 ];
@@ -87,6 +90,7 @@ const updates = [
   "Painel com acompanhamento de pedidos por etapa para clientes e equipe.",
   "Publicações semanais com orientações práticas para emplacamento e regularização.",
 ];
+
 
 const heroSlides = [
   {
@@ -284,9 +288,9 @@ const Home = () => {
         <div className="container">
           <div className="mb-12 text-center">
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços essenciais para sua operação</h2>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços em formato de etapas</h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Conheça os principais serviços da MAV com etapas claras e acompanhamento em cada fase do atendimento.
+              Mantivemos os cards no tema de placas e adicionamos tópicos com as possíveis etapas para cada serviço principal.
             </p>
           </div>
 
@@ -294,7 +298,7 @@ const Home = () => {
             {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
-                <article key={service.title} className="reveal-on-scroll group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 border-border/70 bg-gradient-to-b from-white to-slate-50 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg" data-reveal>
+                <article key={service.title} className="reveal-on-scroll group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 border-border/70 bg-gradient-to-b from-[#08163e] to-[#0f255f] p-5 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg" data-reveal>
                   <div className="-mx-5 -mt-5 mb-5 rounded-t-2xl bg-[#003399] px-4 py-2 text-white shadow-sm">
                     <div className="flex items-center justify-between gap-2">
                       <img src={mercosulLogo} alt="Logo Mercosul" className="h-5 w-auto" />
@@ -303,21 +307,37 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="mb-4 flex items-center gap-3">
-                    <div className="inline-flex rounded-xl bg-primary/10 p-2 text-primary">
+                    <div className="inline-flex rounded-xl bg-white/15 p-2 text-white">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Etapas do serviço</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-200">Principais serviços</p>
                   </div>
-                  <h3 className="mt-1 text-lg font-bold text-[#003399]">{service.title}</h3>
+                  <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
+                  <p className="mt-3 rounded-xl bg-white/5 px-3 py-3 text-sm leading-relaxed text-slate-200">{service.description}</p>
                   <ul className="mt-4 space-y-2 text-sm">
                     {service.bullets.map((bullet) => (
-                      <li key={bullet} className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-700 px-3 py-2 text-slate-100">
+                      <li key={bullet} className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-slate-100">
                         <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
                         <span>{bullet}</span>
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-4 rounded-xl bg-primary/5 px-3 py-3 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
+
+                  <div className="mt-5 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Etapas possíveis</p>
+                    {service.steps.map((step, index) => (
+                      <div key={step} className="flex items-center gap-3 rounded-xl border border-white/15 bg-[#051233] px-3 py-2 text-sm text-slate-100">
+                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-slate-900 ${service.badgeColor}`}>
+                          {index + 1}
+                        </span>
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button asChild className="mt-6 w-full rounded-xl bg-[#25d366] text-slate-900 hover:bg-[#1eb85a]">
+                    <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Precisa de ajuda da MAV?</a>
+                  </Button>
                 </article>
               );
             })}
@@ -326,40 +346,15 @@ const Home = () => {
       </section>
 
       <section id="fluxo" className="reveal-on-scroll py-20" data-reveal>
-        <div className="container">
-          <div className="mb-10 text-center">
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Etapas organizadas para evitar retrabalho</h2>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="reveal-on-scroll flex items-start gap-4 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md" data-reveal>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-              <MapPin className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="mb-1 text-lg font-semibold">Coleta e conferência inicial</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">Recebemos os dados, validamos documentos e iniciamos o processo com checklist técnico.</p>
-            </div>
-          </div>
-          <div className="reveal-on-scroll flex items-start gap-4 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md" data-reveal>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-              <FileSearch className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="mb-1 text-lg font-semibold">Acompanhamento por etapa</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">Cada pedido evolui com status visível para cliente e equipe, reduzindo ruído na comunicação.</p>
-            </div>
-          </div>
-          <div className="reveal-on-scroll flex items-start gap-4 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md" data-reveal>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
-              <Clock3 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="mb-1 text-lg font-semibold">Entrega com prazo definido</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">Fluxo operacional padronizado para previsibilidade e melhor experiência no atendimento.</p>
-            </div>
-          </div>
-          </div>
+        <div className="container max-w-5xl rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/15 to-background p-8 text-center shadow-sm">
+          <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
+          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Cada serviço segue um passo a passo claro</h2>
+          <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">
+            Nossos cards mostram os serviços principais e as possíveis etapas para você entender o processo antes de iniciar.
+          </p>
+          <Button asChild size="lg" className="mt-6">
+            <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Precisa de ajuda da MAV?</a>
+          </Button>
         </div>
       </section>
 

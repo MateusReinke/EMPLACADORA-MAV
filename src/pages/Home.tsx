@@ -8,12 +8,14 @@ import {
   Clock3,
   FileCheck2,
   FileSearch,
+  Menu,
   MessageCircle,
   Instagram,
   Newspaper,
   ShieldCheck,
   Sparkles,
   Star,
+  X,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
@@ -174,9 +176,17 @@ const heroSlides = [
   },
 ];
 
+const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true" className={className}>
+    <path d="M19.11 17.12c-.25-.13-1.48-.73-1.71-.82-.23-.09-.4-.13-.57.13-.17.26-.65.82-.8.99-.15.17-.29.2-.54.07-.25-.13-1.05-.39-2.01-1.24-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.01-.39.11-.52.11-.11.25-.29.37-.43.12-.14.16-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.21-.5-.43-.43-.57-.43h-.49c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.43 1.03 2.6c.13.17 1.77 2.69 4.29 3.77.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.48-.61 1.69-1.2.21-.59.21-1.09.15-1.2-.06-.11-.23-.17-.48-.3z"/>
+    <path d="M16 3C8.83 3 3 8.83 3 16c0 2.29.6 4.53 1.74 6.5L3 29l6.67-1.7A12.95 12.95 0 0 0 16 29c7.17 0 13-5.83 13-13S23.17 3 16 3zm0 23.66c-1.95 0-3.86-.53-5.52-1.52l-.4-.24-3.96 1.01 1.06-3.86-.26-.4A10.58 10.58 0 0 1 5.33 16C5.33 10.3 10.3 5.33 16 5.33S26.67 10.3 26.67 16 21.7 26.66 16 26.66z"/>
+  </svg>
+);
+
 const Home = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeService, setActiveService] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -228,11 +238,36 @@ const Home = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const closeMenuOnDesktop = () => {
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    closeMenuOnDesktop();
+    window.addEventListener("resize", closeMenuOnDesktop);
+
+    return () => {
+      window.removeEventListener("resize", closeMenuOnDesktop);
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-background" itemScope itemType="https://schema.org/ProfessionalService">
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-between">
           <img src={mavLogo} alt="MAV Emplacadora" className="h-10 w-auto" />
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((current) => !current)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card/70 text-foreground transition hover:bg-accent md:hidden"
+            aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
 
           <nav className="hidden items-center gap-3 md:flex">
             {navItems.map((item) => (
@@ -251,13 +286,36 @@ const Home = () => {
             </Button>
           </nav>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="border-t border-border bg-background px-4 py-4 md:hidden">
+            <nav className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <Button asChild size="sm" variant="secondary" className="justify-start">
+                <Link to="/login?perfil=colaborador">Login Colaborador</Link>
+              </Button>
+              <Button asChild size="sm" className="justify-start">
+                <Link to="/login?perfil=gestao">Login Vendedor/Admin</Link>
+              </Button>
+            </nav>
+          </div>
+        )}
       </header>
 
-      <section className="reveal-on-scroll relative overflow-hidden py-20 lg:py-28" data-reveal>
+      <section className="reveal-on-scroll relative overflow-hidden py-12 lg:py-24" data-reveal>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
         <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6 text-center lg:text-left">
-            <div className="relative min-h-[250px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-6">
+            <div className="relative min-h-[230px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-5 sm:min-h-[250px] sm:p-6">
               {heroSlides.map((slide, index) => (
                 <article
                   key={slide.title}
@@ -272,8 +330,8 @@ const Home = () => {
                   <span className="inline-flex w-fit items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                     {slide.badge}
                   </span>
-                  <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">{slide.title}</h1>
-                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">{slide.description}</p>
+                  <h1 className="mt-3 text-[2rem] font-black leading-tight sm:text-4xl lg:text-5xl">{slide.title}</h1>
+                  <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-lg">{slide.description}</p>
                 </article>
               ))}
             </div>
@@ -289,7 +347,7 @@ const Home = () => {
               ))}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+            <div className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row sm:flex-wrap lg:justify-start">
               <Button asChild size="lg">
                 <a href="#servicos">Conhecer serviços</a>
               </Button>
@@ -350,8 +408,10 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[0.42fr_0.58fr]">
-            <aside className="max-h-[560px] space-y-3 overflow-y-auto rounded-3xl border border-white/10 bg-[#07142e] p-4 shadow-2xl shadow-[#020817]/60">
+          <div className="grid gap-4 lg:gap-6 lg:grid-cols-[0.42fr_0.58fr]">
+            <aside className="rounded-3xl border border-white/10 bg-[#07142e] p-3 shadow-2xl shadow-[#020817]/60 sm:p-4 lg:max-h-[560px] lg:overflow-y-auto">
+              <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Toque em um serviço</p>
+              <div className="space-y-2.5 lg:space-y-3">
               {serviceCards.map((service, index) => {
                 const Icon = service.icon;
                 const isActive = index === activeService;
@@ -361,7 +421,7 @@ const Home = () => {
                     key={service.title}
                     type="button"
                     onClick={() => setActiveService(index)}
-                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                    className={`w-full rounded-2xl border px-3.5 py-3.5 text-left transition sm:px-4 sm:py-4 ${
                       isActive
                         ? "border-cyan-300/60 bg-[#0b1f46]"
                         : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
@@ -371,24 +431,26 @@ const Home = () => {
                       <div className="rounded-lg border border-white/20 bg-[#0a1a3a] p-2 text-white">
                         <Icon className="h-4 w-4" />
                       </div>
-                      <div>
-                        <p className="text-base font-semibold text-white">{service.title}</p>
-                        <p className="text-xs uppercase tracking-wider text-slate-300">{service.category}</p>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold leading-snug text-white sm:text-base">{service.title}</p>
+                        <p className="text-[11px] uppercase tracking-wider text-slate-300">{service.category}</p>
                       </div>
+                      {isActive && <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">Ativo</span>}
                     </div>
                   </button>
                 );
               })}
+              </div>
             </aside>
 
-            <article className="rounded-3xl border border-white/10 bg-[#030b1f] p-6 text-white shadow-2xl shadow-[#020817]/70 sm:p-8">
+            <article className="rounded-3xl border border-white/10 bg-[#030b1f] p-5 text-white shadow-2xl shadow-[#020817]/70 sm:p-8">
               <span className="inline-flex items-center rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                 {serviceCards[activeService].category}
               </span>
-              <h3 className="mt-4 text-3xl font-bold">{serviceCards[activeService].title}</h3>
+              <h3 className="mt-4 text-2xl font-bold sm:text-3xl">{serviceCards[activeService].title}</h3>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">{serviceCards[activeService].description}</p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-2.5 sm:grid-cols-2 sm:gap-3">
                 {serviceCards[activeService].bullets.map((bullet) => (
                   <div key={bullet} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-100">
                     {bullet}
@@ -408,7 +470,7 @@ const Home = () => {
                 ))}
               </div>
 
-              <Button asChild className="mt-8 rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a]">
+              <Button asChild className="mt-7 w-full rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a] sm:mt-8 sm:w-fit">
                 <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Solicitar atendimento da MAV</a>
               </Button>
             </article>
@@ -483,26 +545,26 @@ const Home = () => {
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2 sm:bottom-6 sm:right-6 sm:gap-3">
         <a
           href="https://www.instagram.com/mavemplacamento"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02]"
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02] sm:px-6 sm:py-3 sm:text-base"
           aria-label="Abrir Instagram"
         >
           <Instagram className="h-5 w-5" />
-          Instagram
+          <span className="hidden sm:inline">Instagram</span>
         </a>
         <a
           href="https://wa.me/5500000000000"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d]"
+          className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d] sm:px-6 sm:py-3 sm:text-base"
           aria-label="Abrir WhatsApp"
         >
-          <MessageCircle className="h-5 w-5" />
-          WhatsApp
+          <WhatsAppIcon className="h-5 w-5" />
+          <span className="hidden sm:inline">WhatsApp</span>
         </a>
       </div>
 

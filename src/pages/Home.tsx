@@ -8,12 +8,14 @@ import {
   Clock3,
   FileCheck2,
   FileSearch,
+  Menu,
   MessageCircle,
   Instagram,
   Newspaper,
   ShieldCheck,
   Sparkles,
   Star,
+  X,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
@@ -177,6 +179,7 @@ const heroSlides = [
 const Home = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeService, setActiveService] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -228,11 +231,36 @@ const Home = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const closeMenuOnDesktop = () => {
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    closeMenuOnDesktop();
+    window.addEventListener("resize", closeMenuOnDesktop);
+
+    return () => {
+      window.removeEventListener("resize", closeMenuOnDesktop);
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-background" itemScope itemType="https://schema.org/ProfessionalService">
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-between">
           <img src={mavLogo} alt="MAV Emplacadora" className="h-10 w-auto" />
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((current) => !current)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card/70 text-foreground transition hover:bg-accent md:hidden"
+            aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
 
           <nav className="hidden items-center gap-3 md:flex">
             {navItems.map((item) => (
@@ -251,6 +279,29 @@ const Home = () => {
             </Button>
           </nav>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="border-t border-border bg-background px-4 py-4 md:hidden">
+            <nav className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <Button asChild size="sm" variant="secondary" className="justify-start">
+                <Link to="/login?perfil=colaborador">Login Colaborador</Link>
+              </Button>
+              <Button asChild size="sm" className="justify-start">
+                <Link to="/login?perfil=gestao">Login Vendedor/Admin</Link>
+              </Button>
+            </nav>
+          </div>
+        )}
       </header>
 
       <section className="reveal-on-scroll relative overflow-hidden py-20 lg:py-28" data-reveal>
@@ -351,7 +402,8 @@ const Home = () => {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[0.42fr_0.58fr]">
-            <aside className="max-h-[560px] space-y-3 overflow-y-auto rounded-3xl border border-white/10 bg-[#07142e] p-4 shadow-2xl shadow-[#020817]/60">
+            <aside className="rounded-3xl border border-white/10 bg-[#07142e] p-4 shadow-2xl shadow-[#020817]/60 lg:max-h-[560px] lg:overflow-y-auto">
+              <div className="flex gap-3 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible">
               {serviceCards.map((service, index) => {
                 const Icon = service.icon;
                 const isActive = index === activeService;
@@ -361,7 +413,7 @@ const Home = () => {
                     key={service.title}
                     type="button"
                     onClick={() => setActiveService(index)}
-                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                    className={`min-w-[250px] rounded-2xl border px-4 py-4 text-left transition lg:min-w-0 lg:w-full ${
                       isActive
                         ? "border-cyan-300/60 bg-[#0b1f46]"
                         : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
@@ -379,13 +431,14 @@ const Home = () => {
                   </button>
                 );
               })}
+              </div>
             </aside>
 
             <article className="rounded-3xl border border-white/10 bg-[#030b1f] p-6 text-white shadow-2xl shadow-[#020817]/70 sm:p-8">
               <span className="inline-flex items-center rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                 {serviceCards[activeService].category}
               </span>
-              <h3 className="mt-4 text-3xl font-bold">{serviceCards[activeService].title}</h3>
+              <h3 className="mt-4 text-2xl font-bold sm:text-3xl">{serviceCards[activeService].title}</h3>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">{serviceCards[activeService].description}</p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -483,26 +536,26 @@ const Home = () => {
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2 sm:bottom-6 sm:right-6 sm:gap-3">
         <a
           href="https://www.instagram.com/mavemplacamento"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02]"
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02] sm:px-6 sm:py-3 sm:text-base"
           aria-label="Abrir Instagram"
         >
           <Instagram className="h-5 w-5" />
-          Instagram
+          <span className="hidden sm:inline">Instagram</span>
         </a>
         <a
           href="https://wa.me/5500000000000"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d]"
+          className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d] sm:px-6 sm:py-3 sm:text-base"
           aria-label="Abrir WhatsApp"
         >
           <MessageCircle className="h-5 w-5" />
-          WhatsApp
+          <span className="hidden sm:inline">WhatsApp</span>
         </a>
       </div>
 

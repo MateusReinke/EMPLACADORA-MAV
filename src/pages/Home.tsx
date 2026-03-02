@@ -172,29 +172,41 @@ const Home = () => {
 
     if (!revealElements.length) return;
 
+    revealElements.forEach((element, index) => {
+      element.style.transitionDelay = `${Math.min(index * 45, 220)}ms`;
+    });
+
+    if (typeof window === "undefined" || typeof window.IntersectionObserver === "undefined") {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const element = entry.target as HTMLElement;
           if (entry.isIntersecting) {
-            element.classList.add("is-visible");
-          } else {
-            element.classList.remove("is-visible");
+            (entry.target as HTMLElement).classList.add("is-visible");
           }
         });
       },
       {
-        threshold: 0.2,
-        rootMargin: "0px 0px -10% 0px",
+        threshold: 0.05,
+        rootMargin: "0px 0px -5% 0px",
       },
     );
 
-    revealElements.forEach((element, index) => {
-      element.style.transitionDelay = `${Math.min(index * 45, 220)}ms`;
+    revealElements.forEach((element) => {
       observer.observe(element);
     });
 
-    return () => observer.disconnect();
+    const fallbackTimer = window.setTimeout(() => {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+    }, 900);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      observer.disconnect();
+    };
   }, []);
 
   return (

@@ -16,10 +16,6 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
-  MessageCircle,
-  Instagram,
-  Newspaper,
-  Megaphone,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
@@ -90,24 +86,6 @@ const updates = [
   "Atendimento digital com resposta mais rápida para dúvidas de documentação.",
   "Painel com acompanhamento de pedidos por etapa para clientes e equipe.",
   "Publicações semanais com orientações práticas para emplacamento e regularização.",
-];
-
-const heroSlides = [
-  {
-    badge: "MAV Emplacadora",
-    title: "Soluções completas em emplacamento e documentação veicular",
-    description: "Atendemos pessoa física e jurídica com processo organizado, orientação técnica e acompanhamento em todas as etapas.",
-  },
-  {
-    badge: "Novidades",
-    title: "Informações atualizadas para decisões mais rápidas",
-    description: "Novos conteúdos e atualizações de serviço para reduzir dúvidas e dar mais previsibilidade ao cliente.",
-  },
-  {
-    badge: "Conteúdo Estratégico",
-    title: "Página preparada para atrair tráfego orgânico qualificado",
-    description: "Estrutura com conteúdo útil e termos de busca do segmento para aumentar alcance e gerar mais contatos.",
-  },
 ];
 
 const heroSlides = [

@@ -11,6 +11,7 @@ import {
   MapPin,
   Megaphone,
   MessageCircle,
+  Instagram,
   Newspaper,
   ShieldCheck,
   Sparkles,
@@ -289,11 +290,11 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
-                <article key={service.title} className="reveal-on-scroll group relative overflow-hidden rounded-3xl border-2 border-border/70 bg-gradient-to-b from-white to-slate-50 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg" data-reveal>
+                <article key={service.title} className="reveal-on-scroll group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 border-border/70 bg-gradient-to-b from-white to-slate-50 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg" data-reveal>
                   <div className="-mx-5 -mt-5 mb-5 rounded-t-2xl bg-[#003399] px-4 py-2 text-white shadow-sm">
                     <div className="flex items-center justify-between gap-2">
                       <img src={mercosulLogo} alt="Logo Mercosul" className="h-5 w-auto" />
@@ -301,14 +302,19 @@ const Home = () => {
                       <img src={brazilFlag} alt="Bandeira do Brasil" className="h-5 w-auto" />
                     </div>
                   </div>
-                  <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
-                    <Icon className="h-5 w-5" />
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="inline-flex rounded-xl bg-primary/10 p-2 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Etapas do serviço</p>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Etapas do serviço</p>
                   <h3 className="mt-1 text-lg font-bold text-[#003399]">{service.title}</h3>
                   <ul className="mt-4 space-y-2 text-sm">
                     {service.bullets.map((bullet) => (
-                      <li key={bullet} className="rounded-lg border border-slate-300 bg-slate-700 px-3 py-2 text-slate-100">• {bullet}</li>
+                      <li key={bullet} className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-700 px-3 py-2 text-slate-100">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+                        <span>{bullet}</span>
+                      </li>
                     ))}
                   </ul>
                   <p className="mt-4 rounded-xl bg-primary/5 px-3 py-3 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
@@ -320,7 +326,12 @@ const Home = () => {
       </section>
 
       <section id="fluxo" className="reveal-on-scroll py-20" data-reveal>
-        <div className="container grid grid-cols-1 gap-10 md:grid-cols-3">
+        <div className="container">
+          <div className="mb-10 text-center">
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Etapas organizadas para evitar retrabalho</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="reveal-on-scroll flex items-start gap-4 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md" data-reveal>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
               <MapPin className="h-6 w-6 text-primary" />
@@ -347,6 +358,7 @@ const Home = () => {
               <h3 className="mb-1 text-lg font-semibold">Entrega com prazo definido</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">Fluxo operacional padronizado para previsibilidade e melhor experiência no atendimento.</p>
             </div>
+          </div>
           </div>
         </div>
       </section>
@@ -377,7 +389,17 @@ const Home = () => {
         </div>
       </footer>
 
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        <a
+          href="https://www.instagram.com/mavemplacamento"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-pink-900/30 transition hover:scale-[1.02]"
+          aria-label="Abrir Instagram"
+        >
+          <Instagram className="h-5 w-5" />
+          Instagram
+        </a>
         <a
           href="https://wa.me/5500000000000"
           target="_blank"

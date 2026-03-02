@@ -16,11 +16,15 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  MessageCircle,
+  Instagram,
+  Newspaper,
+  Megaphone,
 } from "lucide-react";
 
 import mavLogo from "@/assets/mav-emplacamento-logo.svg";
-import brazilFlag from "@/assets/brazil-flag.svg";
 import mercosulLogo from "@/assets/logo-mercosul-blanco.svg";
+import brazilFlag from "@/assets/brazil-flag.svg";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -106,6 +110,27 @@ const heroSlides = [
   },
 ];
 
+const heroSlides = [
+  {
+    badge: "MAV Emplacadora",
+    title: "Especialistas em emplacamento e regularização veicular",
+    description:
+      "Atendimento completo para primeiro emplacamento, transferência, licenciamento e rotinas de frota com apoio técnico do início ao fim.",
+  },
+  {
+    badge: "Novidade",
+    title: "Acompanhamento de pedidos em tempo real",
+    description:
+      "Clientes e equipes acompanham o status de cada processo por etapa, reduzindo dúvidas e acelerando decisões.",
+  },
+  {
+    badge: "SEO e Conteúdo",
+    title: "Conteúdo útil para atrair mais cliques orgânicos",
+    description:
+      "Publicações com dúvidas reais de emplacamento aumentam relevância no Google e fortalecem a confiança de novos clientes.",
+  },
+];
+
 const Home = () => {
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -115,33 +140,6 @@ const Home = () => {
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const revealElements = document.querySelectorAll<HTMLElement>("[data-reveal]");
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-          } else {
-            entry.target.classList.remove("is-visible");
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-
-    revealElements.forEach((element) => {
-      element.classList.add("reveal-on-scroll");
-      observer.observe(element);
-    });
-
-    return () => {
-      revealElements.forEach((element) => observer.unobserve(element));
-      observer.disconnect();
-    };
   }, []);
 
   return (
@@ -173,11 +171,11 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/5" />
         <div className="container relative grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6 text-center lg:text-left">
-            <div className="relative min-h-[260px] overflow-hidden rounded-3xl border border-primary/20 bg-background/70 shadow-xl">
+            <div className="relative min-h-[250px] overflow-hidden rounded-2xl border border-primary/20 bg-background/60 p-6">
               {heroSlides.map((slide, index) => (
                 <article
                   key={slide.title}
-                  className={`absolute inset-0 flex flex-col justify-center p-6 transition-all duration-700 lg:p-8 ${
+                  className={`absolute inset-0 flex flex-col justify-center p-6 text-center transition-all duration-700 lg:text-left ${
                     index === activeSlide
                       ? "translate-x-0 opacity-100"
                       : index < activeSlide
@@ -218,6 +216,12 @@ const Home = () => {
                   Direct no Instagram
                 </a>
               </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-muted-foreground lg:justify-start">
+              <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Atendimento PF e PJ</span>
+              <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Acompanhamento por etapas</span>
+              <span className="rounded-full border border-border/80 bg-card/60 px-3 py-1">Gestão por perfil de usuário</span>
             </div>
           </div>
 
@@ -279,25 +283,29 @@ const Home = () => {
           <div className="mb-12 text-center">
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
             <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços essenciais para sua operação</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+              Cards em padrão visual de placa Mercosul para reforçar identidade e credibilidade na apresentação dos serviços.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
-                <article key={service.title} className="group relative overflow-hidden rounded-3xl border-2 border-border/70 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md" data-reveal>
+                <article key={service.title} className="group relative overflow-hidden rounded-3xl border-2 border-border/70 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:border-primary/40">
                   <div className="-mx-5 -mt-5 mb-5 rounded-t-2xl bg-[#003399] px-4 py-2 text-white">
                     <div className="flex items-center justify-between gap-2">
                       <img src={mercosulLogo} alt="Logo Mercosul" className="h-5 w-auto" />
-                      <p className="text-center text-xs font-bold uppercase tracking-wider">{service.title}</p>
+                      <p className="text-center text-xs font-bold uppercase tracking-wider">Brasil • Serviços MAV</p>
                       <img src={brazilFlag} alt="Bandeira do Brasil" className="h-5 w-auto" />
                     </div>
                   </div>
-
                   <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{service.description}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Padrão Mercosul</p>
+                  <h3 className="mt-1 text-lg font-bold text-[#003399]">{service.title}</h3>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
                   <ul className="mt-4 space-y-2 text-sm">
                     {service.bullets.map((bullet) => (
                       <li key={bullet} className="rounded-lg border bg-background/80 px-3 py-2">• {bullet}</li>

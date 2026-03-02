@@ -5,9 +5,9 @@ import {
   Building2,
   Car,
   ChevronRight,
+  Clock3,
   FileCheck2,
   FileSearch,
-  Megaphone,
   MessageCircle,
   Instagram,
   Newspaper,
@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { label: "Serviços", href: "#servicos" },
   { label: "Artigos", href: "#artigos" },
-  { label: "Novidades", href: "#novidades" },
   { label: "Fluxo", href: "#fluxo" },
   { label: "FAQ", href: "#faq" },
 ];
@@ -32,27 +31,51 @@ const navItems = [
 const serviceCards = [
   {
     title: "Primeiro Emplacamento",
-    description: "Conduzimos todo o processo do veículo zero com conferência, abertura e finalização sem complicação.",
-    bullets: ["Checklist documental", "Abertura de processo", "Acompanhamento até entrega"],
-    steps: ["Envio e validação dos documentos", "Abertura do processo no órgão", "Emissão e instalação da placa"],
-    badgeColor: "bg-[#facc15]",
+    category: "Veículo 0km",
+    description: "Processo completo para veículo novo com checklist e finalização segura.",
+    bullets: ["Conferência documental", "Abertura no sistema", "Suporte até instalação da placa"],
+    steps: ["Validação dos documentos", "Cadastro e protocolo", "Emissão e instalação"],
     icon: Car,
   },
   {
     title: "Transferência de Propriedade",
-    description: "Atendimento completo para transferência com orientação clara e redução de retrabalho nas etapas críticas.",
-    bullets: ["Triagem de pendências", "Emissão de guias", "Atualização de status"],
-    steps: ["Conferência de débitos e impedimentos", "Apoio na vistoria e documentação", "Finalização da transferência no sistema"],
-    badgeColor: "bg-[#fb7185]",
+    category: "Compra e venda",
+    description: "Organização de cada etapa para reduzir pendências e acelerar a transferência.",
+    bullets: ["Triagem de débitos", "Emissão de guias", "Atualização em tempo real"],
+    steps: ["Análise inicial", "Apoio em vistoria", "Conclusão da transferência"],
     icon: FileCheck2,
   },
   {
-    title: "Licenciamento e Regularização",
-    description: "Mantemos veículos e frotas em conformidade com fluxo previsível, histórico e controle por atendimento.",
-    bullets: ["Suporte PF e PJ", "Controle por veículo", "Histórico organizado"],
-    steps: ["Levantamento das pendências", "Pagamento e atualização de taxas", "Liberação e confirmação do status"],
-    badgeColor: "bg-[#4ade80]",
+    title: "Licenciamento Anual",
+    category: "Regularização",
+    description: "Licenciamento de veículos com acompanhamento por etapa e prazo.",
+    bullets: ["Consulta de pendências", "Pagamentos orientados", "Confirmação de liberação"],
+    steps: ["Levantamento", "Regularização", "Confirmação final"],
     icon: ShieldCheck,
+  },
+  {
+    title: "2ª Via de CRLV e documentos",
+    category: "Documentação",
+    description: "Emissão de segunda via com orientação clara para pessoa física e jurídica.",
+    bullets: ["Atendimento digital", "Checklist de exigências", "Status por atendimento"],
+    steps: ["Solicitação", "Validação", "Entrega digital"],
+    icon: FileSearch,
+  },
+  {
+    title: "Placa Mercosul e substituição",
+    category: "Placas",
+    description: "Troca para padrão Mercosul, incluindo suporte em todas as exigências.",
+    bullets: ["Orientação de vistoria", "Conferência de dados", "Agendamento de instalação"],
+    steps: ["Solicitação", "Vistoria", "Emplacamento"],
+    icon: Clock3,
+  },
+  {
+    title: "Atendimento para frotas",
+    category: "Empresas",
+    description: "Gestão de múltiplos veículos com acompanhamento centralizado por lote.",
+    bullets: ["Painel por empresa", "Priorização por urgência", "Histórico por veículo"],
+    steps: ["Mapeamento da frota", "Plano de execução", "Relatório de conclusão"],
+    icon: Building2,
   },
 ];
 
@@ -86,11 +109,6 @@ const articleCards = [
   },
 ];
 
-const updates = [
-  "Atendimento digital com resposta mais rápida para dúvidas de documentação.",
-  "Painel com acompanhamento de pedidos por etapa para clientes e equipe.",
-  "Publicações semanais com orientações práticas para emplacamento e regularização.",
-];
 
 const mercosulSteps = [
   {
@@ -158,6 +176,7 @@ const heroSlides = [
 
 const Home = () => {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [activeService, setActiveService] = useState(0);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -321,81 +340,78 @@ const Home = () => {
         </div>
       </section>
 
-      <section id="novidades" className="reveal-on-scroll py-20" data-reveal>
-        <div className="container max-w-4xl rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8 shadow-sm">
-          <div className="mb-6 text-center">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
-              <Megaphone className="h-4 w-4" /> Novidades
-            </span>
-            <h2 className="mt-2 text-3xl font-bold">O que está novo na MAV</h2>
-          </div>
-          <ul className="space-y-3">
-            {updates.map((item) => (
-              <li key={item} className="reveal-on-scroll rounded-xl border border-border bg-background/80 px-4 py-3 text-sm shadow-sm" data-reveal>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
       <section id="servicos" className="reveal-on-scroll bg-card/40 py-20" data-reveal>
         <div className="container">
           <div className="mb-12 text-center">
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
-            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços em formato de etapas</h2>
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Cobertura de serviços</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Escolha o serviço e veja o detalhamento</h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Mantivemos os cards no tema de placas e adicionamos tópicos com as possíveis etapas para cada serviço principal.
+              Reestruturamos a área para um layout com menu lateral e painel de detalhes, como referência visual enviada.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {serviceCards.map((service) => {
-              const Icon = service.icon;
-              return (
-                <article key={service.title} className="reveal-on-scroll group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 border-border/70 bg-gradient-to-b from-[#08163e] to-[#0f255f] p-5 text-left text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg" data-reveal>
-                  <div className="-mx-5 -mt-5 mb-5 rounded-t-2xl bg-[#003399] px-4 py-2 text-white shadow-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <img src={mercosulLogo} alt="Logo Mercosul" className="h-5 w-auto" />
-                      <p className="text-center text-xs font-bold uppercase tracking-wider">{service.title}</p>
-                      <img src={brazilFlag} alt="Bandeira do Brasil" className="h-5 w-auto" />
-                    </div>
-                  </div>
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="inline-flex rounded-xl bg-white/15 p-2 text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-200">Principais serviços</p>
-                  </div>
-                  <h3 className="mt-1 text-lg font-bold">{service.title}</h3>
-                  <p className="mt-3 rounded-xl bg-white/5 px-3 py-3 text-sm leading-relaxed text-slate-200">{service.description}</p>
-                  <ul className="mt-4 space-y-2 text-sm">
-                    {service.bullets.map((bullet) => (
-                      <li key={bullet} className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-slate-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
+          <div className="grid gap-6 lg:grid-cols-[0.42fr_0.58fr]">
+            <aside className="max-h-[560px] space-y-3 overflow-y-auto rounded-3xl border border-white/10 bg-[#07142e] p-4 shadow-2xl shadow-[#020817]/60">
+              {serviceCards.map((service, index) => {
+                const Icon = service.icon;
+                const isActive = index === activeService;
 
-                  <div className="mt-5 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Etapas possíveis</p>
-                    {service.steps.map((step, index) => (
-                      <div key={step} className="flex items-center gap-3 rounded-xl border border-white/15 bg-[#051233] px-3 py-2 text-sm text-slate-100">
-                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-slate-900 ${service.badgeColor}`}>
-                          {index + 1}
-                        </span>
-                        <span>{step}</span>
+                return (
+                  <button
+                    key={service.title}
+                    type="button"
+                    onClick={() => setActiveService(index)}
+                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                      isActive
+                        ? "border-cyan-300/60 bg-[#0b1f46]"
+                        : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg border border-white/20 bg-[#0a1a3a] p-2 text-white">
+                        <Icon className="h-4 w-4" />
                       </div>
-                    ))}
-                  </div>
+                      <div>
+                        <p className="text-base font-semibold text-white">{service.title}</p>
+                        <p className="text-xs uppercase tracking-wider text-slate-300">{service.category}</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </aside>
 
-                  <Button asChild className="mt-6 w-full rounded-xl bg-[#25d366] text-slate-900 hover:bg-[#1eb85a]">
-                    <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Precisa de ajuda da MAV?</a>
-                  </Button>
-                </article>
-              );
-            })}
+            <article className="rounded-3xl border border-white/10 bg-[#030b1f] p-6 text-white shadow-2xl shadow-[#020817]/70 sm:p-8">
+              <span className="inline-flex items-center rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                {serviceCards[activeService].category}
+              </span>
+              <h3 className="mt-4 text-3xl font-bold">{serviceCards[activeService].title}</h3>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">{serviceCards[activeService].description}</p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {serviceCards[activeService].bullets.map((bullet) => (
+                  <div key={bullet} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-100">
+                    {bullet}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-7 space-y-3 border-t border-white/10 pt-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Etapas principais</p>
+                {serviceCards[activeService].steps.map((step, index) => (
+                  <div key={step} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0b1633] px-4 py-3 text-sm">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300 text-xs font-bold text-slate-900">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button asChild className="mt-8 rounded-xl bg-[#25d366] px-6 text-slate-900 hover:bg-[#1eb85a]">
+                <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Solicitar atendimento da MAV</a>
+              </Button>
+            </article>
           </div>
         </div>
       </section>

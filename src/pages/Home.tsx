@@ -6,6 +6,7 @@ import {
   Car,
   ChevronRight,
   FileCheck2,
+  FileSearch,
   Megaphone,
   MessageCircle,
   Instagram,
@@ -91,6 +92,48 @@ const updates = [
   "Publicações semanais com orientações práticas para emplacamento e regularização.",
 ];
 
+const mercosulSteps = [
+  {
+    step: "1",
+    title: "Solicite a placa no Poupatempo",
+    description: "Acesse o site ou app do Poupatempo e peça a alteração da placa para o padrão Mercosul.",
+    color: "bg-[#facc15]",
+    border: "border-[#facc15]/70",
+    icon: FileSearch,
+  },
+  {
+    step: "2",
+    title: "Faça o laudo de vistoria",
+    description: "Leve o veículo para uma empresa credenciada de vistoria para confirmar as condições e emitir o laudo.",
+    color: "bg-[#ef4444]",
+    border: "border-[#ef4444]/70",
+    icon: Car,
+  },
+  {
+    step: "3",
+    title: "Conclua a etapa administrativa",
+    description: "Finalize o pedido no portal do Poupatempo, anexando o laudo e seguindo as instruções indicadas.",
+    color: "bg-[#38bdf8]",
+    border: "border-[#38bdf8]/70",
+    icon: Clock3,
+  },
+  {
+    step: "4",
+    title: "Aguarde a atualização do documento",
+    description: "Em até 7 dias úteis, o documento atualizado aparecerá na sua carteira digital constando a placa nova.",
+    color: "bg-[#fb923c]",
+    border: "border-[#fb923c]/70",
+    icon: FileCheck2,
+  },
+  {
+    step: "5",
+    title: "Emplaque na MAV",
+    description: "Com o documento (CRLV) atualizado, traga seu veículo até nossa loja para emplacar ou agende pelo WhatsApp.",
+    color: "bg-[#84cc16]",
+    border: "border-[#84cc16]/70",
+    icon: MessageCircle,
+  },
+];
 
 const heroSlides = [
   {
@@ -358,15 +401,43 @@ const Home = () => {
       </section>
 
       <section id="fluxo" className="reveal-on-scroll py-20" data-reveal>
-        <div className="container max-w-5xl rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/15 to-background p-8 text-center shadow-sm">
-          <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
-          <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Cada serviço segue um passo a passo claro</h2>
-          <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">
-            Nossos cards mostram os serviços principais e as possíveis etapas para você entender o processo antes de iniciar.
-          </p>
-          <Button asChild size="lg" className="mt-6">
-            <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">Precisa de ajuda da MAV?</a>
-          </Button>
+        <div className="container">
+          <div className="mb-10 text-center">
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo de atendimento</span>
+            <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Como trocar a placa cinza pela Mercosul</h2>
+            <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">
+              Criamos um passo a passo simples para orientar o cliente desde a solicitação no Poupatempo até o emplacamento final com a MAV.
+            </p>
+          </div>
+          <div className="mx-auto flex max-w-5xl flex-col gap-5">
+            {mercosulSteps.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <article
+                  key={item.step}
+                  className={`reveal-on-scroll flex items-start gap-4 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${item.border}`}
+                  data-reveal
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 bg-background text-sm font-bold text-foreground">
+                    {item.step}
+                  </div>
+                  <div className="flex-1">
+                    <div className={`mb-3 inline-flex rounded-full px-4 py-1.5 text-sm font-semibold text-slate-900 ${item.color}`}>
+                      {item.title}
+                    </div>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                  </div>
+                  <div className="hidden rounded-xl border border-border bg-background p-2 text-foreground/80 sm:block">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                </article>
+              );
+            })}
+            <div className="rounded-2xl bg-[#1f3262] px-6 py-4 text-sm font-semibold text-white sm:text-base">
+              Precisa de ajuda para concluir as etapas? Fale com a MAV no WhatsApp e agende seu emplacamento.
+            </div>
+          </div>
         </div>
       </section>
 

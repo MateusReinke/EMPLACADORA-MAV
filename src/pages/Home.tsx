@@ -242,7 +242,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section id="artigos" className="reveal-on-scroll bg-gradient-to-b from-[#041735] via-[#051a3e] to-[#031127] py-20" data-reveal>
+      <section id="artigos" className="reveal-on-scroll bg-card/40 py-20" data-reveal>
         <div className="container">
           <div className="mb-10 text-center">
             <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
@@ -262,7 +262,7 @@ const Home = () => {
       </section>
 
       <section id="novidades" className="reveal-on-scroll py-20" data-reveal>
-        <div className="container max-w-4xl rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-background p-8 shadow-sm">
+        <div className="container max-w-4xl rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8 shadow-sm">
           <div className="mb-6 text-center">
             <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
               <Megaphone className="h-4 w-4" /> Novidades
@@ -279,13 +279,13 @@ const Home = () => {
         </div>
       </section>
 
-      <section id="servicos" className="reveal-on-scroll bg-gradient-to-b from-[#041735] via-[#051a3e] to-[#031127] py-20" data-reveal>
+      <section id="servicos" className="reveal-on-scroll bg-card/40 py-20" data-reveal>
         <div className="container">
           <div className="mb-12 text-center">
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">O que fazemos</span>
             <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Serviços essenciais para sua operação</h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Atendimento organizado para quem precisa de agilidade, controle e previsibilidade em cada processo.
+              Conheça os principais serviços da MAV com etapas claras e acompanhamento em cada fase do atendimento.
             </p>
           </div>
 
@@ -293,25 +293,25 @@ const Home = () => {
             {serviceCards.map((service) => {
               const Icon = service.icon;
               return (
-                <article key={service.title} className="reveal-on-scroll group relative overflow-hidden rounded-3xl border-2 border-primary/20 bg-gradient-to-b from-slate-50 to-slate-100 p-6 text-center shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl" data-reveal>
+                <article key={service.title} className="reveal-on-scroll group relative overflow-hidden rounded-3xl border-2 border-border/70 bg-gradient-to-b from-white to-slate-50 p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg" data-reveal>
                   <div className="-mx-5 -mt-5 mb-5 rounded-t-2xl bg-[#003399] px-4 py-2 text-white shadow-sm">
                     <div className="flex items-center justify-between gap-2">
                       <img src={mercosulLogo} alt="Logo Mercosul" className="h-5 w-auto" />
-                      <p className="mx-auto text-center text-xs font-bold uppercase tracking-wider">{service.title}</p>
+                      <p className="text-center text-xs font-bold uppercase tracking-wider">{service.title}</p>
                       <img src={brazilFlag} alt="Bandeira do Brasil" className="h-5 w-auto" />
                     </div>
                   </div>
                   <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-2 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Etapas do serviço</p>
-                  <h3 className="mt-1 text-xl font-bold text-[#003399]">{service.title}</h3>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Etapas do serviço</p>
+                  <h3 className="mt-1 text-lg font-bold text-[#003399]">{service.title}</h3>
                   <ul className="mt-4 space-y-2 text-sm">
                     {service.bullets.map((bullet) => (
                       <li key={bullet} className="rounded-lg border border-slate-300 bg-slate-700 px-3 py-2 text-slate-100">• {bullet}</li>
                     ))}
                   </ul>
-                  <p className="mt-4 rounded-xl bg-white/80 px-3 py-3 text-sm leading-relaxed text-slate-600">{service.description}</p>
+                  <p className="mt-4 rounded-xl bg-primary/5 px-3 py-3 text-sm leading-relaxed text-muted-foreground">{service.description}</p>
                 </article>
               );
             })}

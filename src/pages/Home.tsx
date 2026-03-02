@@ -408,10 +408,9 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid gap-4 lg:gap-6 lg:grid-cols-[0.42fr_0.58fr]">
-            <aside className="rounded-3xl border border-white/10 bg-[#07142e] p-3 shadow-2xl shadow-[#020817]/60 sm:p-4 lg:max-h-[560px] lg:overflow-y-auto">
-              <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Toque em um serviço</p>
-              <div className="space-y-2.5 lg:space-y-3">
+          <div className="grid gap-6 lg:grid-cols-[0.42fr_0.58fr]">
+            <aside className="rounded-3xl border border-white/10 bg-[#07142e] p-4 shadow-2xl shadow-[#020817]/60 lg:max-h-[560px] lg:overflow-y-auto">
+              <div className="flex gap-3 overflow-x-auto pb-1 lg:block lg:space-y-3 lg:overflow-visible">
               {serviceCards.map((service, index) => {
                 const Icon = service.icon;
                 const isActive = index === activeService;
@@ -421,7 +420,7 @@ const Home = () => {
                     key={service.title}
                     type="button"
                     onClick={() => setActiveService(index)}
-                    className={`w-full rounded-2xl border px-3.5 py-3.5 text-left transition sm:px-4 sm:py-4 ${
+                    className={`min-w-[250px] rounded-2xl border px-4 py-4 text-left transition lg:min-w-0 lg:w-full ${
                       isActive
                         ? "border-cyan-300/60 bg-[#0b1f46]"
                         : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
@@ -563,7 +562,7 @@ const Home = () => {
           className="inline-flex items-center gap-2 rounded-full bg-[#16a34a] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-green-900/30 transition hover:bg-[#15803d] sm:px-6 sm:py-3 sm:text-base"
           aria-label="Abrir WhatsApp"
         >
-          <WhatsAppIcon className="h-5 w-5" />
+          <MessageCircle className="h-5 w-5" />
           <span className="hidden sm:inline">WhatsApp</span>
         </a>
       </div>

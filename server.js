@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import pg from 'pg';
@@ -31,15 +32,53 @@ const requireSecret = (name, devFallback) => {
 };
 
 const PORT = Number(process.env.APP_PORT || 8090);
+
+const DATABASE_URL = process.env.DATABASE_URL || '';
 const DB_HOST = process.env.POSTGRES_HOST || '127.0.0.1';
 const DB_PORT = Number(process.env.POSTGRES_PORT || 5435);
 const DB_NAME = process.env.POSTGRES_DB || 'emplacadora';
 const DB_USER = process.env.POSTGRES_USER || 'emplacadora';
-const DB_PASSWORD = requireSecret('POSTGRES_PASSWORD', 'emplacadora123');
+
+const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '']);
+
+/**
+ * Dois modos de banco:
+ *  - `embedded`: o PostgreSQL sobe dentro do próprio container (padrão, bom
+ *    para demonstração e desenvolvimento);
+ *  - `external`: a aplicação aponta para um banco gerenciado, informado por
+ *    DATABASE_URL ou por POSTGRES_HOST apontando para fora.
+ * O deploy/start.sh lê esta mesma decisão para não iniciar um Postgres local
+ * que ninguém usaria.
+ */
+const DB_MODE = DATABASE_URL || !LOCAL_HOSTS.has(DB_HOST) ? 'external' : 'embedded';
+
+// Com DATABASE_URL a senha vem dentro da própria URL.
+const DB_PASSWORD = DATABASE_URL ? '' : requireSecret('POSTGRES_PASSWORD', 'emplacadora123');
+
+/**
+ * `require` cifra a conexão sem validar a cadeia — é o que a maioria dos
+ * provedores gerenciados (Neon, Supabase, RDS) precisa, pois usam certificados
+ * próprios. `verify-full` valida contra a CA do sistema ou a informada em
+ * POSTGRES_SSL_CA.
+ */
+const buildSslConfig = () => {
+  const mode = (process.env.POSTGRES_SSL || (DB_MODE === 'external' ? 'require' : 'disable')).toLowerCase();
+
+  if (mode === 'disable' || mode === 'false' || mode === 'off') return false;
+
+  const ca = process.env.POSTGRES_SSL_CA;
+  if (mode === 'verify-full') {
+    return ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
+  }
+
+  return { rejectUnauthorized: false };
+};
+
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@emplacadora.com';
 const DEFAULT_ADMIN_PASSWORD = requireSecret('DEFAULT_ADMIN_PASSWORD', '123456');
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador Padrão';
 const INTEGRATION_API_KEY = requireSecret('INTEGRATION_API_KEY', 'dev-integration-key');
+const SEED_DEMO_DATA = /^(1|true|yes)$/i.test(process.env.SEED_DEMO_DATA || '');
 const API_VERSION = 'v1';
 const BCRYPT_ROUNDS = 10;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
@@ -52,13 +91,28 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
-const pool = new Pool({
-  host: DB_HOST,
-  port: DB_PORT,
-  database: DB_NAME,
-  user: DB_USER,
-  password: DB_PASSWORD,
+const pool = new Pool(
+  DATABASE_URL
+    ? { connectionString: DATABASE_URL, ssl: buildSslConfig() }
+    : {
+        host: DB_HOST,
+        port: DB_PORT,
+        database: DB_NAME,
+        user: DB_USER,
+        password: DB_PASSWORD,
+        ssl: buildSslConfig(),
+      }
+);
+
+// Um erro em conexão ociosa do pool emite 'error'; sem listener, derruba o processo.
+pool.on('error', (error) => {
+  console.error('[server] erro em conexão ociosa do pool:', error);
 });
+
+console.log(
+  `[server] banco em modo ${DB_MODE}` +
+    (DB_MODE === 'external' ? ` (${DATABASE_URL ? 'DATABASE_URL' : `${DB_HOST}:${DB_PORT}`})` : '')
+);
 
 const ALLOWED_TABLES = new Set([
   'users',
@@ -555,6 +609,15 @@ const ensureCoreSchema = async () => {
     [DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL, await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, BCRYPT_ROUNDS)]
   );
 
+  /*
+   * Vocabulário estrutural do domínio. Sempre `DO NOTHING`: o boot preenche um
+   * banco novo, mas nunca reverte o que o operador ajustou depois. Com
+   * `DO UPDATE` — como era antes — cor, ordem e prefixo voltavam ao valor de
+   * fábrica a cada restart.
+   *
+   * Os status de pedido são estruturais de verdade: a reposição automática de
+   * estoque depende de existir um status cujo nome contenha "cancel".
+   */
   await pool.query(`
     INSERT INTO order_statuses (name, sort_order, color, active)
     VALUES
@@ -567,11 +630,7 @@ const ensureCoreSchema = async () => {
       ('Pronto para retirada', 7, '#14b8a6', TRUE),
       ('Concluído', 8, '#16a34a', TRUE),
       ('Cancelado', 9, '#dc2626', TRUE)
-    ON CONFLICT (name) DO UPDATE SET
-      sort_order = EXCLUDED.sort_order,
-      color = EXCLUDED.color,
-      active = EXCLUDED.active,
-      updated_at = NOW()
+    ON CONFLICT (name) DO NOTHING
   `);
 
   await pool.query(`
@@ -589,11 +648,7 @@ const ensureCoreSchema = async () => {
       ('MOTO', 'Moto', 2, TRUE),
       ('CAMINHAO', 'Caminhão', 6, TRUE),
       ('ONIBUS', 'Ônibus', 6, TRUE)
-    ON CONFLICT (code) DO UPDATE SET
-      label = EXCLUDED.label,
-      wheel_count = EXCLUDED.wheel_count,
-      active = EXCLUDED.active,
-      updated_at = NOW()
+    ON CONFLICT (code) DO NOTHING
   `);
 
   await pool.query(`
@@ -603,68 +658,7 @@ const ensureCoreSchema = async () => {
       ('Transferência', 'TRF'),
       ('Segunda Via', '2VIA'),
       ('Documentação', 'DOC')
-    ON CONFLICT (name) DO UPDATE SET
-      prefix = EXCLUDED.prefix,
-      updated_at = NOW()
-  `);
-
-  await pool.query(`
-    INSERT INTO inventory_items (name, quantity, min_quantity, cost_price, category)
-    VALUES
-      ('Placa Mercosul Carro', 200, 20, 40, 'placas'),
-      ('Placa Mercosul Moto', 150, 15, 35, 'placas'),
-      ('Lacre', 500, 50, 2, 'insumos'),
-      ('Tarjeta', 300, 30, 4, 'insumos')
-    ON CONFLICT DO NOTHING
-  `);
-
-  await pool.query(`
-    INSERT INTO service_types (name, description, active, price, category_id)
-    SELECT seed.name, seed.description, TRUE, seed.price, sc.id
-    FROM (
-      VALUES
-        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 320.00::numeric, 'Emplacamento'),
-        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 380.00::numeric, 'Transferência'),
-        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 260.00::numeric, 'Segunda Via'),
-        ('Regularização documental', 'Apoio na regularização de documentação veicular', 180.00::numeric, 'Documentação')
-    ) AS seed(name, description, price, category_name)
-    JOIN service_categories sc ON sc.name = seed.category_name
-    ON CONFLICT (name) DO UPDATE SET
-      description = EXCLUDED.description,
-      active = EXCLUDED.active,
-      price = EXCLUDED.price,
-      category_id = EXCLUDED.category_id,
-      updated_at = NOW()
-  `);
-
-
-  await pool.query(`
-    DELETE FROM service_inventory_rules
-    WHERE service_type_id IN (
-      SELECT id FROM service_types WHERE name IN (
-        'Primeiro emplacamento',
-        'Transferência de propriedade',
-        'Segunda via de placa'
-      )
-    )
-  `);
-
-  await pool.query(`
-    INSERT INTO service_inventory_rules (service_type_id, inventory_item_id, vehicle_category, quantity_required, active)
-    SELECT st.id, ii.id, rules.vehicle_category, rules.quantity_required, TRUE
-    FROM (
-      VALUES
-        ('Primeiro emplacamento', 'Placa Mercosul Carro', 'carro', 2),
-        ('Primeiro emplacamento', 'Placa Mercosul Moto', 'moto', 1),
-        ('Primeiro emplacamento', 'Lacre', 'all', 1),
-        ('Transferência de propriedade', 'Placa Mercosul Carro', 'carro', 2),
-        ('Transferência de propriedade', 'Placa Mercosul Moto', 'moto', 1),
-        ('Transferência de propriedade', 'Lacre', 'all', 1),
-        ('Segunda via de placa', 'Placa Mercosul Carro', 'carro', 2),
-        ('Segunda via de placa', 'Placa Mercosul Moto', 'moto', 1)
-    ) AS rules(service_name, item_name, vehicle_category, quantity_required)
-    JOIN service_types st ON st.name = rules.service_name
-    JOIN inventory_items ii ON ii.name = rules.item_name
+    ON CONFLICT (name) DO NOTHING
   `);
 
   // Colunas usadas em todo filtro/join do app não tinham índice algum.
@@ -678,6 +672,25 @@ const ensureCoreSchema = async () => {
   await pool.query(`CREATE INDEX IF NOT EXISTS vehicles_license_plate_idx ON vehicles(license_plate)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS inventory_movements_order_id_idx ON inventory_movements(order_id)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS inventory_movements_item_id_idx ON inventory_movements(inventory_item_id)`);
+};
+
+/**
+ * Dados de demonstração (tipos de serviço com preços, itens de estoque e regras
+ * de consumo). Ficam FORA do boot padrão: um deploy real nasce vazio e o cliente
+ * cadastra os próprios serviços e preços pelas telas de administração. Carregar
+ * é sempre um ato explícito — `SEED_DEMO_DATA=true` ou rodar o arquivo à mão
+ * com psql. O SQL vive só em deploy/seed_emplacadora.sql, sem cópia aqui.
+ */
+const loadDemoData = async () => {
+  const seedPath = path.join(__dirname, 'deploy', 'seed_emplacadora.sql');
+
+  try {
+    const sql = await fs.readFile(seedPath, 'utf8');
+    await pool.query(sql);
+    console.log('[server] dados de demonstração carregados (SEED_DEMO_DATA).');
+  } catch (error) {
+    console.error('[server] falha ao carregar dados de demonstração:', error);
+  }
 };
 
 /**
@@ -922,10 +935,12 @@ const requireAuth = async (req, res, next) => {
 app.get('/api/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ ok: true });
+    res.json({ ok: true, database: DB_MODE });
   } catch (error) {
     console.error('[server] health check falhou:', error);
-    res.status(500).json({ ok: false, error: { message: 'Banco de dados indisponível' } });
+    // 503, não 500: a API está de pé mas não consegue servir. Um 500 fazia o
+    // orquestrador tratar como saudável um container sem banco.
+    res.status(503).json({ ok: false, database: DB_MODE, error: { message: 'Banco de dados indisponível' } });
   }
 });
 
@@ -1516,6 +1531,7 @@ const bootstrap = async () => {
   try {
     await ensureCoreSchema();
     await migratePlaintextPasswords();
+    if (SEED_DEMO_DATA) await loadDemoData();
     await purgeExpiredSessions();
     setInterval(purgeExpiredSessions, 1000 * 60 * 60).unref();
 

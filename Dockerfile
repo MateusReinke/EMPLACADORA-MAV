@@ -29,4 +29,9 @@ ENV DEFAULT_ADMIN_NAME="Administrador Padrão"
 
 EXPOSE 8090 5435
 
+# /api/health responde 503 quando o banco não está acessível, então um container
+# no ar sem banco é marcado como unhealthy em vez de saudável.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.APP_PORT||8090)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 CMD ["/usr/local/bin/start.sh"]

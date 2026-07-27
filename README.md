@@ -1,9 +1,15 @@
 # EMPLACADORA-MAV
 
-Aplicação React/Vite para gestão de emplacadora, preparada para rodar com:
-- **App Web na porta `8090`**
-- **PostgreSQL na porta `5435`**
-- **Deploy no mesmo container** (app + banco no mesmo runtime)
+Aplicação React/Vite para gestão de emplacadora, com backend Express +
+PostgreSQL. O app web sobe na porta `8090` e o banco pode rodar de dois jeitos:
+
+| Modo | Quando usar | Como ativar |
+|---|---|---|
+| **Embutido** (padrão) | Demonstração, desenvolvimento, avaliação | Nada a fazer — o PostgreSQL sobe dentro do container |
+| **Externo** | Produção: banco gerenciado, com backup e escala | Definir `DATABASE_URL` (ou `POSTGRES_HOST`) |
+
+No modo externo o PostgreSQL embutido **não é iniciado**: a aplicação conecta
+direto no banco informado, e o container carrega só o app.
 
 ## Primeiro acesso
 
@@ -26,48 +32,79 @@ npm install
 npm run dev -- --host 0.0.0.0 --port 8090
 ```
 
-## Deploy em um único container
+## Deploy — modo embutido (banco no mesmo container)
 
 ```bash
-docker build -t emplacadora-mav .
-docker run --rm -p 8090:8090 --env-file .env emplacadora-mav
+cp .env.example .env   # defina os segredos
+docker compose up -d
 ```
 
-O PostgreSQL roda dentro do container e não é publicado no host — a aplicação
-fala com ele por `127.0.0.1`. Publique a porta `5435` apenas se precisar de
-acesso externo ao banco.
+O PostgreSQL roda dentro do container e escuta apenas em `127.0.0.1`, sem ser
+publicado no host. Para acesso externo ao banco, defina
+`POSTGRES_LISTEN=0.0.0.0` e publique a porta `5435` — nunca com senha padrão.
 
-Ao iniciar, o container:
-1. sobe o PostgreSQL interno na porta `5435`;
-2. cria banco/usuário padrão (se ainda não existirem);
-3. aplica seed de usuário admin inicial;
-4. sobe o servidor web/API em `8090` (frontend + rotas `/api/*`).
+Ao iniciar, o container sobe o PostgreSQL interno, cria banco e usuário se não
+existirem, aplica o schema e sobe a API/web em `8090`.
 
-O backend também garante no startup que:
-- a tabela `users` existe;
-- o usuário admin padrão existe/está ativo com as credenciais definidas em ambiente.
+Os dados vivem no volume `pgdata`. Ele **não** é gerenciado por nenhuma rotina de
+backup — para produção com dados reais, prefira o modo externo.
+
+## Deploy — modo externo (banco gerenciado)
+
+Basta apontar `DATABASE_URL` para o banco:
+
+```bash
+DATABASE_URL=postgres://usuario:senha@host:5432/emplacadora
+```
+
+O `start.sh` detecta e pula a inicialização do PostgreSQL local. A aplicação
+cria o schema sozinha na primeira conexão, então o banco pode estar vazio — só
+precisa existir, com um usuário que possa criar tabelas.
+
+`POSTGRES_PASSWORD` deixa de ser necessária (a senha vai dentro da URL). Como
+alternativa a `DATABASE_URL`, dá para usar `POSTGRES_HOST`/`PORT`/`DB`/`USER`/
+`PASSWORD` separados — apontar `POSTGRES_HOST` para fora já ativa o modo externo.
+
+TLS via `POSTGRES_SSL`: `require` (padrão no modo externo, cifra sem validar a
+cadeia — o que a maioria dos provedores gerenciados usa), `verify-full` (valida
+contra a CA do sistema ou a de `POSTGRES_SSL_CA`) ou `disable`.
 
 ## Variáveis de ambiente
 
-Use como base o `.env.example` (já com valores padrão para importação no Coolify/Compose).
-
-```bash
-cp .env.example .env
-```
+Use o `.env.example` como base — ele separa configuração, segredos e banco.
 
 Configuração (com fallback no `docker-compose.yml`):
-- `NODE_ENV`
-- `APP_PORT`
-- `POSTGRES_PORT`
-- `POSTGRES_DB`
-- `POSTGRES_USER`
-- `DEFAULT_ADMIN_EMAIL`
-- `DEFAULT_ADMIN_NAME`
+`NODE_ENV`, `APP_PORT`, `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`,
+`POSTGRES_USER`, `POSTGRES_SSL`, `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_NAME`,
+`SEED_DEMO_DATA`.
 
 Segredos (**obrigatórios**, sem fallback — o deploy falha se faltarem):
-- `POSTGRES_PASSWORD`
 - `DEFAULT_ADMIN_PASSWORD`
 - `INTEGRATION_API_KEY`
+- `POSTGRES_PASSWORD` — apenas quando não há `DATABASE_URL`
+
+## Dados iniciais
+
+Um banco novo nasce apenas com o **vocabulário estrutural**: status de pedido,
+tipos de placa, tipos de veículo e categorias de serviço. Tipos de serviço,
+preços e itens de estoque são cadastrados pelo cliente nas telas de
+administração — um deploy real não nasce com preços fictícios.
+
+Esses catálogos são inseridos com `ON CONFLICT DO NOTHING`: o boot preenche um
+banco vazio, mas **nunca reverte** o que o operador ajustou depois.
+
+Para popular uma base de demonstração:
+
+```bash
+# no boot
+SEED_DEMO_DATA=true
+
+# ou depois, com o sistema no ar
+psql -h 127.0.0.1 -p 5435 -U emplacadora -d emplacadora -f deploy/seed_emplacadora.sql
+```
+
+O script é idempotente: rodar duas vezes não duplica registros nem sobrescreve
+preços e regras já ajustados.
 
 ## Autenticação e autorização
 
@@ -94,9 +131,14 @@ Após subir o container:
 curl -s http://localhost:8090/api/health
 ```
 
-A resposta deve ser `{"ok":true}`. O diagnóstico detalhado (existência do
-admin, contagem de usuários) fica em `/api/integrations/health`, que exige
-`x-api-key`.
+A resposta deve ser `{"ok":true,"database":"embedded"}` (ou `"external"`).
+
+Quando o banco está inacessível a rota responde **503**, não 200 — é o que o
+`HEALTHCHECK` do Docker usa para marcar como *unhealthy* um container que subiu
+sem banco, em vez de tratá-lo como saudável.
+
+O diagnóstico detalhado (existência do admin, contagem de usuários) fica em
+`/api/integrations/health`, que exige `x-api-key`.
 
 
 ## Estrutura de APIs para Integrações

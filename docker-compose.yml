@@ -12,11 +12,27 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       APP_PORT: ${APP_PORT:-8090}
+
+      # --- Banco -----------------------------------------------------------
+      # Modo EMBUTIDO (padrão): deixe DATABASE_URL e POSTGRES_HOST vazios e o
+      # PostgreSQL sobe dentro do container.
+      # Modo EXTERNO: defina DATABASE_URL (ou POSTGRES_HOST) apontando para um
+      # banco gerenciado e o PostgreSQL embutido nem é iniciado.
+      DATABASE_URL: ${DATABASE_URL:-}
+      POSTGRES_HOST: ${POSTGRES_HOST:-127.0.0.1}
       POSTGRES_PORT: ${POSTGRES_PORT:-5435}
       POSTGRES_DB: ${POSTGRES_DB:-emplacadora}
       POSTGRES_USER: ${POSTGRES_USER:-emplacadora}
-      # Sem fallback, de propósito: o deploy falha se o segredo não for definido.
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      # Obrigatória no modo embutido; no externo com DATABASE_URL, deixe vazia.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      # require (padrão no modo externo), verify-full ou disable.
+      POSTGRES_SSL: ${POSTGRES_SSL:-}
+
+      # Carrega tipos de serviço, estoque e regras de exemplo. Use só em demo.
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+
+      # --- Segredos da aplicação ------------------------------------------
+      # Sem fallback, de propósito: o deploy falha se não forem definidos.
       DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@emplacadora.com}
       DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:?defina DEFAULT_ADMIN_PASSWORD}
       DEFAULT_ADMIN_NAME: ${DEFAULT_ADMIN_NAME:-Administrador Padrão}

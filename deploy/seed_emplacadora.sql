@@ -1,55 +1,36 @@
--- Rode este script após o backend criar o schema base (ensureCoreSchema).
--- Exemplo:
--- psql -h 127.0.0.1 -p 5435 -U emplacadora -d emplacadora -f deploy/seed_emplacadora.sql
+-- Dados de DEMONSTRAÇÃO: tipos de serviço com preços de exemplo, itens de
+-- estoque e regras de consumo.
+--
+-- Isto NÃO é carregado num deploy normal. Um banco novo nasce apenas com o
+-- vocabulário estrutural (status de pedido, tipos de placa, tipos de veículo e
+-- categorias de serviço), e o cliente cadastra os próprios serviços, preços e
+-- estoque pelas telas de administração.
+--
+-- Carregue só quando quiser uma base populada para demonstração ou testes:
+--
+--   SEED_DEMO_DATA=true no ambiente (o servidor roda este arquivo no boot)
+--
+-- ou, com o sistema já no ar:
+--
+--   psql -h 127.0.0.1 -p 5435 -U emplacadora -d emplacadora -f deploy/seed_emplacadora.sql
+--
+-- O script é idempotente e não sobrescreve nada que já exista: rodar duas vezes
+-- não duplica registros nem reverte preços ajustados pelo cliente.
 
 BEGIN;
 
-INSERT INTO order_statuses (name, sort_order, color, active)
-VALUES
-  ('Novo', 1, '#2563eb', TRUE),
-  ('Aguardando documentação', 2, '#f97316', TRUE),
-  ('Documentação pendente', 3, '#ea580c', TRUE),
-  ('Em análise DETRAN', 4, '#f59e0b', TRUE),
-  ('Aguardando pagamento', 5, '#eab308', TRUE),
-  ('Em produção', 6, '#0ea5e9', TRUE),
-  ('Pronto para retirada', 7, '#14b8a6', TRUE),
-  ('Concluído', 8, '#16a34a', TRUE),
-  ('Cancelado', 9, '#dc2626', TRUE)
-ON CONFLICT (name) DO UPDATE SET
-  sort_order = EXCLUDED.sort_order,
-  color = EXCLUDED.color,
-  active = EXCLUDED.active,
-  updated_at = NOW();
-
-INSERT INTO vehicle_types (code, label, wheel_count, active)
-VALUES
-  ('CARRO', 'Carro', 4, TRUE),
-  ('MOTO', 'Moto', 2, TRUE),
-  ('CAMINHAO', 'Caminhão', 6, TRUE),
-  ('ONIBUS', 'Ônibus', 6, TRUE)
-ON CONFLICT (code) DO UPDATE SET
-  label = EXCLUDED.label,
-  wheel_count = EXCLUDED.wheel_count,
-  active = EXCLUDED.active,
-  updated_at = NOW();
-
-INSERT INTO service_categories (name, prefix)
-VALUES
-  ('Emplacamento', 'EMP'),
-  ('Transferência', 'TRF'),
-  ('Segunda Via', '2VIA'),
-  ('Documentação', 'DOC')
-ON CONFLICT (name) DO UPDATE SET
-  prefix = EXCLUDED.prefix,
-  updated_at = NOW();
-
 INSERT INTO inventory_items (name, quantity, min_quantity, cost_price, category)
-VALUES
-  ('Placa Mercosul Carro', 200, 20, 40, 'placas'),
-  ('Placa Mercosul Moto', 150, 15, 35, 'placas'),
-  ('Lacre', 500, 50, 2, 'insumos'),
-  ('Tarjeta', 300, 30, 4, 'insumos')
-ON CONFLICT DO NOTHING;
+SELECT seed.name, seed.quantity, seed.min_quantity, seed.cost_price, seed.category
+FROM (
+  VALUES
+    ('Placa Mercosul Carro', 200, 20, 40::numeric, 'placas'),
+    ('Placa Mercosul Moto', 150, 15, 35::numeric, 'placas'),
+    ('Lacre', 500, 50, 2::numeric, 'insumos'),
+    ('Tarjeta', 300, 30, 4::numeric, 'insumos')
+) AS seed(name, quantity, min_quantity, cost_price, category)
+WHERE NOT EXISTS (
+  SELECT 1 FROM inventory_items ii WHERE ii.name = seed.name
+);
 
 INSERT INTO service_types (name, description, active, price, category_id)
 SELECT seed.name, seed.description, TRUE, seed.price, sc.id
@@ -61,23 +42,11 @@ FROM (
     ('Regularização documental', 'Apoio na regularização de documentação veicular', 180.00::numeric, 'Documentação')
 ) AS seed(name, description, price, category_name)
 JOIN service_categories sc ON sc.name = seed.category_name
-ON CONFLICT (name) DO UPDATE SET
-  description = EXCLUDED.description,
-  active = EXCLUDED.active,
-  price = EXCLUDED.price,
-  category_id = EXCLUDED.category_id,
-  updated_at = NOW();
+ON CONFLICT (name) DO NOTHING;
 
-DELETE FROM service_inventory_rules
-WHERE service_type_id IN (
-  SELECT id FROM service_types
-  WHERE name IN (
-    'Primeiro emplacamento',
-    'Transferência de propriedade',
-    'Segunda via de placa'
-  )
-);
-
+-- Sem DELETE prévio: a versão anterior apagava e recriava estas regras a cada
+-- boot, destruindo qualquer ajuste de consumo feito pelo cliente. O NOT EXISTS
+-- torna a carga repetível sem duplicar nem sobrescrever.
 INSERT INTO service_inventory_rules (service_type_id, inventory_item_id, vehicle_category, quantity_required, active)
 SELECT st.id, ii.id, rules.vehicle_category, rules.quantity_required, TRUE
 FROM (
@@ -92,6 +61,12 @@ FROM (
     ('Segunda via de placa', 'Placa Mercosul Moto', 'moto', 1)
 ) AS rules(service_name, item_name, vehicle_category, quantity_required)
 JOIN service_types st ON st.name = rules.service_name
-JOIN inventory_items ii ON ii.name = rules.item_name;
+JOIN inventory_items ii ON ii.name = rules.item_name
+WHERE NOT EXISTS (
+  SELECT 1 FROM service_inventory_rules sir
+  WHERE sir.service_type_id = st.id
+    AND sir.inventory_item_id = ii.id
+    AND sir.vehicle_category = rules.vehicle_category
+);
 
 COMMIT;

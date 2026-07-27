@@ -16,15 +16,16 @@ COPY deploy/start.sh /usr/local/bin/start.sh
 COPY deploy/init.sql /docker-entrypoint-initdb.d/init.sql
 RUN chmod +x /usr/local/bin/start.sh
 
+# Apenas configuração não sensível. POSTGRES_PASSWORD, DEFAULT_ADMIN_PASSWORD e
+# INTEGRATION_API_KEY precisam vir do ambiente de deploy: com NODE_ENV=production
+# o servidor recusa subir sem elas, em vez de usar um valor conhecido.
+ENV NODE_ENV=production
 ENV APP_PORT=8090
 ENV POSTGRES_PORT=5435
 ENV POSTGRES_DB=emplacadora
 ENV POSTGRES_USER=emplacadora
-ENV POSTGRES_PASSWORD=emplacadora123
 ENV DEFAULT_ADMIN_EMAIL=admin@emplacadora.com
-ENV DEFAULT_ADMIN_PASSWORD=123456
 ENV DEFAULT_ADMIN_NAME="Administrador Padrão"
-ENV INTEGRATION_API_KEY=dev-integration-key
 
 EXPOSE 8090 5435
 

@@ -4,19 +4,23 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: emplacadora-mav
+    # O Postgres não é publicado no host: a aplicação roda no mesmo container e
+    # fala com ele por 127.0.0.1. Exponha 5435 apenas se precisar de acesso
+    # externo, e nunca com a senha padrão.
     ports:
       - "8090:8090"
-      - "5435:5435"
     environment:
+      NODE_ENV: ${NODE_ENV:-production}
       APP_PORT: ${APP_PORT:-8090}
       POSTGRES_PORT: ${POSTGRES_PORT:-5435}
       POSTGRES_DB: ${POSTGRES_DB:-emplacadora}
       POSTGRES_USER: ${POSTGRES_USER:-emplacadora}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-emplacadora123}
+      # Sem fallback, de propósito: o deploy falha se o segredo não for definido.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
       DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@emplacadora.com}
-      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-123456}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:?defina DEFAULT_ADMIN_PASSWORD}
       DEFAULT_ADMIN_NAME: ${DEFAULT_ADMIN_NAME:-Administrador Padrão}
-      INTEGRATION_API_KEY: ${INTEGRATION_API_KEY:-dev-integration-key}
+      INTEGRATION_API_KEY: ${INTEGRATION_API_KEY:?defina INTEGRATION_API_KEY}
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped

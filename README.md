@@ -5,16 +5,23 @@ Aplicação React/Vite para gestão de emplacadora, preparada para rodar com:
 - **PostgreSQL na porta `5435`**
 - **Deploy no mesmo container** (app + banco no mesmo runtime)
 
-## Credenciais padrão
+## Primeiro acesso
 
-Para primeiro acesso:
-- **Email:** `admin@emplacadora.com`
-- **Senha:** `123456`
-- **Perfil:** `admin`
+O usuário admin inicial é criado no primeiro boot a partir das variáveis
+`DEFAULT_ADMIN_EMAIL` e `DEFAULT_ADMIN_PASSWORD`, com a senha já em bcrypt.
+
+- Em produção (`NODE_ENV=production`) **não existe senha padrão**: o servidor
+  recusa iniciar se `DEFAULT_ADMIN_PASSWORD`, `POSTGRES_PASSWORD` ou
+  `INTEGRATION_API_KEY` não vierem do ambiente.
+- Depois do primeiro boot, o bootstrap nunca sobrescreve a senha do admin —
+  trocar a senha pela aplicação é definitivo e sobrevive a restarts.
+- Em desenvolvimento, sem variáveis definidas, o servidor cai em valores de
+  conveniência e avisa no log. Não use esse modo em ambiente exposto.
 
 ## Rodando localmente (sem Docker)
 
 ```bash
+cp .env.example .env   # defina os segredos
 npm install
 npm run dev -- --host 0.0.0.0 --port 8090
 ```
@@ -23,8 +30,12 @@ npm run dev -- --host 0.0.0.0 --port 8090
 
 ```bash
 docker build -t emplacadora-mav .
-docker run --rm -p 8090:8090 -p 5435:5435 emplacadora-mav
+docker run --rm -p 8090:8090 --env-file .env emplacadora-mav
 ```
+
+O PostgreSQL roda dentro do container e não é publicado no host — a aplicação
+fala com ele por `127.0.0.1`. Publique a porta `5435` apenas se precisar de
+acesso externo ao banco.
 
 Ao iniciar, o container:
 1. sobe o PostgreSQL interno na porta `5435`;
@@ -44,28 +55,48 @@ Use como base o `.env.example` (já com valores padrão para importação no Coo
 cp .env.example .env
 ```
 
-Variáveis disponíveis:
+Configuração (com fallback no `docker-compose.yml`):
+- `NODE_ENV`
 - `APP_PORT`
 - `POSTGRES_PORT`
 - `POSTGRES_DB`
 - `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
 - `DEFAULT_ADMIN_EMAIL`
-- `DEFAULT_ADMIN_PASSWORD`
 - `DEFAULT_ADMIN_NAME`
+
+Segredos (**obrigatórios**, sem fallback — o deploy falha se faltarem):
+- `POSTGRES_PASSWORD`
+- `DEFAULT_ADMIN_PASSWORD`
 - `INTEGRATION_API_KEY`
 
-No `docker-compose.yml`, todas elas estão configuradas com fallback (`${VAR:-valor}`), então podem aparecer para preenchimento no ambiente de deploy.
+## Autenticação e autorização
+
+- Senhas são guardadas apenas como hash bcrypt (coluna `password_hash`). No
+  primeiro boot após a atualização, senhas em texto puro existentes são
+  convertidas automaticamente e o campo legado é apagado.
+- A sessão vive na tabela `sessions`, com validade de 7 dias, e sobrevive a
+  restarts do container. O cookie é `httpOnly`, `sameSite=lax` e `secure` em
+  produção.
+- `/api/query` exige sessão autenticada e aplica política por perfil no
+  servidor: administradores enxergam tudo; vendedores, apenas os clientes,
+  pedidos e veículos que criaram; clientes finais, apenas os próprios
+  registros. Catálogos e estoque são somente leitura para não-administradores,
+  e `role`/`active` só mudam por conta de administrador.
+- `update` e `delete` exigem ao menos um filtro, para que nenhuma requisição
+  atinja uma tabela inteira.
+- Senhas nunca são devolvidas pela API, em nenhuma rota.
 
 ## Verificação rápida de saúde
 
-Após subir o container, valide banco + admin com:
+Após subir o container:
 
 ```bash
 curl -s http://localhost:8090/api/health
 ```
 
-A resposta deve conter `ok: true` e `auth.adminExists: true`.
+A resposta deve ser `{"ok":true}`. O diagnóstico detalhado (existência do
+admin, contagem de usuários) fica em `/api/integrations/health`, que exige
+`x-api-key`.
 
 
 ## Estrutura de APIs para Integrações

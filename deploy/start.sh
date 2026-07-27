@@ -3,12 +3,32 @@ set -uo pipefail
 
 : "${POSTGRES_DB:=emplacadora}"
 : "${POSTGRES_USER:=emplacadora}"
-: "${POSTGRES_PASSWORD:=emplacadora123}"
 : "${POSTGRES_PORT:=5435}"
 : "${APP_PORT:=8090}"
 : "${DEFAULT_ADMIN_EMAIL:=admin@emplacadora.com}"
-: "${DEFAULT_ADMIN_PASSWORD:=123456}"
 : "${DEFAULT_ADMIN_NAME:=Administrador Padrão}"
+: "${NODE_ENV:=production}"
+
+# Segredos não têm valor padrão: em produção o container falha em vez de subir
+# com uma senha conhecida publicamente.
+if [ "$NODE_ENV" = "production" ]; then
+  missing=""
+  for var in POSTGRES_PASSWORD DEFAULT_ADMIN_PASSWORD INTEGRATION_API_KEY; do
+    eval "value=\${$var:-}"
+    [ -z "$value" ] && missing="$missing $var"
+  done
+
+  if [ -n "$missing" ]; then
+    echo "[start.sh] Variáveis obrigatórias ausentes em produção:$missing"
+    echo "[start.sh] Defina-as no ambiente de deploy e suba o container novamente."
+    exit 1
+  fi
+else
+  : "${POSTGRES_PASSWORD:=emplacadora123}"
+  : "${DEFAULT_ADMIN_PASSWORD:=123456}"
+  : "${INTEGRATION_API_KEY:=dev-integration-key}"
+  export POSTGRES_PASSWORD DEFAULT_ADMIN_PASSWORD INTEGRATION_API_KEY
+fi
 
 ensure_node_dependencies() {
   if [ ! -d node_modules ] || ! node -e "require.resolve('express');require.resolve('cookie-parser');require.resolve('pg')" >/dev/null 2>&1; then
@@ -48,10 +68,9 @@ CFG
   psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" | grep -q 1 || \
     psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U postgres -c "CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER}" || return 1
 
+  # O init.sql só garante a estrutura mínima; o admin é criado pelo servidor,
+  # com a senha já em bcrypt.
   psql -h 127.0.0.1 -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-    -v admin_email="$DEFAULT_ADMIN_EMAIL" \
-    -v admin_password="$DEFAULT_ADMIN_PASSWORD" \
-    -v admin_name="$DEFAULT_ADMIN_NAME" \
     -f /docker-entrypoint-initdb.d/init.sql || return 1
 
   echo "[start.sh] PostgreSQL local inicializado com sucesso na porta ${POSTGRES_PORT}."

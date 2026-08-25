@@ -281,35 +281,95 @@ export const FAQS: Faq[] = [
   },
 ];
 
-export interface Testimonial {
-  /** `null` enquanto a MAV não enviar depoimentos reais e autorizados. */
-  quote: string | null;
-  author: string | null;
-  service: string | null;
+/* -------------------------------------------------------------------------
+ * Tabela de preços da placa Mercosul
+ * ---------------------------------------------------------------------- */
+
+export interface PlatePrice {
+  id: "carro" | "moto";
+  label: string;
+  /** O que o valor cobre, em uma linha. */
+  unit: string;
+  price: number;
+  /** Preço "de" riscado. `null` quando não há promoção. */
+  priceFrom: number | null;
+  description: string;
+  highlight?: boolean;
+  whatsappMessage: string;
 }
+
+export const PLATE_PRICES: PlatePrice[] = [
+  {
+    id: "carro",
+    label: "Carro",
+    unit: "o par",
+    price: 140,
+    priceFrom: 179,
+    description: "Par de placas Mercosul para carro, no padrão oficial.",
+    highlight: true,
+    whatsappMessage:
+      "Olá! Vi no site a promoção da placa Mercosul para carro por R$ 140,00 o par. Quero fazer o pedido.",
+  },
+  {
+    id: "moto",
+    label: "Moto",
+    unit: "placa única",
+    price: 90,
+    priceFrom: null,
+    description: "Placa Mercosul para motocicleta, no padrão oficial.",
+    whatsappMessage:
+      "Olá! Vi no site a placa Mercosul para moto por R$ 90,00. Quero fazer o pedido.",
+  },
+];
 
 /**
- * Depoimentos reais ainda não fornecidos pelo cliente. Enquanto `quote` for
- * `null`, a seção renderiza um marcador de pendência — nunca um texto fictício.
+ * Ressalva exibida abaixo da tabela. Deliberadamente neutra: o valor anunciado
+ * é o da placa, e não sabemos o que a MAV inclui ou cobra à parte em taxas
+ * oficiais — afirmar isso aqui seria inventar política comercial.
  */
-export const TESTIMONIALS: Testimonial[] = [
-  { quote: null, author: null, service: "Primeira via de placa" },
-  { quote: null, author: null, service: "Veículo 0km" },
-  { quote: null, author: null, service: "Transferência" },
-];
+export const PRICE_DISCLAIMER =
+  "Valor referente à placa Mercosul. Confirme pelo WhatsApp o que está incluído no seu caso e as taxas oficiais aplicáveis.";
 
-export interface Stat {
-  /** `null` enquanto não houver número real auditável. */
-  value: number | null;
-  suffix?: string;
-  label: string;
+export const priceLabel = (value: number) =>
+  value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+/* -------------------------------------------------------------------------
+ * Avaliações do Google
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Endpoint que devolve as avaliações do Google já normalizadas. Duas
+ * implementações equivalentes acompanham o projeto:
+ *   - `server.js`                  → deploy em Node/VPS;
+ *   - `deploy/hostinger/api/`      → hospedagem compartilhada (PHP).
+ *
+ * A chave da API fica sempre no servidor. Se o endpoint não estiver
+ * configurado, a seção de avaliações não é renderizada — melhor uma seção a
+ * menos do que uma seção com depoimento inventado.
+ */
+export const REVIEWS_ENDPOINT =
+  (typeof import.meta !== "undefined" &&
+    import.meta.env?.VITE_REVIEWS_ENDPOINT) ||
+  "/api/google-reviews";
+
+export interface GoogleReview {
+  author: string;
+  photo: string | null;
+  authorUrl: string | null;
+  rating: number;
+  relativeTime: string;
+  text: string;
 }
 
-export const STATS: Stat[] = [
-  { value: null, suffix: "+", label: "Placas emplacadas" },
-  { value: null, suffix: "+", label: "Clientes atendidos" },
-  { value: null, suffix: " anos", label: "De experiência" },
-];
+export interface GoogleReviewsPayload {
+  rating: number | null;
+  total: number | null;
+  url: string | null;
+  reviews: GoogleReview[];
+}
 
 /** Passos genéricos exibidos no resumo de "Como funciona". */
 export const FLOW_SUMMARY = [
@@ -332,19 +392,25 @@ export const FLOW_SUMMARY = [
 
 export const NAV_ITEMS = [
   { label: "Serviços", href: "#servicos" },
+  { label: "Preços", href: "#precos" },
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "Depoimentos", href: "#depoimentos" },
   { label: "FAQ", href: "#faq" },
   { label: "Contato", href: "#contato" },
 ];
 
+const carPrice = PLATE_PRICES.find((item) => item.id === "carro")!;
+const motoPrice = PLATE_PRICES.find((item) => item.id === "moto")!;
+
+/**
+ * Meta tags. O `index.html` consome estes valores por placeholders (`%SEO_*%`)
+ * resolvidos no build — assim título e descrição não existem em dois lugares
+ * que podem divergir. Os preços vêm de PLATE_PRICES pelo mesmo motivo.
+ */
 export const SEO = {
   title: `MAV Emplacamento | Placa Mercosul, 1ª e 2ª Via em ${BUSINESS.address.city}`,
-  /** 155 caracteres: serviço + região + diferencial. */
-  description:
-    "Placa Mercosul com agilidade e segurança em São Paulo. Primeira e segunda via, emplacamento de 0km, transferência e licenciamento. Fale agora no WhatsApp.",
+  description: `Placa Mercosul em ${BUSINESS.address.city}: carro R$ ${carPrice.price} o par e moto R$ ${motoPrice.price}. Primeira e segunda via, 0km, transferência e licenciamento. Fale no WhatsApp.`,
   ogTitle: "MAV Emplacamento — Referência em Placa Mercosul",
-  ogDescription: `Primeira via, segunda via, 0km, transferência e licenciamento em ${BUSINESS.address.district}, ${BUSINESS.address.city}. Atendimento rápido pelo WhatsApp ${BUSINESS.phoneDisplay}.`,
+  ogDescription: `Placa Mercosul a partir de R$ ${motoPrice.price}. Primeira via, segunda via, 0km, transferência e licenciamento em ${BUSINESS.address.district}, ${BUSINESS.address.city}. WhatsApp ${BUSINESS.phoneDisplay}.`,
   ogImage: "/og-mav-emplacamento.jpg",
   ogImageAlt:
     "Placa Mercosul emplacada pela MAV Emplacamento, referência em emplacamento em São Paulo",

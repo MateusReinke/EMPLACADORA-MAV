@@ -56,7 +56,7 @@ export const IconBadge = ({
   className?: string;
 }) => {
   const tones = {
-    navy: "bg-mav-navy text-white ring-mav-navy/10",
+    navy: "bg-site-badge text-white ring-site-badge/10",
     blue: "bg-mav-blue text-white ring-mav-blue/15",
     white: "bg-white text-mav-navy ring-white/25",
   };
@@ -87,7 +87,7 @@ export const Eyebrow = ({
     className={`inline-flex items-center gap-2 rounded-md border px-3 py-1 font-display text-[0.6875rem] font-bold uppercase tracking-[0.16em] ${
       tone === "white"
         ? "border-white/25 bg-white/10 text-white"
-        : "border-mav-blue/25 bg-mav-blue-soft text-mav-blue"
+        : "border-mav-blue/25 bg-site-accent-soft text-site-accent"
     }`}
   >
     {children}

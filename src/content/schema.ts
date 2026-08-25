@@ -7,7 +7,7 @@
  * custar a elegibilidade dos rich results do negócio.
  */
 
-import { BUSINESS, FAQS, SEO, SERVICES, SITE_URL } from "./site";
+import { BUSINESS, FAQS, PLATE_PRICES, SEO, SERVICES, SITE_URL } from "./site";
 
 const absolute = (path: string) => `${SITE_URL.replace(/\/$/, "")}${path}`;
 
@@ -41,14 +41,30 @@ export const buildLocalBusinessSchema = () => {
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "Serviços de emplacamento e documentação veicular",
-      itemListElement: SERVICES.map((service) => ({
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: service.title,
-          description: service.description,
-        },
-      })),
+      itemListElement: [
+        // Placas: têm preço público, então a oferta carrega o valor.
+        ...PLATE_PRICES.map((item) => ({
+          "@type": "Offer",
+          name: `Placa Mercosul — ${item.label}`,
+          price: item.price.toFixed(2),
+          priceCurrency: "BRL",
+          availability: "https://schema.org/InStock",
+          itemOffered: {
+            "@type": "Product",
+            name: `Placa Mercosul para ${item.label.toLowerCase()}`,
+            description: item.description,
+          },
+        })),
+        // Serviços: o valor depende de taxas e do caso, então vai sem preço.
+        ...SERVICES.map((service) => ({
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: service.title,
+            description: service.description,
+          },
+        })),
+      ],
     },
   };
 

@@ -26,3 +26,6 @@ dist-ssr
 
 # Ambientes
 .env
+# Chave da Places API usada pelo proxy PHP em hospedagem compartilhada.
+# Só o config.example.php é versionado.
+deploy/hostinger/api/config.php

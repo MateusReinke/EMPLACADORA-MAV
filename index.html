@@ -4,15 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>MAV Emplacamento | Placa Mercosul, 1ª e 2ª Via em São Paulo</title>
-    <meta
-      name="description"
-      content="Placa Mercosul com agilidade e segurança em São Paulo. Primeira e segunda via, emplacamento de 0km, transferência e licenciamento. Fale agora no WhatsApp."
-    />
+    <title>%SEO_TITLE%</title>
+    <meta name="description" content="%SEO_DESCRIPTION%" />
     <link rel="canonical" href="%SITE_URL%/" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="author" content="MAV Emplacamento" />
-    <meta name="theme-color" content="#0A1F44" />
+    <meta name="theme-color" content="#0A1F44" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#091428" media="(prefers-color-scheme: dark)" />
 
     <!-- SEO local: reforça região de atendimento -->
     <meta name="geo.region" content="BR-SP" />
@@ -23,33 +21,18 @@
     <meta property="og:site_name" content="MAV Emplacamento" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:url" content="%SITE_URL%/" />
-    <meta
-      property="og:title"
-      content="MAV Emplacamento — Referência em Placa Mercosul"
-    />
-    <meta
-      property="og:description"
-      content="Primeira via, segunda via, 0km, transferência e licenciamento em Chácara Santo Antônio, São Paulo. Atendimento rápido pelo WhatsApp (11) 93929-0373."
-    />
-    <meta property="og:image" content="%SITE_URL%/og-mav-emplacamento.jpg" />
+    <meta property="og:title" content="%SEO_OG_TITLE%" />
+    <meta property="og:description" content="%SEO_OG_DESCRIPTION%" />
+    <meta property="og:image" content="%SITE_URL%%SEO_OG_IMAGE%" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:type" content="image/jpeg" />
-    <meta
-      property="og:image:alt"
-      content="Placa Mercosul emplacada pela MAV Emplacamento, referência em emplacamento em São Paulo"
-    />
+    <meta property="og:image:alt" content="%SEO_OG_IMAGE_ALT%" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="MAV Emplacamento — Referência em Placa Mercosul"
-    />
-    <meta
-      name="twitter:description"
-      content="Primeira via, segunda via, 0km, transferência e licenciamento em São Paulo. Fale no WhatsApp (11) 93929-0373."
-    />
-    <meta name="twitter:image" content="%SITE_URL%/og-mav-emplacamento.jpg" />
+    <meta name="twitter:title" content="%SEO_OG_TITLE%" />
+    <meta name="twitter:description" content="%SEO_OG_DESCRIPTION%" />
+    <meta name="twitter:image" content="%SITE_URL%%SEO_OG_IMAGE%" />
 
     <link rel="icon" type="image/svg+xml" href="/mav-emplacamento-logo.svg" />
     <link rel="apple-touch-icon" href="/mav-emplacamento-logo.svg" />
@@ -75,6 +58,30 @@
           }
         } catch (e) {
           /* sem matchMedia: segue sem animação, conteúdo visível */
+        }
+
+        /*
+         * Tema do site público, resolvido antes da primeira pintura: escolha
+         * salva > preferência do sistema > claro. Feito aqui, e não no React,
+         * porque decidir depois da montagem faria a página piscar branca antes
+         * de virar escura.
+         */
+        try {
+          var saved = null;
+          try {
+            saved = localStorage.getItem("mav-site-theme");
+          } catch (e) {
+            /* modo privativo: cai na preferência do sistema */
+          }
+
+          var dark =
+            saved === "dark" ||
+            (saved !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+          document.documentElement.dataset.siteTheme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.dataset.siteTheme = "light";
         }
       })();
     </script>

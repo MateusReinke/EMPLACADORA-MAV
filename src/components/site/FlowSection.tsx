@@ -17,14 +17,14 @@ export const FlowSection = () => {
   const ActiveIcon = SERVICE_ICONS[active.icon];
 
   return (
-    <section id="como-funciona" className="bg-white py-16 sm:py-24">
+    <section id="como-funciona" className="bg-site-bg py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <div className="max-w-2xl" data-reveal>
           <Eyebrow>Como funciona</Eyebrow>
-          <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-mav-navy sm:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-site-ink sm:text-4xl">
             Três etapas, do WhatsApp à placa instalada
           </h2>
-          <p className="mt-3 font-body text-mav-navy/70">
+          <p className="mt-3 font-body text-site-ink/70">
             O mesmo caminho para qualquer serviço. Você acompanha cada etapa e só
             paga taxa depois que a documentação está conferida.
           </p>
@@ -38,13 +38,13 @@ export const FlowSection = () => {
           />
           {FLOW_SUMMARY.map((step, index) => (
             <li key={step.title} className="relative md:pr-6" data-reveal>
-              <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-mav-blue font-display text-lg font-extrabold text-white ring-8 ring-white">
+              <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-mav-blue font-display text-lg font-extrabold text-white ring-8 ring-site-bg">
                 {index + 1}
               </span>
-              <h3 className="mt-4 font-display text-lg font-extrabold text-mav-navy">
+              <h3 className="mt-4 font-display text-lg font-extrabold text-site-ink">
                 {step.title}
               </h3>
-              <p className="mt-2 font-body text-sm leading-relaxed text-mav-navy/70">
+              <p className="mt-2 font-body text-sm leading-relaxed text-site-ink/70">
                 {step.description}
               </p>
             </li>
@@ -52,9 +52,9 @@ export const FlowSection = () => {
         </ol>
 
         {/* Seletor de fluxo por serviço */}
-        <div className="mt-14 overflow-hidden rounded-3xl border border-mav-line bg-mav-surface" data-reveal>
-          <div className="border-b border-mav-line bg-white px-5 py-4 sm:px-7">
-            <p className="font-display text-sm font-bold uppercase tracking-[0.14em] text-mav-navy/60">
+        <div className="mt-14 overflow-hidden rounded-3xl border border-site-line bg-site-alt" data-reveal>
+          <div className="border-b border-site-line bg-site-card px-5 py-4 sm:px-7">
+            <p className="font-display text-sm font-bold uppercase tracking-[0.14em] text-site-ink/60">
               Fluxo de atendimento por serviço
             </p>
           </div>
@@ -62,7 +62,7 @@ export const FlowSection = () => {
           <div className="grid lg:grid-cols-[0.4fr_0.6fr]">
             {/* Lista de serviços: chips roláveis no mobile, lista vertical no desktop */}
             <div
-              className="flex gap-2 overflow-x-auto border-b border-mav-line p-4 lg:flex-col lg:overflow-visible lg:border-b-0 lg:border-r lg:p-5"
+              className="flex gap-2 overflow-x-auto border-b border-site-line p-4 lg:flex-col lg:overflow-visible lg:border-b-0 lg:border-r lg:p-5"
               role="tablist"
               aria-label="Escolha o serviço para ver o fluxo"
             >
@@ -79,13 +79,13 @@ export const FlowSection = () => {
                     onClick={() => setActiveIndex(index)}
                     className={`flex min-w-[220px] items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-200 lg:min-w-0 lg:w-full ${
                       isActive
-                        ? "border-mav-blue bg-white shadow-mav-card"
-                        : "border-transparent bg-white/60 hover:border-mav-line hover:bg-white"
+                        ? "border-mav-blue bg-site-card shadow-mav-card"
+                        : "border-transparent bg-site-card/60 hover:border-site-line hover:bg-site-card"
                     }`}
                   >
                     <span
                       className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
-                        isActive ? "bg-mav-blue text-white" : "bg-mav-navy/8 text-mav-navy"
+                        isActive ? "bg-mav-blue text-white" : "bg-site-ink/10 text-site-ink"
                       }`}
                     >
                       <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} />
@@ -93,12 +93,12 @@ export const FlowSection = () => {
                     <span className="min-w-0">
                       <span
                         className={`block truncate font-display text-sm font-bold ${
-                          isActive ? "text-mav-blue" : "text-mav-navy"
+                          isActive ? "text-site-accent" : "text-site-ink"
                         }`}
                       >
                         {service.title}
                       </span>
-                      <span className="block truncate font-body text-xs text-mav-navy/50">
+                      <span className="block truncate font-body text-xs text-site-ink/50">
                         {service.eyebrow}
                       </span>
                     </span>
@@ -108,16 +108,16 @@ export const FlowSection = () => {
             </div>
 
             {/* Painel do serviço selecionado */}
-            <div key={active.id} className="animate-answer-in bg-white p-6 sm:p-8">
+            <div key={active.id} className="animate-answer-in bg-site-card p-6 sm:p-8">
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mav-navy text-white">
+                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-site-badge text-white">
                   <ActiveIcon className="h-5 w-5" strokeWidth={2.25} />
                 </span>
                 <div>
-                  <p className="font-display text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-mav-blue">
+                  <p className="font-display text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-site-accent">
                     {active.eyebrow}
                   </p>
-                  <h3 className="font-display text-xl font-extrabold leading-tight text-mav-navy">
+                  <h3 className="font-display text-xl font-extrabold leading-tight text-site-ink">
                     {active.title}
                   </h3>
                 </div>
@@ -129,26 +129,26 @@ export const FlowSection = () => {
                     {index < active.steps.length - 1 && (
                       <span
                         aria-hidden="true"
-                        className="absolute left-[15px] top-9 h-[calc(100%-1.5rem)] w-0.5 bg-mav-line"
+                        className="absolute left-[15px] top-9 h-[calc(100%-1.5rem)] w-0.5 bg-site-line"
                       />
                     )}
-                    <span className="relative z-[1] inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-mav-blue bg-white font-display text-sm font-extrabold text-mav-blue">
+                    <span className="relative z-[1] inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-mav-blue bg-site-card font-display text-sm font-extrabold text-site-accent">
                       {index + 1}
                     </span>
-                    <p className="pt-1 font-body text-sm leading-relaxed text-mav-navy/75">
+                    <p className="pt-1 font-body text-sm leading-relaxed text-site-ink/75">
                       {step}
                     </p>
                   </li>
                 ))}
               </ol>
 
-              <ul className="mt-6 flex flex-wrap gap-2 border-t border-mav-line pt-5">
+              <ul className="mt-6 flex flex-wrap gap-2 border-t border-site-line pt-5">
                 {active.includes.map((item) => (
                   <li
                     key={item}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-mav-blue-soft px-2.5 py-1.5 font-body text-xs font-medium text-mav-navy/75"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-site-accent-soft px-2.5 py-1.5 font-body text-xs font-medium text-site-ink/75"
                   >
-                    <Check className="h-3 w-3 text-mav-blue" strokeWidth={3.5} />
+                    <Check className="h-3 w-3 text-site-accent" strokeWidth={3.5} />
                     {item}
                   </li>
                 ))}

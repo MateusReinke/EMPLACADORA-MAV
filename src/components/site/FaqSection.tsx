@@ -11,14 +11,14 @@ const FAQ_WHATSAPP_MESSAGE =
  * para indexação e para o schema FAQPage) e o bloco funciona mesmo sem JS.
  */
 export const FaqSection = () => (
-  <section id="faq" className="bg-mav-surface py-16 sm:py-24">
+  <section id="faq" className="bg-site-alt py-16 sm:py-24">
     <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
       <div data-reveal>
         <Eyebrow>Dúvidas frequentes</Eyebrow>
-        <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-mav-navy sm:text-4xl">
+        <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-site-ink sm:text-4xl">
           O que todo mundo pergunta antes de emplacar
         </h2>
-        <p className="mt-3 font-body text-mav-navy/70">
+        <p className="mt-3 font-body text-site-ink/70">
           Se a sua dúvida não estiver aqui, é só chamar no WhatsApp — a gente
           responde sem enrolação.
         </p>
@@ -34,18 +34,18 @@ export const FaqSection = () => (
         </a>
       </div>
 
-      <div className="divide-y divide-mav-line overflow-hidden rounded-2xl border border-mav-line bg-white">
+      <div className="divide-y divide-site-line overflow-hidden rounded-2xl border border-site-line bg-site-card">
         {FAQS.map((faq, index) => (
           // A primeira já nasce aberta: mostra o padrão de interação e entrega
           // a resposta mais buscada sem exigir um clique.
           <details key={faq.question} className="group" open={index === 0} data-reveal>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5 font-display text-base font-bold text-mav-navy transition-colors hover:text-mav-blue sm:px-6 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5 font-display text-base font-bold text-site-ink transition-colors hover:text-site-accent sm:px-6 [&::-webkit-details-marker]:hidden">
               <h3 className="font-display text-base font-bold">{faq.question}</h3>
-              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mav-blue-soft text-mav-blue transition-transform duration-200 group-open:rotate-45">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-site-accent-soft text-site-accent transition-transform duration-200 group-open:rotate-45">
                 <Plus className="h-4 w-4" strokeWidth={3} />
               </span>
             </summary>
-            <p className="animate-answer-in px-5 pb-5 font-body text-[0.9375rem] leading-relaxed text-mav-navy/70 sm:px-6">
+            <p className="animate-answer-in px-5 pb-5 font-body text-[0.9375rem] leading-relaxed text-site-ink/70 sm:px-6">
               {faq.answer}
             </p>
           </details>

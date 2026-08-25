@@ -7,7 +7,7 @@ import { PILLAR_ICONS } from "./icons";
  * separados por filetes, para não repetir a grade da seção de serviços.
  */
 export const PillarsSection = () => (
-  <section className="relative overflow-hidden bg-mav-navy py-16 sm:py-20">
+  <section className="relative overflow-hidden bg-site-contrast py-16 sm:py-20">
     <div
       aria-hidden="true"
       className="pointer-events-none absolute -left-24 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-mav-blue/20 blur-3xl"
@@ -31,7 +31,7 @@ export const PillarsSection = () => (
           const Icon = PILLAR_ICONS[pillar.icon];
 
           return (
-            <div key={pillar.title} className="bg-mav-navy p-6 sm:p-7" data-reveal>
+            <div key={pillar.title} className="bg-site-contrast p-6 sm:p-7" data-reveal>
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-mav-blue text-white">
                 <Icon className="h-[22px] w-[22px]" strokeWidth={2.25} />
               </span>

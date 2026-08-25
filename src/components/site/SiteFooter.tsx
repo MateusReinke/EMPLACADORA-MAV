@@ -3,7 +3,7 @@ import { BUSINESS, NAV_ITEMS, SERVICES, fullAddress } from "@/content/site";
 const currentYear = new Date().getFullYear();
 
 export const SiteFooter = () => (
-  <footer className="border-t border-white/10 bg-mav-navy">
+  <footer className="border-t border-white/10 bg-site-contrast">
     <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6">
       <div className="grid gap-10 md:grid-cols-[1.3fr_1fr_1fr]">
         <div>

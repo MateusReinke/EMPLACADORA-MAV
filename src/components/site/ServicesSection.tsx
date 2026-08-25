@@ -10,14 +10,14 @@ export const ServicesSection = () => {
   const FeaturedIcon = SERVICE_ICONS[featured.icon];
 
   return (
-    <section id="servicos" className="bg-mav-surface py-16 sm:py-24">
+    <section id="servicos" className="bg-site-alt py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <div className="max-w-2xl" data-reveal>
           <Eyebrow>Serviços</Eyebrow>
-          <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-mav-navy sm:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-site-ink sm:text-4xl">
             Tudo o que a MAV resolve pelo seu veículo
           </h2>
-          <p className="mt-3 font-body text-mav-navy/70">
+          <p className="mt-3 font-body text-site-ink/70">
             Escolha o serviço e fale direto com quem vai executar. Cada atendimento
             começa com a conferência dos documentos — antes de qualquer pagamento.
           </p>
@@ -26,7 +26,7 @@ export const ServicesSection = () => {
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {/* Card em destaque: o carro-chefe da MAV ocupa quatro células */}
           <article
-            className="group relative flex flex-col overflow-hidden rounded-2xl bg-mav-navy p-7 text-white shadow-mav-plate md:col-span-2 lg:row-span-2 lg:p-9"
+            className="group relative flex flex-col overflow-hidden rounded-2xl bg-site-contrast p-7 text-white shadow-mav-plate md:col-span-2 lg:row-span-2 lg:p-9"
             data-reveal
           >
             <div
@@ -103,24 +103,24 @@ export const ServicesSection = () => {
             return (
               <article
                 key={service.id}
-                className="group flex flex-col rounded-2xl border border-mav-line bg-white p-6 shadow-mav-card transition-all duration-200 hover:-translate-y-1 hover:border-mav-blue/40 hover:shadow-mav-card-hover"
+                className="group flex flex-col rounded-2xl border border-site-line bg-site-card p-6 shadow-mav-card transition-all duration-200 hover:-translate-y-1 hover:border-mav-blue/40 hover:shadow-mav-card-hover"
                 data-reveal
               >
                 <div className="flex items-center gap-4">
-                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-mav-navy text-white transition-colors duration-200 group-hover:bg-mav-blue">
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-site-badge text-white transition-colors duration-200 group-hover:bg-mav-blue">
                     <Icon className="h-[22px] w-[22px]" strokeWidth={2.25} />
                   </span>
                   {/* Filete que sangra até a borda do card */}
-                  <span aria-hidden="true" className="-mr-6 h-px flex-1 bg-mav-line" />
+                  <span aria-hidden="true" className="-mr-6 h-px flex-1 bg-site-line" />
                 </div>
 
-                <p className="mt-5 font-display text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-mav-blue">
+                <p className="mt-5 font-display text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-site-accent">
                   {service.eyebrow}
                 </p>
-                <h3 className="mt-1.5 font-display text-lg font-extrabold leading-snug text-mav-navy">
+                <h3 className="mt-1.5 font-display text-lg font-extrabold leading-snug text-site-ink">
                   {service.title}
                 </h3>
-                <p className="mt-2.5 font-body text-sm leading-relaxed text-mav-navy/70">
+                <p className="mt-2.5 font-body text-sm leading-relaxed text-site-ink/70">
                   {service.description}
                 </p>
 
@@ -128,10 +128,10 @@ export const ServicesSection = () => {
                   {service.includes.map((item) => (
                     <li
                       key={item}
-                      className="flex items-start gap-2 font-body text-[0.8125rem] text-mav-navy/65"
+                      className="flex items-start gap-2 font-body text-[0.8125rem] text-site-ink/65"
                     >
-                      <span className="mt-[3px] inline-flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-full bg-mav-blue-soft">
-                        <Check className="h-2.5 w-2.5 text-mav-blue" strokeWidth={3.5} />
+                      <span className="mt-[3px] inline-flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-full bg-site-accent-soft">
+                        <Check className="h-2.5 w-2.5 text-site-accent" strokeWidth={3.5} />
                       </span>
                       {item}
                     </li>

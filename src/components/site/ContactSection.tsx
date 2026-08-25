@@ -36,7 +36,7 @@ const OpeningHours = () => {
 };
 
 export const ContactSection = () => (
-  <section id="contato" className="bg-mav-navy-deep py-16 sm:py-20">
+  <section id="contato" className="bg-site-contrast-deep py-16 sm:py-20">
     <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:gap-14">
       <div data-reveal>
         <Eyebrow tone="white">Contato</Eyebrow>

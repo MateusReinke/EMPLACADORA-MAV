@@ -26,6 +26,25 @@ export default {
 				body: ['Inter', 'Inter Fallback', 'Helvetica Neue', 'Arial', 'sans-serif'],
 			},
 			colors: {
+				/*
+				 * Superfícies do site público. Apontam para as variáveis de
+				 * src/index.css, que trocam no tema escuro — por isso os
+				 * componentes do site usam `site-*` em vez de `bg-white`.
+				 */
+				site: {
+					bg: 'rgb(var(--site-bg) / <alpha-value>)',
+					alt: 'rgb(var(--site-alt) / <alpha-value>)',
+					card: 'rgb(var(--site-card) / <alpha-value>)',
+					ink: 'rgb(var(--site-ink) / <alpha-value>)',
+					line: 'rgb(var(--site-line) / <alpha-value>)',
+					accent: 'rgb(var(--site-accent) / <alpha-value>)',
+					'accent-soft': 'rgb(var(--site-accent-soft) / <alpha-value>)',
+					contrast: 'rgb(var(--site-contrast) / <alpha-value>)',
+					'contrast-deep': 'rgb(var(--site-contrast-deep) / <alpha-value>)',
+					badge: 'rgb(var(--site-badge) / <alpha-value>)',
+					promo: 'rgb(var(--site-promo) / <alpha-value>)',
+					'promo-deep': 'rgb(var(--site-promo-deep) / <alpha-value>)',
+				},
 				// Paleta oficial da marca MAV (material impresso/redes).
 				mav: {
 					blue: '#0B57E0',

@@ -1508,6 +1508,89 @@ app.post('/api/query', requireAuth, async (req, res) => {
 });
 
 
+/*
+ * ---------------------------------------------------------------------------
+ * Avaliações do Google (site público)
+ *
+ * A chave da Places API nunca vai para o navegador: o front chama esta rota e
+ * recebe só o resultado já normalizado. O cache evita queimar cota — avaliação
+ * de despachante não muda de minuto em minuto.
+ *
+ * Sem GOOGLE_PLACES_API_KEY/GOOGLE_PLACE_ID a rota responde 204 e a seção de
+ * avaliações simplesmente não é renderizada no site.
+ * ---------------------------------------------------------------------------
+ */
+const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
+const GOOGLE_PLACE_ID = process.env.GOOGLE_PLACE_ID || '';
+const REVIEWS_CACHE_TTL_MS = Number(process.env.GOOGLE_REVIEWS_TTL_MS || 6 * 60 * 60 * 1000);
+
+let reviewsCache = { expiresAt: 0, payload: null };
+
+/** Converte a resposta da Places API (New) no formato que o site consome. */
+const normalizeGoogleReviews = (place) => ({
+  rating: typeof place?.rating === 'number' ? place.rating : null,
+  total: typeof place?.userRatingCount === 'number' ? place.userRatingCount : null,
+  url: place?.googleMapsUri || null,
+  reviews: (place?.reviews || [])
+    .map((review) => ({
+      author: review?.authorAttribution?.displayName || 'Cliente',
+      photo: review?.authorAttribution?.photoUri || null,
+      authorUrl: review?.authorAttribution?.uri || null,
+      rating: Number(review?.rating) || 0,
+      relativeTime: review?.relativePublishTimeDescription || '',
+      text: review?.originalText?.text || review?.text?.text || '',
+    }))
+    // Avaliação só com nota, sem texto, não rende card — vira ruído visual.
+    .filter((review) => review.text.trim().length > 0),
+});
+
+app.get('/api/google-reviews', async (_req, res) => {
+  if (!GOOGLE_PLACES_API_KEY || !GOOGLE_PLACE_ID) {
+    return res.status(204).end();
+  }
+
+  if (reviewsCache.payload && reviewsCache.expiresAt > Date.now()) {
+    return res.json(reviewsCache.payload);
+  }
+
+  try {
+    const response = await fetch(
+      `https://places.googleapis.com/v1/places/${encodeURIComponent(GOOGLE_PLACE_ID)}?languageCode=pt-BR`,
+      {
+        headers: {
+          'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+          'X-Goog-FieldMask': 'rating,userRatingCount,googleMapsUri,reviews',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Places API respondeu ${response.status}`);
+    }
+
+    const payload = normalizeGoogleReviews(await response.json());
+    reviewsCache = { payload, expiresAt: Date.now() + REVIEWS_CACHE_TTL_MS };
+
+    return res.json(payload);
+  } catch (error) {
+    console.error('[server] falha ao buscar avaliações do Google:', error);
+
+    // Cache vencido ainda é melhor que seção sumindo por uma falha passageira.
+    if (reviewsCache.payload) return res.json(reviewsCache.payload);
+    return res.status(204).end();
+  }
+});
+
+/*
+ * A hospedagem compartilhada usa a versão em PHP desta rota. Se algum deploy
+ * copiar aquele arquivo para o dist, o express.static o serviria como texto —
+ * expondo o código em vez de executá-lo.
+ */
+app.use((req, res, next) => {
+  if (req.path.toLowerCase().endsWith('.php')) return res.status(404).end();
+  return next();
+});
+
 app.use(express.static(path.join(__dirname, 'dist')));
 
 /*

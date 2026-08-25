@@ -10,8 +10,9 @@ Guia rápido para manter a landing page (`/`) sem precisar mexer em componente.
 | `src/content/schema.ts` | Geração do JSON-LD (`AutomotiveBusiness`, `WebSite`, `FAQPage`) a partir do arquivo acima. |
 | `src/site/LandingPage.tsx` | Montagem das seções. |
 | `src/components/site/` | Componentes de cada seção. |
-| `index.html` | `<title>`, meta description, Open Graph, canonical. |
+| `index.html` | Estrutura do `<head>`. Título, descrição e Open Graph vêm de `SEO` em `site.ts` por placeholders `%SEO_*%` resolvidos no build — não edite os textos aqui. |
 | `scripts/generate_og_image.py` | Gera `public/og-mav-emplacamento.jpg` (preview de link no WhatsApp/Instagram). |
+| `deploy/hostinger/` | `.htaccess` e proxy PHP das avaliações, para hospedagem compartilhada. |
 
 ## Pendências de conteúdo real
 
@@ -25,14 +26,31 @@ diretrizes de dados estruturados do Google e derrubaria a confiança do visitant
 | `BUSINESS.openingHours` | Horário real de atendimento. Ex.: `[{ days: ["Mo","Tu","We","Th","Fr"], opens: "09:00", closes: "18:00" }]` |
 | `BUSINESS.geo` | Latitude/longitude reais (pegue no Google Maps: clique com o botão direito no ponto → coordenadas). |
 | `BUSINESS.address.postalCode` | CEP da unidade. |
-| `BUSINESS.aggregateRating` | Nota e nº de avaliações **verificáveis** do Google Meu Negócio. |
 | `BUSINESS.email` | E-mail comercial, se houver. |
-| `TESTIMONIALS[].quote/author` | Depoimentos reais e autorizados pelo cliente. |
-| `STATS[].value` | Números auditáveis (placas emplacadas, clientes, anos). Ao virar número, o contador anima sozinho. |
+
+Depoimentos e nota de avaliação **não** são mais preenchidos à mão: vêm ao vivo
+do Google. Configure a chave e o Place ID conforme `docs/DEPLOY_HOSTINGER.md` e a
+seção de avaliações aparece sozinha — sem chave, ela simplesmente não é
+renderizada.
+
+`BUSINESS.aggregateRating` continua existindo, mas deixe em `null`: o Google não
+aceita que você marque no seu próprio JSON-LD as avaliações coletadas na ficha do
+Google. As avaliações aparecem na página; o `aggregateRating` do schema fica para
+avaliações coletadas pelo próprio site, se um dia houver.
 
 Também vale substituir os visuais por fotografia real quando a MAV enviar: fotos da
 loja, da equipe e de placas instaladas. Hoje o site usa a placa Mercosul desenhada em
 SVG — nítida em qualquer tela e sem custo de download.
+
+## Preços
+
+`PLATE_PRICES`, em `src/content/site.ts`, controla a seção de preços, as
+mensagens do WhatsApp com o valor citado, a meta description e as ofertas do
+JSON-LD. Mudou o preço, muda só ali:
+
+```ts
+{ id: "carro", price: 140, priceFrom: 179, ... }  // priceFrom: null tira o "de/por"
+```
 
 ## Domínio
 

@@ -6,6 +6,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 import { buildAllSchemas } from "./src/content/schema";
+import { SEO } from "./src/content/site";
 
 /**
  * Domínio canônico do site. Enquanto a MAV não migrar para domínio próprio,
@@ -15,10 +16,19 @@ import { buildAllSchemas } from "./src/content/schema";
 const SITE_URL = (process.env.VITE_SITE_URL || "https://www.mavemplacamento.com.br")
   .replace(/\/+$/, "");
 
+/** Escapa para uso dentro de um atributo HTML (`content="..."`). */
+const attr = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
 /**
- * Resolve `%SITE_URL%` no index.html e injeta os dados estruturados gerados a
- * partir de `src/content/site.ts`. Fazer isso no build evita manter uma cópia
- * do JSON-LD escrita à mão, que sairia do ar assim que o conteúdo mudasse.
+ * Resolve os placeholders do index.html e injeta os dados estruturados, tudo a
+ * partir de `src/content/site.ts`. Fazer isso no build evita manter título,
+ * descrição e JSON-LD escritos à mão numa segunda cópia, que sairia do ar
+ * assim que o conteúdo mudasse.
  */
 const seoHtmlPlugin = (): Plugin => ({
   name: "mav-seo-html",
@@ -32,9 +42,22 @@ const seoHtmlPlugin = (): Plugin => ({
         )
         .join("\n");
 
-      return html
-        .replace(/%SITE_URL%/g, SITE_URL)
-        .replace("</head>", `${jsonLd}\n  </head>`);
+      const tokens: Record<string, string> = {
+        "%SITE_URL%": SITE_URL,
+        "%SEO_TITLE%": attr(SEO.title),
+        "%SEO_DESCRIPTION%": attr(SEO.description),
+        "%SEO_OG_TITLE%": attr(SEO.ogTitle),
+        "%SEO_OG_DESCRIPTION%": attr(SEO.ogDescription),
+        "%SEO_OG_IMAGE%": SEO.ogImage,
+        "%SEO_OG_IMAGE_ALT%": attr(SEO.ogImageAlt),
+      };
+
+      const resolved = Object.entries(tokens).reduce(
+        (acc, [token, value]) => acc.split(token).join(value),
+        html
+      );
+
+      return resolved.replace("</head>", `${jsonLd}\n  </head>`);
     },
   },
 });

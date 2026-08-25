@@ -14,6 +14,13 @@ export interface Seller {
   ordersCount?: number;
 }
 
+/** Senha inicial aleatória: o backend a converte em hash bcrypt na escrita. */
+const generateInitialPassword = (): string => {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+};
+
 export class SellersService {
   /** Lista todos os vendedores */
   static async getSellers(): Promise<Seller[]> {
@@ -57,14 +64,16 @@ export class SellersService {
     name: string;
     email: string;
     phone?: string;
-  }): Promise<Seller> {
+  }): Promise<Seller & { initialPassword: string }> {
+    const initialPassword = generateInitialPassword();
+
     const { data, error } = await db
       .from("users")
       .insert([
         {
           ...payload,
           role: "seller",
-          password: "123456",
+          password: initialPassword,
           active: true,
         },
       ])
@@ -72,7 +81,8 @@ export class SellersService {
       .single();
 
     if (error) throw error;
-    return data;
+    // Única oportunidade de mostrar a senha: o backend só guarda o hash.
+    return { ...data, initialPassword };
   }
 
   /** Atualizar vendedor */

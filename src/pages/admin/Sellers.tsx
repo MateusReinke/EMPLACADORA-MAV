@@ -77,7 +77,7 @@ const AdminSellers = () => {
 
     try {
       setSavingSeller(true);
-      await SellersService.createSeller({
+      const created = await SellersService.createSeller({
         name: newSellerName.trim(),
         email: newSellerEmail.trim(),
         phone: newSellerPhone.trim() || undefined,
@@ -90,8 +90,9 @@ const AdminSellers = () => {
       await loadSellers();
 
       toast({
-        title: 'Sucesso',
-        description: 'Vendedor criado com sucesso. Senha inicial: 123456',
+        title: 'Vendedor criado',
+        description: `Senha inicial: ${created.initialPassword} — anote agora, ela não será exibida novamente.`,
+        duration: 30000,
       });
     } catch (error) {
       console.error('Erro ao criar vendedor:', error);

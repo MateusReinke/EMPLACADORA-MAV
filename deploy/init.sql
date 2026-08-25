@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
 
-INSERT INTO users (name, email, password, role, active)
-VALUES (:'admin_name', :'admin_email', :'admin_password', 'admin', TRUE)
-ON CONFLICT (email) DO NOTHING;
+-- O admin inicial é criado pelo servidor (ensureCoreSchema), com a senha já em
+-- bcrypt. Semear aqui gravaria a senha em texto puro no banco.

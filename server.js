@@ -1,39 +1,119 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import pg from 'pg';
+import bcrypt from 'bcryptjs';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 const { Pool } = pg;
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+/**
+ * Segredos nunca caem em um default silencioso em produção: um deploy que
+ * esquece de definir a variável precisa falhar alto, não subir com a senha
+ * conhecida publicamente.
+ */
+const requireSecret = (name, devFallback) => {
+  const value = process.env[name];
+  if (value) return value;
+
+  if (IS_PRODUCTION) {
+    console.error(`[server] ${name} é obrigatório em produção e não foi definido. Encerrando.`);
+    process.exit(1);
+  }
+
+  console.warn(`[server] ${name} não definido; usando valor de desenvolvimento. NÃO use isso em produção.`);
+  return devFallback;
+};
+
 const PORT = Number(process.env.APP_PORT || 8090);
+
+const DATABASE_URL = process.env.DATABASE_URL || '';
 const DB_HOST = process.env.POSTGRES_HOST || '127.0.0.1';
 const DB_PORT = Number(process.env.POSTGRES_PORT || 5435);
 const DB_NAME = process.env.POSTGRES_DB || 'emplacadora';
 const DB_USER = process.env.POSTGRES_USER || 'emplacadora';
-const DB_PASSWORD = process.env.POSTGRES_PASSWORD || 'emplacadora123';
+
+const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '']);
+
+/**
+ * Dois modos de banco:
+ *  - `embedded`: o PostgreSQL sobe dentro do próprio container (padrão, bom
+ *    para demonstração e desenvolvimento);
+ *  - `external`: a aplicação aponta para um banco gerenciado, informado por
+ *    DATABASE_URL ou por POSTGRES_HOST apontando para fora.
+ * O deploy/start.sh lê esta mesma decisão para não iniciar um Postgres local
+ * que ninguém usaria.
+ */
+const DB_MODE = DATABASE_URL || !LOCAL_HOSTS.has(DB_HOST) ? 'external' : 'embedded';
+
+// Com DATABASE_URL a senha vem dentro da própria URL.
+const DB_PASSWORD = DATABASE_URL ? '' : requireSecret('POSTGRES_PASSWORD', 'emplacadora123');
+
+/**
+ * `require` cifra a conexão sem validar a cadeia — é o que a maioria dos
+ * provedores gerenciados (Neon, Supabase, RDS) precisa, pois usam certificados
+ * próprios. `verify-full` valida contra a CA do sistema ou a informada em
+ * POSTGRES_SSL_CA.
+ */
+const buildSslConfig = () => {
+  const mode = (process.env.POSTGRES_SSL || (DB_MODE === 'external' ? 'require' : 'disable')).toLowerCase();
+
+  if (mode === 'disable' || mode === 'false' || mode === 'off') return false;
+
+  const ca = process.env.POSTGRES_SSL_CA;
+  if (mode === 'verify-full') {
+    return ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
+  }
+
+  return { rejectUnauthorized: false };
+};
+
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || 'admin@emplacadora.com';
-const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || '123456';
+const DEFAULT_ADMIN_PASSWORD = requireSecret('DEFAULT_ADMIN_PASSWORD', '123456');
 const DEFAULT_ADMIN_NAME = process.env.DEFAULT_ADMIN_NAME || 'Administrador Padrão';
-const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || 'dev-integration-key';
+const INTEGRATION_API_KEY = requireSecret('INTEGRATION_API_KEY', 'dev-integration-key');
+const SEED_DEMO_DATA = /^(1|true|yes)$/i.test(process.env.SEED_DEMO_DATA || '');
 const API_VERSION = 'v1';
+const BCRYPT_ROUNDS = 10;
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// CSP fica desligada: o bundle do Vite depende de estilos inline do shadcn/Radix.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
-const pool = new Pool({
-  host: DB_HOST,
-  port: DB_PORT,
-  database: DB_NAME,
-  user: DB_USER,
-  password: DB_PASSWORD,
+const pool = new Pool(
+  DATABASE_URL
+    ? { connectionString: DATABASE_URL, ssl: buildSslConfig() }
+    : {
+        host: DB_HOST,
+        port: DB_PORT,
+        database: DB_NAME,
+        user: DB_USER,
+        password: DB_PASSWORD,
+        ssl: buildSslConfig(),
+      }
+);
+
+// Um erro em conexão ociosa do pool emite 'error'; sem listener, derruba o processo.
+pool.on('error', (error) => {
+  console.error('[server] erro em conexão ociosa do pool:', error);
 });
 
-const sessions = new Map();
+console.log(
+  `[server] banco em modo ${DB_MODE}` +
+    (DB_MODE === 'external' ? ` (${DATABASE_URL ? 'DATABASE_URL' : `${DB_HOST}:${DB_PORT}`})` : '')
+);
+
 const ALLOWED_TABLES = new Set([
   'users',
   'clients',
@@ -52,25 +132,26 @@ const ALLOWED_TABLES = new Set([
 
 const isSafeIdent = (s) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s);
 
-const buildWhere = (filters = [], startIndex = 1) => {
+const buildWhere = (filters = [], startIndex = 1, alias = '') => {
   const clauses = [];
   const values = [];
+  const prefix = alias ? `${alias}.` : '';
   let i = startIndex;
 
   for (const f of filters) {
     if (!f || !isSafeIdent(f.column)) continue;
 
     if (f.op === 'eq') {
-      clauses.push(`${f.column} = $${i++}`);
+      clauses.push(`${prefix}${f.column} = $${i++}`);
       values.push(f.value);
     } else if (f.op === 'in' && Array.isArray(f.value) && f.value.length > 0) {
-      clauses.push(`${f.column} = ANY($${i++})`);
+      clauses.push(`${prefix}${f.column} = ANY($${i++})`);
       values.push(f.value);
     } else if (f.op === 'gte') {
-      clauses.push(`${f.column} >= $${i++}`);
+      clauses.push(`${prefix}${f.column} >= $${i++}`);
       values.push(f.value);
     } else if (f.op === 'lte') {
-      clauses.push(`${f.column} <= $${i++}`);
+      clauses.push(`${prefix}${f.column} <= $${i++}`);
       values.push(f.value);
     }
   }
@@ -80,6 +161,223 @@ const buildWhere = (filters = [], startIndex = 1) => {
     values,
     nextIndex: i,
   };
+};
+
+/*
+ * ---------------------------------------------------------------------------
+ * Autorização do /api/query
+ *
+ * O frontend fala com um clone da API do Supabase (src/lib/dbClient.ts), mas o
+ * Supabase depende de RLS no banco para autorizar. Como este backend não tem
+ * RLS, a política vive aqui: `queryPolicy` decide se a operação é permitida e
+ * `scopeFor` devolve as cláusulas que restringem as linhas visíveis. Ambas são
+ * aplicadas no servidor — os `filters` que vêm do cliente nunca são a única
+ * defesa.
+ * ---------------------------------------------------------------------------
+ */
+
+// Catálogos: leitura para qualquer autenticado, escrita apenas admin.
+const REFERENCE_TABLES = new Set([
+  'service_categories',
+  'service_types',
+  'service_inventory_rules',
+  'order_statuses',
+  'plate_types',
+]);
+
+// Estoque: invisível para clientes finais.
+const INVENTORY_TABLES = new Set(['inventory_items', 'inventory_movements', 'inventory_status']);
+
+// Registros com dono: o escopo por role limita as linhas.
+const OWNED_TABLES = new Set(['orders', 'clients', 'vehicles']);
+
+const READ_ONLY_TABLES = new Set(['inventory_status']);
+
+// Nunca trafegam para o cliente, em nenhuma tabela.
+const SENSITIVE_COLUMNS = new Set(['password', 'password_hash']);
+
+// Só admin muda: impede escalonamento de privilégio via /api/query.
+const PRIVILEGED_COLUMNS = new Set(['role', 'active']);
+
+const CLIENT_ROLES = new Set(['physical', 'juridical']);
+
+const deny = (message = 'Operação não permitida para este perfil') => ({ allowed: false, message });
+const allow = () => ({ allowed: true });
+
+const queryPolicy = (table, action, user) => {
+  const isRead = action === 'select';
+
+  if (READ_ONLY_TABLES.has(table) && !isRead) {
+    return deny('Recurso somente leitura');
+  }
+
+  if (user.role === 'admin') return allow();
+
+  if (table === 'users') {
+    // Não-admin só enxerga a própria linha (ver scopeFor) e nunca escreve.
+    return isRead ? allow() : deny();
+  }
+
+  if (REFERENCE_TABLES.has(table)) {
+    return isRead ? allow() : deny('Apenas administradores alteram catálogos');
+  }
+
+  if (INVENTORY_TABLES.has(table)) {
+    if (user.role === 'seller') {
+      return isRead ? allow() : deny('Apenas administradores alteram o estoque');
+    }
+    return deny();
+  }
+
+  if (table === 'dashboard_layouts') {
+    // scopeFor prende à própria linha; o user_id é forçado na escrita.
+    return allow();
+  }
+
+  if (OWNED_TABLES.has(table)) {
+    if (user.role === 'seller') return allow();
+    // Clientes finais apenas consultam os próprios registros.
+    return isRead ? allow() : deny();
+  }
+
+  return deny();
+};
+
+/**
+ * Cláusulas de escopo por perfil. Cada entrada recebe o índice do próximo
+ * placeholder e devolve o SQL correspondente, para compor com os filtros do
+ * cliente sem colidir numeração.
+ */
+const scopeFor = (table, user, alias = '') => {
+  if (user.role === 'admin') return [];
+
+  const p = alias ? `${alias}.` : '';
+  const ownClientsSubquery = (i) =>
+    `(SELECT id FROM clients WHERE created_by = $${i} OR (email IS NOT NULL AND email = $${i + 1}))`;
+
+  if (table === 'users') {
+    return [{ sql: (i) => `${p}id = $${i}`, values: [user.id] }];
+  }
+
+  if (table === 'dashboard_layouts') {
+    return [{ sql: (i) => `${p}user_id = $${i}`, values: [user.id] }];
+  }
+
+  if (user.role === 'seller') {
+    if (table === 'orders' || table === 'clients') {
+      return [{ sql: (i) => `${p}created_by = $${i}`, values: [user.id] }];
+    }
+    if (table === 'vehicles') {
+      return [
+        {
+          sql: (i) => `${p}client_id IN (SELECT id FROM clients WHERE created_by = $${i})`,
+          values: [user.id],
+        },
+      ];
+    }
+    return [];
+  }
+
+  if (CLIENT_ROLES.has(user.role)) {
+    // O vínculo usuário → cliente é por created_by ou e-mail (ver clientProfileService).
+    if (table === 'clients') {
+      return [
+        {
+          sql: (i) => `(${p}created_by = $${i} OR (${p}email IS NOT NULL AND ${p}email = $${i + 1}))`,
+          values: [user.id, user.email],
+        },
+      ];
+    }
+    if (table === 'orders' || table === 'vehicles') {
+      return [
+        {
+          sql: (i) => `${p}client_id IN ${ownClientsSubquery(i)}`,
+          values: [user.id, user.email],
+        },
+      ];
+    }
+    return [];
+  }
+
+  return [];
+};
+
+/** Filtros do cliente + escopo do servidor, com numeração de placeholders contígua. */
+const buildScopedWhere = (table, filters, user, alias = '') => {
+  const base = buildWhere(filters, 1, alias);
+  const clauses = base.sql ? [base.sql.replace(/^WHERE /, '')] : [];
+  const values = [...base.values];
+  let i = base.nextIndex;
+
+  for (const scope of scopeFor(table, user, alias)) {
+    clauses.push(scope.sql(i));
+    values.push(...scope.values);
+    i += scope.values.length;
+  }
+
+  return {
+    sql: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    values,
+    nextIndex: i,
+    clientFilterCount: base.values.length,
+  };
+};
+
+const stripSensitive = (row) => {
+  if (!row || typeof row !== 'object') return row;
+  const clean = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (SENSITIVE_COLUMNS.has(key)) continue;
+    clean[key] = value;
+  }
+  return clean;
+};
+
+const stripSensitiveRows = (data) => {
+  if (Array.isArray(data)) return data.map(stripSensitive);
+  return stripSensitive(data);
+};
+
+/**
+ * Normaliza um payload de escrita: converte senha em claro para hash, remove
+ * colunas privilegiadas de quem não é admin e força o dono do registro.
+ */
+const sanitizeWritePayload = async (table, row, user) => {
+  const clean = { ...(row || {}) };
+
+  for (const key of SENSITIVE_COLUMNS) {
+    if (key === 'password') continue;
+    delete clean[key];
+  }
+
+  if (typeof clean.password === 'string' && clean.password) {
+    clean.password_hash = await bcrypt.hash(clean.password, BCRYPT_ROUNDS);
+  }
+  delete clean.password;
+
+  if (user.role !== 'admin') {
+    for (const key of PRIVILEGED_COLUMNS) delete clean[key];
+  }
+
+  if (user.role !== 'admin') {
+    if (table === 'orders' || table === 'clients') clean.created_by = user.id;
+    if (table === 'dashboard_layouts') clean.user_id = user.id;
+  }
+
+  return clean;
+};
+
+/** Um não-admin só pode escrever veículo de um cliente que ele enxerga. */
+const assertVehicleClientInScope = async (clientId, user) => {
+  if (user.role === 'admin' || !clientId) return;
+
+  const scope = buildScopedWhere('clients', [{ op: 'eq', column: 'id', value: clientId }], user);
+  const { rows } = await pool.query(`SELECT 1 FROM clients ${scope.sql} LIMIT 1`, scope.values);
+  if (!rows[0]) {
+    const error = new Error('Cliente fora do escopo do usuário');
+    error.statusCode = 403;
+    throw error;
+  }
 };
 
 
@@ -101,6 +399,22 @@ const ensureCoreSchema = async () => {
   `);
 
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT`);
+  // `password` (texto puro) vira legado: fica nullable até ser removida numa
+  // migration futura, depois que todo ambiente tiver rodado o backfill.
+  await pool.query(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions(user_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions(expires_at)`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS service_categories (
@@ -284,21 +598,26 @@ const ensureCoreSchema = async () => {
     FROM inventory_items i
   `);
 
+  // DO NOTHING, e não DO UPDATE: o bootstrap cria o admin quando ele não
+  // existe, mas nunca reverte a senha que o operador trocou pela interface.
   await pool.query(
     `
-      INSERT INTO users (name, email, password, role, active)
+      INSERT INTO users (name, email, password_hash, role, active)
       VALUES ($1, $2, $3, 'admin', true)
-      ON CONFLICT (email)
-      DO UPDATE SET
-        name = EXCLUDED.name,
-        password = EXCLUDED.password,
-        role = 'admin',
-        active = true,
-        updated_at = NOW()
+      ON CONFLICT (email) DO NOTHING
     `,
-    [DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD]
+    [DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_EMAIL, await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, BCRYPT_ROUNDS)]
   );
 
+  /*
+   * Vocabulário estrutural do domínio. Sempre `DO NOTHING`: o boot preenche um
+   * banco novo, mas nunca reverte o que o operador ajustou depois. Com
+   * `DO UPDATE` — como era antes — cor, ordem e prefixo voltavam ao valor de
+   * fábrica a cada restart.
+   *
+   * Os status de pedido são estruturais de verdade: a reposição automática de
+   * estoque depende de existir um status cujo nome contenha "cancel".
+   */
   await pool.query(`
     INSERT INTO order_statuses (name, sort_order, color, active)
     VALUES
@@ -311,11 +630,7 @@ const ensureCoreSchema = async () => {
       ('Pronto para retirada', 7, '#14b8a6', TRUE),
       ('Concluído', 8, '#16a34a', TRUE),
       ('Cancelado', 9, '#dc2626', TRUE)
-    ON CONFLICT (name) DO UPDATE SET
-      sort_order = EXCLUDED.sort_order,
-      color = EXCLUDED.color,
-      active = EXCLUDED.active,
-      updated_at = NOW()
+    ON CONFLICT (name) DO NOTHING
   `);
 
   await pool.query(`
@@ -333,11 +648,7 @@ const ensureCoreSchema = async () => {
       ('MOTO', 'Moto', 2, TRUE),
       ('CAMINHAO', 'Caminhão', 6, TRUE),
       ('ONIBUS', 'Ônibus', 6, TRUE)
-    ON CONFLICT (code) DO UPDATE SET
-      label = EXCLUDED.label,
-      wheel_count = EXCLUDED.wheel_count,
-      active = EXCLUDED.active,
-      updated_at = NOW()
+    ON CONFLICT (code) DO NOTHING
   `);
 
   await pool.query(`
@@ -347,71 +658,72 @@ const ensureCoreSchema = async () => {
       ('Transferência', 'TRF'),
       ('Segunda Via', '2VIA'),
       ('Documentação', 'DOC')
-    ON CONFLICT (name) DO UPDATE SET
-      prefix = EXCLUDED.prefix,
-      updated_at = NOW()
+    ON CONFLICT (name) DO NOTHING
   `);
 
-  await pool.query(`
-    INSERT INTO inventory_items (name, quantity, min_quantity, cost_price, category)
-    VALUES
-      ('Placa Mercosul Carro', 200, 20, 40, 'placas'),
-      ('Placa Mercosul Moto', 150, 15, 35, 'placas'),
-      ('Lacre', 500, 50, 2, 'insumos'),
-      ('Tarjeta', 300, 30, 4, 'insumos')
-    ON CONFLICT DO NOTHING
-  `);
-
-  await pool.query(`
-    INSERT INTO service_types (name, description, active, price, category_id)
-    SELECT seed.name, seed.description, TRUE, seed.price, sc.id
-    FROM (
-      VALUES
-        ('Primeiro emplacamento', 'Cadastro e emissão inicial de placa Mercosul', 320.00::numeric, 'Emplacamento'),
-        ('Transferência de propriedade', 'Processo completo de transferência com emissão de placas', 380.00::numeric, 'Transferência'),
-        ('Segunda via de placa', 'Emissão de segunda via de placa por perda ou dano', 260.00::numeric, 'Segunda Via'),
-        ('Regularização documental', 'Apoio na regularização de documentação veicular', 180.00::numeric, 'Documentação')
-    ) AS seed(name, description, price, category_name)
-    JOIN service_categories sc ON sc.name = seed.category_name
-    ON CONFLICT (name) DO UPDATE SET
-      description = EXCLUDED.description,
-      active = EXCLUDED.active,
-      price = EXCLUDED.price,
-      category_id = EXCLUDED.category_id,
-      updated_at = NOW()
-  `);
-
-
-  await pool.query(`
-    DELETE FROM service_inventory_rules
-    WHERE service_type_id IN (
-      SELECT id FROM service_types WHERE name IN (
-        'Primeiro emplacamento',
-        'Transferência de propriedade',
-        'Segunda via de placa'
-      )
-    )
-  `);
-
-  await pool.query(`
-    INSERT INTO service_inventory_rules (service_type_id, inventory_item_id, vehicle_category, quantity_required, active)
-    SELECT st.id, ii.id, rules.vehicle_category, rules.quantity_required, TRUE
-    FROM (
-      VALUES
-        ('Primeiro emplacamento', 'Placa Mercosul Carro', 'carro', 2),
-        ('Primeiro emplacamento', 'Placa Mercosul Moto', 'moto', 1),
-        ('Primeiro emplacamento', 'Lacre', 'all', 1),
-        ('Transferência de propriedade', 'Placa Mercosul Carro', 'carro', 2),
-        ('Transferência de propriedade', 'Placa Mercosul Moto', 'moto', 1),
-        ('Transferência de propriedade', 'Lacre', 'all', 1),
-        ('Segunda via de placa', 'Placa Mercosul Carro', 'carro', 2),
-        ('Segunda via de placa', 'Placa Mercosul Moto', 'moto', 1)
-    ) AS rules(service_name, item_name, vehicle_category, quantity_required)
-    JOIN service_types st ON st.name = rules.service_name
-    JOIN inventory_items ii ON ii.name = rules.item_name
-  `);
+  // Colunas usadas em todo filtro/join do app não tinham índice algum.
+  await pool.query(`CREATE INDEX IF NOT EXISTS orders_client_id_idx ON orders(client_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS orders_status_id_idx ON orders(status_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS orders_created_by_idx ON orders(created_by)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS orders_service_type_id_idx ON orders(service_type_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS clients_created_by_idx ON clients(created_by)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS clients_email_idx ON clients(email)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS vehicles_client_id_idx ON vehicles(client_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS vehicles_license_plate_idx ON vehicles(license_plate)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS inventory_movements_order_id_idx ON inventory_movements(order_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS inventory_movements_item_id_idx ON inventory_movements(inventory_item_id)`);
 };
 
+/**
+ * Dados de demonstração (tipos de serviço com preços, itens de estoque e regras
+ * de consumo). Ficam FORA do boot padrão: um deploy real nasce vazio e o cliente
+ * cadastra os próprios serviços e preços pelas telas de administração. Carregar
+ * é sempre um ato explícito — `SEED_DEMO_DATA=true` ou rodar o arquivo à mão
+ * com psql. O SQL vive só em deploy/seed_emplacadora.sql, sem cópia aqui.
+ */
+const loadDemoData = async () => {
+  const seedPath = path.join(__dirname, 'deploy', 'seed_emplacadora.sql');
+
+  try {
+    const sql = await fs.readFile(seedPath, 'utf8');
+    await pool.query(sql);
+    console.log('[server] dados de demonstração carregados (SEED_DEMO_DATA).');
+  } catch (error) {
+    console.error('[server] falha ao carregar dados de demonstração:', error);
+  }
+};
+
+/**
+ * Backfill das senhas em texto puro para bcrypt. Como o valor original está
+ * disponível, o hash é gerado direto e a coluna legada é zerada no mesmo passo
+ * — não é preciso esperar o próximo login do usuário.
+ */
+const migratePlaintextPasswords = async () => {
+  const { rows } = await pool.query(
+    `SELECT id, password FROM users
+     WHERE password_hash IS NULL AND password IS NOT NULL AND password <> ''`
+  );
+
+  for (const row of rows) {
+    const hash = await bcrypt.hash(row.password, BCRYPT_ROUNDS);
+    await pool.query('UPDATE users SET password_hash = $1, password = NULL, updated_at = NOW() WHERE id = $2', [
+      hash,
+      row.id,
+    ]);
+  }
+
+  // Restos de texto puro em contas que já tinham hash.
+  await pool.query(`UPDATE users SET password = NULL WHERE password IS NOT NULL AND password_hash IS NOT NULL`);
+
+  if (rows.length) {
+    console.log(`[server] ${rows.length} senha(s) em texto puro migrada(s) para bcrypt.`);
+  }
+};
+
+/**
+ * Diagnóstico de bootstrap. Só é usado nos logs de startup e na rota
+ * autenticada de integrações — o /api/health público não expõe nada disso.
+ */
 const getAuthDiagnostics = async () => {
   const [{ rows: adminRows }, { rows: totalRows }] = await Promise.all([
     pool.query('SELECT id, email, role, active FROM users WHERE email = $1 LIMIT 1', [DEFAULT_ADMIN_EMAIL]),
@@ -426,6 +738,44 @@ const getAuthDiagnostics = async () => {
   };
 };
 
+const sessionCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: IS_PRODUCTION,
+  maxAge: SESSION_TTL_MS,
+  path: '/',
+});
+
+const createSession = async (userId) => {
+  const token = crypto.randomUUID();
+  await pool.query('INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)', [
+    token,
+    userId,
+    new Date(Date.now() + SESSION_TTL_MS),
+  ]);
+  return token;
+};
+
+const destroySession = (token) => pool.query('DELETE FROM sessions WHERE token = $1', [token]);
+
+const purgeExpiredSessions = async () => {
+  try {
+    await pool.query('DELETE FROM sessions WHERE expires_at <= NOW()');
+  } catch (error) {
+    console.error('[server] falha ao limpar sessões expiradas:', error);
+  }
+};
+
+/** Erro genérico para o cliente; o detalhe fica no log do servidor. */
+const respondServerError = (res, context, error, shape = 'query') => {
+  console.error(`[server] ${context}:`, error);
+  const status = error?.statusCode || 500;
+  const message = error?.statusCode ? error.message : 'Erro interno do servidor';
+
+  if (shape === 'ok') return res.status(status).json({ ok: false, error: { message } });
+  return res.status(status).json({ data: null, error: { message } });
+};
+
 
 const parsePagination = (req) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 500);
@@ -433,9 +783,16 @@ const parsePagination = (req) => {
   return { limit, offset };
 };
 
+/** Comparação em tempo constante, para não vazar a chave por timing. */
+const secretsMatch = (provided, expected) => {
+  const a = Buffer.from(String(provided ?? ''), 'utf8');
+  const b = Buffer.from(String(expected ?? ''), 'utf8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+};
+
 const requireIntegrationKey = (req, res, next) => {
-  const provided = req.header('x-api-key');
-  if (!provided || provided !== INTEGRATION_API_KEY) {
+  if (!secretsMatch(req.header('x-api-key'), INTEGRATION_API_KEY)) {
     return res.status(401).json({
       ok: false,
       error: {
@@ -446,6 +803,14 @@ const requireIntegrationKey = (req, res, next) => {
 
   return next();
 };
+
+const signinLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { data: { user: null, session: null }, error: { message: 'Muitas tentativas de login. Tente novamente em alguns minutos.' } },
+});
 
 const mapOrderWhere = (params = {}) => {
   const clauses = [];
@@ -541,22 +906,41 @@ const restoreOrderInventory = async (client, orderId, responsibleId, reason) => 
 const getSessionUser = async (req) => {
   const token = req.cookies?.vp_session;
   if (!token) return null;
-  const userId = sessions.get(token);
-  if (!userId) return null;
+
   const { rows } = await pool.query(
-    'SELECT id, email, role FROM users WHERE id = $1 AND active = true LIMIT 1',
-    [userId]
+    `SELECT u.id, u.email, u.role, u.name
+     FROM sessions s
+     JOIN users u ON u.id = s.user_id
+     WHERE s.token = $1 AND s.expires_at > NOW() AND u.active = true
+     LIMIT 1`,
+    [token]
   );
+
   return rows[0] || null;
+};
+
+const requireAuth = async (req, res, next) => {
+  try {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return res.status(401).json({ data: null, error: { message: 'Não autenticado' } });
+    }
+    req.user = user;
+    return next();
+  } catch (error) {
+    return respondServerError(res, 'falha ao resolver sessão', error);
+  }
 };
 
 app.get('/api/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
-    const auth = await getAuthDiagnostics();
-    res.json({ ok: true, auth });
+    res.json({ ok: true, database: DB_MODE });
   } catch (error) {
-    res.status(500).json({ ok: false, error: String(error) });
+    console.error('[server] health check falhou:', error);
+    // 503, não 500: a API está de pé mas não consegue servir. Um 500 fazia o
+    // orquestrador tratar como saudável um container sem banco.
+    res.status(503).json({ ok: false, database: DB_MODE, error: { message: 'Banco de dados indisponível' } });
   }
 });
 
@@ -566,35 +950,57 @@ app.get('/api/auth/session', async (req, res) => {
     if (!user) return res.json({ data: { session: null }, error: null });
     return res.json({ data: { session: { access_token: 'server-session', user } }, error: null });
   } catch (error) {
-    return res.status(500).json({ data: { session: null }, error: { message: String(error) } });
+    console.error('[server] falha ao ler sessão:', error);
+    return res.status(500).json({ data: { session: null }, error: { message: 'Erro interno do servidor' } });
   }
 });
 
-app.post('/api/auth/signin', async (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ data: { user: null, session: null }, error: { message: 'Credenciais inválidas' } });
-  }
+app.post('/api/auth/signin', signinLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ data: { user: null, session: null }, error: { message: 'Credenciais inválidas' } });
+    }
 
-  const { rows } = await pool.query(
-    'SELECT id, email, role FROM users WHERE email = $1 AND password = $2 AND active = true LIMIT 1',
-    [email, password]
-  );
-  const user = rows[0];
-  if (!user) {
-    return res.status(401).json({ data: { user: null, session: null }, error: { message: 'Credenciais inválidas' } });
-  }
+    const { rows } = await pool.query(
+      'SELECT id, email, role, name, password_hash FROM users WHERE email = $1 AND active = true LIMIT 1',
+      [email]
+    );
 
-  const token = crypto.randomUUID();
-  sessions.set(token, user.id);
-  res.cookie('vp_session', token, { httpOnly: true, sameSite: 'lax' });
-  return res.json({ data: { user, session: { access_token: 'server-session', user } }, error: null });
+    const record = rows[0];
+    // bcrypt.compare mesmo sem usuário: mantém o custo constante e não revela
+    // por timing se o e-mail existe.
+    const passwordMatches = await bcrypt.compare(
+      String(password),
+      record?.password_hash || '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidi'
+    );
+
+    if (!record || !passwordMatches) {
+      return res.status(401).json({ data: { user: null, session: null }, error: { message: 'Credenciais inválidas' } });
+    }
+
+    const user = { id: record.id, email: record.email, role: record.role, name: record.name };
+    const token = await createSession(user.id);
+    res.cookie('vp_session', token, sessionCookieOptions());
+
+    return res.json({ data: { user, session: { access_token: 'server-session', user } }, error: null });
+  } catch (error) {
+    console.error('[server] falha no login:', error);
+    return res
+      .status(500)
+      .json({ data: { user: null, session: null }, error: { message: 'Erro interno do servidor' } });
+  }
 });
 
-app.post('/api/auth/signout', (req, res) => {
-  const token = req.cookies?.vp_session;
-  if (token) sessions.delete(token);
-  res.clearCookie('vp_session');
+app.post('/api/auth/signout', async (req, res) => {
+  try {
+    const token = req.cookies?.vp_session;
+    if (token) await destroySession(token);
+  } catch (error) {
+    console.error('[server] falha ao encerrar sessão:', error);
+  }
+
+  res.clearCookie('vp_session', { ...sessionCookieOptions(), maxAge: undefined });
   res.json({ error: null });
 });
 
@@ -621,7 +1027,7 @@ app.get('/api/integrations/health', requireIntegrationKey, async (_req, res) => 
     const auth = await getAuthDiagnostics();
     return res.json({ ok: true, version: API_VERSION, auth });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -647,7 +1053,7 @@ app.get('/api/integrations/orders', requireIntegrationKey, async (req, res) => {
       pagination: { limit, offset, total: countRows[0]?.total ?? 0 },
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -660,7 +1066,7 @@ app.get('/api/integrations/orders/:id', requireIntegrationKey, async (req, res) 
     }
     return res.json({ ok: true, data: rows[0] });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -682,7 +1088,7 @@ app.post('/api/integrations/orders/:id/status', requireIntegrationKey, async (re
 
     return res.json({ ok: true, data: rows[0] });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -695,7 +1101,7 @@ app.get('/api/integrations/clients', requireIntegrationKey, async (req, res) => 
     );
     return res.json({ ok: true, data: rows, pagination: { limit, offset } });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -708,7 +1114,7 @@ app.get('/api/integrations/vehicles', requireIntegrationKey, async (req, res) =>
     );
     return res.json({ ok: true, data: rows, pagination: { limit, offset } });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -719,7 +1125,7 @@ app.get('/api/integrations/service-types', requireIntegrationKey, async (_req, r
     );
     return res.json({ ok: true, data: rows });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -728,7 +1134,7 @@ app.get('/api/integrations/order-statuses', requireIntegrationKey, async (_req, 
     const { rows } = await pool.query(`SELECT * FROM order_statuses ORDER BY sort_order ASC, name ASC`);
     return res.json({ ok: true, data: rows });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: { message: String(error) } });
+    return respondServerError(res, 'falha em rota de integração', error, 'ok');
   }
 });
 
@@ -736,7 +1142,7 @@ app.post('/api/integrations/webhooks/test', requireIntegrationKey, async (req, r
   return res.json({ ok: true, receivedAt: new Date().toISOString(), payload: req.body ?? null });
 });
 
-app.post('/api/query', async (req, res) => {
+app.post('/api/query', requireAuth, async (req, res) => {
   try {
     const {
       table,
@@ -755,14 +1161,25 @@ app.post('/api/query', async (req, res) => {
       return res.status(400).json({ data: null, error: { message: 'Tabela não permitida' } });
     }
 
+    const user = req.user;
+    const policy = queryPolicy(table, action, user);
+    if (!policy.allowed) {
+      return res.status(403).json({ data: null, error: { message: policy.message } });
+    }
+
     if (action === 'select') {
-      const where = buildWhere(filters);
+      // A consulta de pedidos usa join, então colunas ambíguas (created_by
+      // existe em orders e em clients) precisam do alias `o`.
+      const alias = table === 'orders' ? 'o' : '';
+      const where = buildScopedWhere(table, filters, user, alias);
+      const orderPrefix = alias ? `${alias}.` : '';
       const orderSql = sortBy && isSafeIdent(sortBy.column)
-        ? ` ORDER BY ${sortBy.column} ${sortBy.ascending ? 'ASC' : 'DESC'}`
+        ? ` ORDER BY ${orderPrefix}${sortBy.column} ${sortBy.ascending ? 'ASC' : 'DESC'}`
         : '';
       const limitSql = Number.isInteger(limitN) ? ` LIMIT ${limitN}` : '';
 
       let query;
+      let countFrom;
       if (table === 'orders') {
         query = `
           SELECT o.*,
@@ -779,31 +1196,44 @@ app.post('/api/query', async (req, res) => {
           ${orderSql}
           ${limitSql}
         `;
+        countFrom = 'orders o';
       } else {
         query = `SELECT * FROM ${table} ${where.sql}${orderSql}${limitSql}`;
+        countFrom = table;
       }
 
       const { rows } = await pool.query(query, where.values);
       let count;
       if (selectOptions?.count === 'exact') {
-        const c = await pool.query(`SELECT COUNT(*)::int AS total FROM ${table} ${where.sql}`, where.values);
+        const c = await pool.query(
+          `SELECT COUNT(*)::int AS total FROM ${countFrom} ${where.sql}`,
+          where.values
+        );
         count = c.rows[0]?.total ?? 0;
       }
 
-      const data = selectOptions?.head ? null : rows;
+      const safeRows = stripSensitiveRows(rows);
+      const data = selectOptions?.head ? null : safeRows;
       if (singleMode === 'single') {
-        if (!rows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' }, count });
-        return res.json({ data: rows[0], error: null, count });
+        if (!safeRows[0]) return res.json({ data: null, error: { message: 'Registro não encontrado' }, count });
+        return res.json({ data: safeRows[0], error: null, count });
       }
       if (singleMode === 'maybeSingle') {
-        return res.json({ data: rows[0] ?? null, error: null, count });
+        return res.json({ data: safeRows[0] ?? null, error: null, count });
       }
       return res.json({ data, error: null, count });
     }
 
     if (action === 'insert') {
-      const rowsToInsert = Array.isArray(payload) ? payload : [];
-      if (!rowsToInsert.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
+      const rawRows = Array.isArray(payload) ? payload : [];
+      if (!rawRows.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
+
+      const rowsToInsert = [];
+      for (const raw of rawRows) {
+        const clean = await sanitizeWritePayload(table, raw, user);
+        if (table === 'vehicles') await assertVehicleClientInScope(clean.client_id, user);
+        rowsToInsert.push(clean);
+      }
 
       const inserted = [];
       for (const row of rowsToInsert) {
@@ -886,20 +1316,28 @@ app.post('/api/query', async (req, res) => {
         }
       }
 
+      const safeInserted = stripSensitiveRows(inserted);
       if (returnMode === 'minimal') {
         return res.json({ data: null, error: null });
       }
-      if (singleMode === 'single') return res.json({ data: inserted[0] ?? null, error: null });
-      return res.json({ data: inserted, error: null });
+      if (singleMode === 'single') return res.json({ data: safeInserted[0] ?? null, error: null });
+      return res.json({ data: safeInserted, error: null });
     }
 
     if (action === 'upsert') {
-      const rowsToUpsert = Array.isArray(payload) ? payload : payload ? [payload] : [];
-      if (!rowsToUpsert.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
+      const rawRows = Array.isArray(payload) ? payload : payload ? [payload] : [];
+      if (!rawRows.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
 
       const conflictColumn = isSafeIdent(upsertOptions?.onConflict || '') ? upsertOptions.onConflict : null;
       if (!conflictColumn) {
         return res.status(400).json({ data: null, error: { message: 'onConflict é obrigatório para upsert' } });
+      }
+
+      const rowsToUpsert = [];
+      for (const raw of rawRows) {
+        const clean = await sanitizeWritePayload(table, raw, user);
+        if (table === 'vehicles') await assertVehicleClientInScope(clean.client_id, user);
+        rowsToUpsert.push(clean);
       }
 
       const upserted = [];
@@ -923,19 +1361,29 @@ app.post('/api/query', async (req, res) => {
         upserted.push(r.rows[0]);
       }
 
+      const safeUpserted = stripSensitiveRows(upserted);
       if (returnMode === 'minimal') {
         return res.json({ data: null, error: null });
       }
-      if (singleMode === 'single' || rowsToUpsert.length === 1) return res.json({ data: upserted[0] ?? null, error: null });
-      return res.json({ data: upserted, error: null });
+      if (singleMode === 'single' || rowsToUpsert.length === 1) return res.json({ data: safeUpserted[0] ?? null, error: null });
+      return res.json({ data: safeUpserted, error: null });
     }
 
     if (action === 'update') {
-      const where = buildWhere(filters);
-      const cols = Object.keys(payload || {}).filter(isSafeIdent);
+      const where = buildScopedWhere(table, filters, user);
+      // Sem filtro do cliente o UPDATE não teria WHERE e reescreveria a tabela
+      // inteira — o escopo de perfil sozinho não é proteção suficiente aqui.
+      if (!where.clientFilterCount) {
+        return res
+          .status(400)
+          .json({ data: null, error: { message: 'update exige ao menos um filtro' } });
+      }
+
+      const cleanPayload = await sanitizeWritePayload(table, payload, user);
+      const cols = Object.keys(cleanPayload).filter(isSafeIdent);
       if (!cols.length) return res.status(400).json({ data: null, error: { message: 'Payload vazio' } });
       const setSql = cols.map((c, i) => `${c} = $${i + 1}`).join(', ');
-      const values = cols.map((c) => payload[c]);
+      const values = cols.map((c) => cleanPayload[c]);
       const whereSql = where.sql ? ` ${where.sql.replace(/\$(\d+)/g, (_, n) => `$${Number(n) + cols.length}`)}` : '';
       const q = `UPDATE ${table} SET ${setSql}, updated_at = NOW()${whereSql} RETURNING *`;
 
@@ -950,12 +1398,12 @@ app.post('/api/query', async (req, res) => {
           );
 
           const r = await client.query(q, [...values, ...where.values]);
-          const rows = r.rows;
+          const rows = stripSensitiveRows(r.rows);
 
-          if (payload?.status_id) {
+          if (cleanPayload.status_id) {
             const { rows: targetStatusRows } = await client.query(
               'SELECT name FROM order_statuses WHERE id = $1 LIMIT 1',
-              [payload.status_id]
+              [cleanPayload.status_id]
             );
 
             const targetName = String(targetStatusRows[0]?.name || '').toLowerCase();
@@ -998,7 +1446,7 @@ app.post('/api/query', async (req, res) => {
       }
 
       const r = await pool.query(q, [...values, ...where.values]);
-      const rows = r.rows;
+      const rows = stripSensitiveRows(r.rows);
       if (returnMode === 'minimal') {
         return res.json({ data: null, error: null });
       }
@@ -1011,7 +1459,13 @@ app.post('/api/query', async (req, res) => {
     }
 
     if (action === 'delete') {
-      const where = buildWhere(filters);
+      const where = buildScopedWhere(table, filters, user);
+      // Mesmo motivo do update: sem filtro isto vira `DELETE FROM <tabela>`.
+      if (!where.clientFilterCount) {
+        return res
+          .status(400)
+          .json({ data: null, error: { message: 'delete exige ao menos um filtro' } });
+      }
 
       if (table === 'orders') {
         const client = await pool.connect();
@@ -1049,7 +1503,7 @@ app.post('/api/query', async (req, res) => {
 
     return res.status(400).json({ data: null, error: { message: 'Ação inválida' } });
   } catch (error) {
-    return res.status(500).json({ data: null, error: { message: String(error) } });
+    return respondServerError(res, `falha em /api/query (${req.body?.table}/${req.body?.action})`, error);
   }
 });
 
@@ -1057,6 +1511,15 @@ app.post('/api/query', async (req, res) => {
 app.use(express.static(path.join(__dirname, 'dist')));
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Sem estes handlers, uma rejeição não tratada derruba o processo silenciosamente.
+process.on('unhandledRejection', (reason) => {
+  console.error('[server] unhandled rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[server] uncaught exception:', error);
 });
 
 const startHttpServer = () => {
@@ -1067,6 +1530,11 @@ const startHttpServer = () => {
 const bootstrap = async () => {
   try {
     await ensureCoreSchema();
+    await migratePlaintextPasswords();
+    if (SEED_DEMO_DATA) await loadDemoData();
+    await purgeExpiredSessions();
+    setInterval(purgeExpiredSessions, 1000 * 60 * 60).unref();
+
     const auth = await getAuthDiagnostics();
     console.log('[server] auth bootstrap:', auth);
   } catch (error) {

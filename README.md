@@ -1,71 +1,144 @@
 # EMPLACADORA-MAV
 
-Aplicação React/Vite para gestão de emplacadora, preparada para rodar com:
-- **App Web na porta `8090`**
-- **PostgreSQL na porta `5435`**
-- **Deploy no mesmo container** (app + banco no mesmo runtime)
+Aplicação React/Vite para gestão de emplacadora, com backend Express +
+PostgreSQL. O app web sobe na porta `8090` e o banco pode rodar de dois jeitos:
 
-## Credenciais padrão
+| Modo | Quando usar | Como ativar |
+|---|---|---|
+| **Embutido** (padrão) | Demonstração, desenvolvimento, avaliação | Nada a fazer — o PostgreSQL sobe dentro do container |
+| **Externo** | Produção: banco gerenciado, com backup e escala | Definir `DATABASE_URL` (ou `POSTGRES_HOST`) |
 
-Para primeiro acesso:
-- **Email:** `admin@emplacadora.com`
-- **Senha:** `123456`
-- **Perfil:** `admin`
+No modo externo o PostgreSQL embutido **não é iniciado**: a aplicação conecta
+direto no banco informado, e o container carrega só o app.
+
+## Primeiro acesso
+
+O usuário admin inicial é criado no primeiro boot a partir das variáveis
+`DEFAULT_ADMIN_EMAIL` e `DEFAULT_ADMIN_PASSWORD`, com a senha já em bcrypt.
+
+- Em produção (`NODE_ENV=production`) **não existe senha padrão**: o servidor
+  recusa iniciar se `DEFAULT_ADMIN_PASSWORD`, `POSTGRES_PASSWORD` ou
+  `INTEGRATION_API_KEY` não vierem do ambiente.
+- Depois do primeiro boot, o bootstrap nunca sobrescreve a senha do admin —
+  trocar a senha pela aplicação é definitivo e sobrevive a restarts.
+- Em desenvolvimento, sem variáveis definidas, o servidor cai em valores de
+  conveniência e avisa no log. Não use esse modo em ambiente exposto.
 
 ## Rodando localmente (sem Docker)
 
 ```bash
+cp .env.example .env   # defina os segredos
 npm install
 npm run dev -- --host 0.0.0.0 --port 8090
 ```
 
-## Deploy em um único container
+## Deploy — modo embutido (banco no mesmo container)
 
 ```bash
-docker build -t emplacadora-mav .
-docker run --rm -p 8090:8090 -p 5435:5435 emplacadora-mav
+cp .env.example .env   # defina os segredos
+docker compose up -d
 ```
 
-Ao iniciar, o container:
-1. sobe o PostgreSQL interno na porta `5435`;
-2. cria banco/usuário padrão (se ainda não existirem);
-3. aplica seed de usuário admin inicial;
-4. sobe o servidor web/API em `8090` (frontend + rotas `/api/*`).
+O PostgreSQL roda dentro do container e escuta apenas em `127.0.0.1`, sem ser
+publicado no host. Para acesso externo ao banco, defina
+`POSTGRES_LISTEN=0.0.0.0` e publique a porta `5435` — nunca com senha padrão.
 
-O backend também garante no startup que:
-- a tabela `users` existe;
-- o usuário admin padrão existe/está ativo com as credenciais definidas em ambiente.
+Ao iniciar, o container sobe o PostgreSQL interno, cria banco e usuário se não
+existirem, aplica o schema e sobe a API/web em `8090`.
+
+Os dados vivem no volume `pgdata`. Ele **não** é gerenciado por nenhuma rotina de
+backup — para produção com dados reais, prefira o modo externo.
+
+## Deploy — modo externo (banco gerenciado)
+
+Basta apontar `DATABASE_URL` para o banco:
+
+```bash
+DATABASE_URL=postgres://usuario:senha@host:5432/emplacadora
+```
+
+O `start.sh` detecta e pula a inicialização do PostgreSQL local. A aplicação
+cria o schema sozinha na primeira conexão, então o banco pode estar vazio — só
+precisa existir, com um usuário que possa criar tabelas.
+
+`POSTGRES_PASSWORD` deixa de ser necessária (a senha vai dentro da URL). Como
+alternativa a `DATABASE_URL`, dá para usar `POSTGRES_HOST`/`PORT`/`DB`/`USER`/
+`PASSWORD` separados — apontar `POSTGRES_HOST` para fora já ativa o modo externo.
+
+TLS via `POSTGRES_SSL`: `require` (padrão no modo externo, cifra sem validar a
+cadeia — o que a maioria dos provedores gerenciados usa), `verify-full` (valida
+contra a CA do sistema ou a de `POSTGRES_SSL_CA`) ou `disable`.
 
 ## Variáveis de ambiente
 
-Use como base o `.env.example` (já com valores padrão para importação no Coolify/Compose).
+Use o `.env.example` como base — ele separa configuração, segredos e banco.
+
+Configuração (com fallback no `docker-compose.yml`):
+`NODE_ENV`, `APP_PORT`, `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`,
+`POSTGRES_USER`, `POSTGRES_SSL`, `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_NAME`,
+`SEED_DEMO_DATA`.
+
+Segredos (**obrigatórios**, sem fallback — o deploy falha se faltarem):
+- `DEFAULT_ADMIN_PASSWORD`
+- `INTEGRATION_API_KEY`
+- `POSTGRES_PASSWORD` — apenas quando não há `DATABASE_URL`
+
+## Dados iniciais
+
+Um banco novo nasce apenas com o **vocabulário estrutural**: status de pedido,
+tipos de placa, tipos de veículo e categorias de serviço. Tipos de serviço,
+preços e itens de estoque são cadastrados pelo cliente nas telas de
+administração — um deploy real não nasce com preços fictícios.
+
+Esses catálogos são inseridos com `ON CONFLICT DO NOTHING`: o boot preenche um
+banco vazio, mas **nunca reverte** o que o operador ajustou depois.
+
+Para popular uma base de demonstração:
 
 ```bash
-cp .env.example .env
+# no boot
+SEED_DEMO_DATA=true
+
+# ou depois, com o sistema no ar
+psql -h 127.0.0.1 -p 5435 -U emplacadora -d emplacadora -f deploy/seed_emplacadora.sql
 ```
 
-Variáveis disponíveis:
-- `APP_PORT`
-- `POSTGRES_PORT`
-- `POSTGRES_DB`
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `DEFAULT_ADMIN_EMAIL`
-- `DEFAULT_ADMIN_PASSWORD`
-- `DEFAULT_ADMIN_NAME`
-- `INTEGRATION_API_KEY`
+O script é idempotente: rodar duas vezes não duplica registros nem sobrescreve
+preços e regras já ajustados.
 
-No `docker-compose.yml`, todas elas estão configuradas com fallback (`${VAR:-valor}`), então podem aparecer para preenchimento no ambiente de deploy.
+## Autenticação e autorização
+
+- Senhas são guardadas apenas como hash bcrypt (coluna `password_hash`). No
+  primeiro boot após a atualização, senhas em texto puro existentes são
+  convertidas automaticamente e o campo legado é apagado.
+- A sessão vive na tabela `sessions`, com validade de 7 dias, e sobrevive a
+  restarts do container. O cookie é `httpOnly`, `sameSite=lax` e `secure` em
+  produção.
+- `/api/query` exige sessão autenticada e aplica política por perfil no
+  servidor: administradores enxergam tudo; vendedores, apenas os clientes,
+  pedidos e veículos que criaram; clientes finais, apenas os próprios
+  registros. Catálogos e estoque são somente leitura para não-administradores,
+  e `role`/`active` só mudam por conta de administrador.
+- `update` e `delete` exigem ao menos um filtro, para que nenhuma requisição
+  atinja uma tabela inteira.
+- Senhas nunca são devolvidas pela API, em nenhuma rota.
 
 ## Verificação rápida de saúde
 
-Após subir o container, valide banco + admin com:
+Após subir o container:
 
 ```bash
 curl -s http://localhost:8090/api/health
 ```
 
-A resposta deve conter `ok: true` e `auth.adminExists: true`.
+A resposta deve ser `{"ok":true,"database":"embedded"}` (ou `"external"`).
+
+Quando o banco está inacessível a rota responde **503**, não 200 — é o que o
+`HEALTHCHECK` do Docker usa para marcar como *unhealthy* um container que subiu
+sem banco, em vez de tratá-lo como saudável.
+
+O diagnóstico detalhado (existência do admin, contagem de usuários) fica em
+`/api/integrations/health`, que exige `x-api-key`.
 
 
 ## Estrutura de APIs para Integrações

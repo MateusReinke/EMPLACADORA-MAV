@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 178 78" width="178" height="78" role="img" aria-label="MAV Emplacamento">
+  <title>MAV Emplacamento</title>
+  <!-- Variante para fundos escuros (rodapé navy) -->
+  <text x="0" y="45"
+        font-family="Archivo, 'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+        font-size="48" font-weight="900" letter-spacing="-1.5" fill="#FFFFFF">MAV</text>
+  <g fill="#4C8DFF">
+    <polygon points="122,12 134,12 122,46 110,46"/>
+    <polygon points="140,12 152,12 140,46 128,46" opacity="0.6"/>
+    <polygon points="158,12 166,12 154,46 146,46" opacity="0.3"/>
+  </g>
+  <rect x="1" y="55" width="176" height="2" fill="#FFFFFF" opacity="0.25"/>
+  <text x="1" y="72"
+        font-family="Archivo, 'Helvetica Neue', Arial, sans-serif"
+        font-size="13" font-weight="700" letter-spacing="3.55" fill="#8FB6FF">EMPLACAMENTO</text>
+</svg>

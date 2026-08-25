@@ -19,7 +19,29 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				// Famílias exclusivas do site público. `sans` continua intocado para
+				// não alterar a tipografia do painel interno.
+				display: ['Archivo', 'Archivo Fallback', 'Helvetica Neue', 'Arial', 'sans-serif'],
+				body: ['Inter', 'Inter Fallback', 'Helvetica Neue', 'Arial', 'sans-serif'],
+			},
 			colors: {
+				// Paleta oficial da marca MAV (material impresso/redes).
+				mav: {
+					blue: '#0B57E0',
+					'blue-dark': '#0847B8',
+					'blue-soft': '#E8F0FE',
+					navy: '#0A1F44',
+					'navy-deep': '#061431',
+					'navy-soft': '#12305F',
+					surface: '#F5F7FA',
+					line: '#DDE4EE',
+				},
+				whats: {
+					DEFAULT: '#25D366',
+					dark: '#1DAF54',
+				},
+				gold: '#FDB813',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -90,11 +112,21 @@ export default {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.5' },
 				},
+				'answer-in': {
+					from: { opacity: '0', transform: 'translateY(-4px)' },
+					to: { opacity: '1', transform: 'translateY(0)' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'answer-in': 'answer-in 0.24s ease-out',
+			},
+			boxShadow: {
+				'mav-card': '0 1px 2px rgba(10, 31, 68, 0.05), 0 12px 28px -18px rgba(10, 31, 68, 0.35)',
+				'mav-card-hover': '0 2px 4px rgba(10, 31, 68, 0.06), 0 26px 46px -22px rgba(11, 87, 224, 0.45)',
+				'mav-plate': '0 30px 60px -28px rgba(10, 31, 68, 0.55)',
 			}
 		}
 	},

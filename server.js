@@ -1509,8 +1509,35 @@ app.post('/api/query', requireAuth, async (req, res) => {
 
 
 app.use(express.static(path.join(__dirname, 'dist')));
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+
+/*
+ * Duas variantes do HTML saem do build (ver scripts/prerender.mjs):
+ *  - index.html      → home pública já renderizada, com o texto no HTML inicial
+ *                      para indexação; é o que o express.static serve em "/";
+ *  - app-shell.html  → shell vazio, para as rotas do painel. Servir a home
+ *                      pré-renderizada aqui só faria o navegador pintar e jogar
+ *                      fora um conteúdo que não é o daquela rota.
+ * Se a pré-renderização não tiver rodado, app-shell.html não existe e o
+ * fallback volta ao index.html — a SPA continua funcionando normalmente.
+ */
+const DIST_DIR = path.join(__dirname, 'dist');
+const APP_SHELL = path.join(DIST_DIR, 'app-shell.html');
+const PRERENDERED_HOME = path.join(DIST_DIR, 'index.html');
+const PUBLIC_SITE_ROUTES = new Set(['/', '/home', '/index']);
+
+const appShellExists = await fs
+  .access(APP_SHELL)
+  .then(() => true)
+  .catch(() => false);
+
+if (!appShellExists) {
+  console.warn('[server] app-shell.html ausente; servindo index.html em todas as rotas.');
+}
+
+app.get('*', (req, res) => {
+  const isPublicSite = PUBLIC_SITE_ROUTES.has(req.path);
+  const file = isPublicSite || !appShellExists ? PRERENDERED_HOME : APP_SHELL;
+  res.sendFile(file);
 });
 
 // Sem estes handlers, uma rejeição não tratada derruba o processo silenciosamente.

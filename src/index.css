@@ -191,14 +191,80 @@
   }
 }
 
-.reveal-on-scroll {
+/* ---------------------------------------------------------------------------
+ * Site público (MAV Emplacamento)
+ *
+ * O painel interno continua no tema escuro definido em `:root`. As regras
+ * abaixo valem apenas onde `data-site="public"` (definido enquanto a landing
+ * está montada) ou `data-prerendered` (HTML gerado no build, antes do JS).
+ * ------------------------------------------------------------------------ */
+
+html[data-site="public"] {
+  scroll-behavior: smooth;
+}
+
+html[data-site="public"],
+html[data-prerendered],
+html[data-prerendered] body {
+  background-color: #f5f7fa;
+  color: #0a1f44;
+}
+
+/* Compensa o cabeçalho fixo ao navegar pelas âncoras do menu. */
+.mav-site :is(section, footer)[id] {
+  scroll-margin-top: 5.5rem;
+}
+
+/*
+ * Animação de entrada.
+ *
+ * O estado escondido só existe quando `html[data-anim="on"]` — atributo que o
+ * script inline do index.html define apenas se houver JS e o usuário não tiver
+ * pedido menos movimento. Sem isso, o HTML pré-renderizado apareceria em branco
+ * até o JavaScript rodar, justamente o oposto do que a pré-renderização
+ * pretende resolver.
+ */
+html[data-anim="on"] [data-reveal] {
   opacity: 0;
-  transform: translateY(26px) scale(0.99);
-  transition: opacity 0.55s ease, transform 0.55s ease;
+  transform: translateY(20px);
   will-change: opacity, transform;
 }
 
-.reveal-on-scroll.is-visible {
+html[data-anim="on"] [data-reveal].is-revealed {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: none;
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Escalonamento leve entre irmãos, para a seção não "estalar" de uma vez. */
+html[data-anim="on"] [data-reveal].is-revealed:nth-child(2) {
+  transition-delay: 70ms;
+}
+html[data-anim="on"] [data-reveal].is-revealed:nth-child(3) {
+  transition-delay: 140ms;
+}
+html[data-anim="on"] [data-reveal].is-revealed:nth-child(4) {
+  transition-delay: 200ms;
+}
+html[data-anim="on"] [data-reveal].is-revealed:nth-child(n + 5) {
+  transition-delay: 250ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-site="public"] {
+    scroll-behavior: auto;
+  }
+
+  html[data-anim="on"] [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .mav-site *,
+  .mav-site *::before,
+  .mav-site *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

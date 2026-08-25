@@ -12,3 +12,12 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Área restrita da equipe: sem conteúdo público para indexar.
+Disallow: /login
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /client/
+
+# A linha abaixo é reescrita no build com o domínio de VITE_SITE_URL.
+Sitemap: https://www.mavemplacamento.com.br/sitemap.xml

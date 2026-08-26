@@ -220,6 +220,9 @@
   --site-promo: 11 87 224; /* faixa de preços */
   --site-promo-deep: 8 71 184;
   /* Textura de fundo: tom e intensidade dos pontos. */
+  /* Tinta sobre o fundo dourado dos avisos. O #FDB813 puro não tem contraste
+     como texto no claro, e no escuro precisa ser justamente ele. */
+  --site-gold-ink: 138 90 0;
   --site-dot: 10 31 68;
   --site-dot-alpha: 0.042;
   /* Banho azul no topo de cada seção clara — ver `.mav-site ... bg-site-*`. */
@@ -248,6 +251,7 @@ html[data-site-theme="dark"] {
   --site-promo: 13 44 105;
   --site-promo-deep: 8 28 70;
   /* Pontos claros sobre fundo escuro, um pouco mais presentes para não sumir. */
+  --site-gold-ink: 240 180 65;
   --site-dot: 190 210 245;
   --site-dot-alpha: 0.06;
   --site-wash: 0.1;

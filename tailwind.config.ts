@@ -61,6 +61,7 @@ export default {
 					dark: '#1DAF54',
 				},
 				gold: '#FDB813',
+				'gold-ink': 'rgb(var(--site-gold-ink) / <alpha-value>)',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

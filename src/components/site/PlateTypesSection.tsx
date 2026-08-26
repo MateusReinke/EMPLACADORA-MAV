@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { PLATE_TYPES, plateTypeMessage, whatsappLink } from "@/content/site";
 import { Eyebrow, MercosulPlate, WhatsAppIcon } from "./brand";
 import { AnimatedIconField } from "./hero/AnimatedIconField";
+import { PlateSizeCompare } from "./PlateSizeCompare";
 
 const GROUP_LABEL: Record<string, string> = {
   categoria: "Categoria",
@@ -216,6 +217,8 @@ export const PlateTypesSection = () => {
             </div>
           </div>
         </div>
+
+        <PlateSizeCompare />
       </div>
     </section>
   );

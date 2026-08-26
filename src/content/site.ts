@@ -402,26 +402,29 @@ export const PLATE_TYPES: PlateType[] = [
     name: "Placa reduzida",
     group: "formato",
     charColor: "#111722",
-    colorName: "Formato menor",
-    summary: "Para quem não tem espaço para a placa padrão",
+    colorName: "34 × 13 cm",
+    summary: "Mais estreita, mesma altura",
     description:
-      "A mesma placa, em tamanho menor. É a saída para veículos cujo espaço de fixação não comporta a placa padrão — situação comum em importados e em alguns modelos esportivos.",
-    examples: ["Importado com berço menor", "Veículo sem espaço para a placa padrão"],
+      "Encurta só a largura: 34 cm no lugar dos 40 cm da placa normal, mantendo os 13 cm de altura. Resolve o nicho estreito, aquele em que a placa padrão sobraria para os lados.",
+    examples: [
+      "Para-choque com grade central estreita",
+      "Picape e veículo com vinco afilado na frente",
+    ],
     sample: "MAV2O26",
-    scale: 0.72,
+    scale: 0.85,
   },
   {
     id: "mini",
     name: "Placa mini",
     group: "formato",
     charColor: "#111722",
-    colorName: "Miniatura decorativa",
-    summary: "Lembrança do seu veículo, para decorar",
+    colorName: "34 × 11 cm",
+    summary: "O menor formato permitido",
     description:
-      "Uma miniatura da placa, feita para decoração: quadro, chaveiro, parede da garagem. É lembrança, não substitui a placa oficial do veículo.",
-    examples: ["Lembrança do carro ou da moto", "Presente e decoração"],
+      "Menor nos dois sentidos: 34 cm de largura por 11 cm de altura. É para o veículo cujo nicho de fábrica é pequeno também na altura — situação comum em importados e em esportivos.",
+    examples: ["Importado com nicho pequeno", "Esportivo sem espaço na altura"],
     sample: "MAV2O26",
-    scale: 0.5,
+    scale: 0.75,
   },
 ];
 
@@ -430,6 +433,76 @@ export const plateTypeMessage = (type: PlateType) =>
   type.group === "formato"
     ? `Olá! Queria saber mais sobre ${type.name.toLowerCase()}. Pode me explicar?`
     : `Olá! Preciso de uma placa Mercosul da categoria ${type.name}. Pode me ajudar?`;
+
+/* -------------------------------------------------------------------------
+ * Tamanhos de placa
+ * ---------------------------------------------------------------------- */
+
+export interface PlateSize {
+  id: "normal" | "reduzida" | "mini";
+  name: string;
+  /** Milímetros — é a unidade da norma. O rótulo na tela vai em centímetros. */
+  width: number;
+  height: number;
+}
+
+/**
+ * Os três tamanhos de placa de automóvel.
+ *
+ * [CONFERIR NA RESOLUÇÃO] As medidas abaixo vieram de material de referência,
+ * não do texto oficial. Antes de publicar, confira contra a resolução do
+ * CONTRAN em vigor — errar milímetro na página de uma estampadora é o tipo de
+ * detalhe que o cliente informado percebe.
+ */
+export const PLATE_SIZES: Record<PlateSize["id"], PlateSize> = {
+  normal: { id: "normal", name: "Normal", width: 400, height: 130 },
+  reduzida: { id: "reduzida", name: "Reduzida", width: 340, height: 130 },
+  mini: { id: "mini", name: "Mini", width: 340, height: 110 },
+};
+
+export interface PlateSizeComparison {
+  id: string;
+  /** A maior do par — é ela que define o contorno de referência. */
+  base: PlateSize["id"];
+  /** A menor, desenhada por dentro. */
+  over: PlateSize["id"];
+  headline: string;
+  detail: string;
+}
+
+export const PLATE_SIZE_COMPARISONS: PlateSizeComparison[] = [
+  {
+    id: "normal-mini",
+    base: "normal",
+    over: "mini",
+    headline: "A mini encolhe nos dois sentidos",
+    detail:
+      "Sai de 40 × 13 cm para 34 × 11 cm. Como largura e altura caem juntas, ela cabe no nicho que é pequeno dos dois lados — o caso de boa parte dos importados.",
+  },
+  {
+    id: "reduzida-mini",
+    base: "reduzida",
+    over: "mini",
+    headline: "Mesma largura, 2 cm a menos de altura",
+    detail:
+      "As duas têm 34 cm de largura: o que separa uma da outra é a altura. A reduzida mantém os 13 cm da placa normal; a mini desce para 11 cm. Nicho estreito mas alto pede a reduzida.",
+  },
+];
+
+/** "40 × 13 cm" a partir das medidas em milímetros. */
+export const plateSizeLabel = (size: PlateSize) =>
+  `${size.width / 10} × ${size.height / 10} cm`;
+
+/**
+ * A ressalva legal do bloco de tamanhos. Não é letra miúda: estampar uma mini
+ * para quem só quer o visual põe o cliente em infração e a loja no meio dela.
+ */
+export const PLATE_SIZE_DISCLAIMER =
+  "Placa menor não é escolha de estilo. A reduzida e a mini só podem ser usadas quando o veículo, de fábrica, não comporta a placa de 40 cm — e a necessidade precisa estar reconhecida junto ao Detran. Fora disso é infração média, com multa, pontos na CNH e retenção do veículo.";
+
+/** Um mesmo veículo pode combinar os dois tamanhos. */
+export const PLATE_SIZE_NOTE =
+  "Um mesmo carro pode andar com a placa normal atrás e a reduzida ou a mini na frente, quando é só o para-choque dianteiro que não comporta o tamanho padrão.";
 
 export interface Faq {
   question: string;

@@ -123,7 +123,10 @@ export const MercosulPlate = ({
   uid?: string;
 }) => (
   <svg
-    viewBox="0 0 420 156"
+    // Sem moldura o corpo da placa ocupa 392×128 do quadro de 420×156, e a
+    // sobra viraria margem invisível — o que estraga qualquer desenho em
+    // escala. A caixa acompanha o que está sendo mesmo desenhado.
+    viewBox={framed ? "0 0 420 156" : "0 0 392 128"}
     className={className}
     role="img"
     aria-label={title}

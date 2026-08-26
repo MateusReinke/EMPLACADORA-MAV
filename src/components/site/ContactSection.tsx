@@ -80,8 +80,8 @@ export const ContactSection = () => (
         </h2>
         <p className="mt-3 max-w-md font-body leading-relaxed text-white/65">
           Estamos na {BUSINESS.address.district}, zona sul de {BUSINESS.address.city}.
-          Boa parte do processo começa e termina pelo WhatsApp — você só vem à loja
-          quando o veículo precisa estar presente.
+          O pedido inteiro é combinado pelo WhatsApp — você vem à loja uma vez só,
+          no horário que agendar, para retirar a placa ou instalar na hora.
         </p>
 
         <a

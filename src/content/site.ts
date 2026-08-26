@@ -79,8 +79,6 @@ export type ServiceId =
   | "primeira-via"
   | "zero-km"
   | "segunda-via"
-  | "transferencia"
-  | "licenciamento"
   | "frotas";
 
 export interface Service {
@@ -97,26 +95,32 @@ export interface Service {
   /** Mensagem pré-preenchida no WhatsApp. */
   whatsappMessage: string;
   /** Ícone do lucide-react, resolvido no componente. */
-  icon: "plate" | "zeroKm" | "duplicate" | "transfer" | "license" | "fleet";
+  icon: "plate" | "zeroKm" | "duplicate" | "fleet";
   featured?: boolean;
 }
 
+/**
+ * A MAV é estampadora de placa Mercosul: o que ela faz é produzir e instalar a
+ * placa. Serviço de despachante — transferência de propriedade, licenciamento
+ * anual e afins — não entra aqui, e as etapas de cada serviço falam só do que
+ * acontece dentro da loja.
+ */
 export const SERVICES: Service[] = [
   {
     id: "primeira-via",
     eyebrow: "Placa Mercosul",
     title: "Primeira Via de Placa",
     description:
-      "Emitimos a primeira placa do seu veículo no padrão Mercosul, com toda a agilidade e segurança — do documento à instalação.",
+      "A primeira placa Mercosul do seu veículo, estampada no padrão oficial e instalada na hora.",
     includes: [
-      "Conferência completa dos documentos",
-      "Emissão no padrão oficial Mercosul",
-      "Instalação da placa no seu veículo",
+      "Estampagem no padrão oficial Mercosul",
+      "Carro, moto e demais categorias",
+      "Instalação na loja, sem deixar o veículo",
     ],
     steps: [
-      "Você envia os documentos pelo WhatsApp e conferimos tudo antes de qualquer pagamento",
-      "Fazemos o cadastro e emitimos o protocolo junto ao órgão competente",
-      "Produzimos a placa no padrão Mercosul e instalamos no seu veículo",
+      "Você manda os dados do veículo pelo WhatsApp e a gente confirma o que é preciso",
+      "Estampamos a placa no padrão Mercosul e avisamos assim que fica pronta",
+      "Você agenda um horário e vem retirar — ou instalar na hora, ali mesmo",
     ],
     whatsappMessage:
       "Olá! Quero fazer a primeira via da placa Mercosul do meu veículo. Pode me ajudar?",
@@ -126,21 +130,21 @@ export const SERVICES: Service[] = [
   {
     id: "zero-km",
     eyebrow: "Veículo novo",
-    title: "Emplacamento de Veículo 0KM",
+    title: "Placa para Veículo 0km",
     description:
-      "Comprou um carro novo? Cuidamos de todo o processo para você sair da concessionária com o veículo de placa nova e regularizado.",
+      "Comprou um carro ou uma moto zero? A gente estampa e instala a placa Mercosul do seu veículo novo.",
     includes: [
-      "Processo completo a partir da nota fiscal",
-      "Acompanhamento até a liberação",
-      "Placa e documento em mãos",
+      "Placa nova no padrão oficial",
+      "Carro e moto",
+      "Instalação feita na hora",
     ],
     steps: [
-      "Recebemos a nota fiscal do veículo e seus dados pessoais",
-      "Abrimos o processo e acompanhamos cada etapa até a aprovação",
-      "Emitimos a placa Mercosul e finalizamos a instalação",
+      "Você chama no WhatsApp com os dados do veículo novo",
+      "Estampamos a placa e avisamos quando estiver pronta",
+      "Você vem na loja e sai com a placa instalada",
     ],
     whatsappMessage:
-      "Olá! Comprei um veículo 0km e quero emplacar com a MAV. Pode me passar as informações?",
+      "Olá! Comprei um veículo 0km e preciso da placa Mercosul. Pode me passar as informações?",
     icon: "zeroKm",
   },
   {
@@ -148,79 +152,39 @@ export const SERVICES: Service[] = [
     eyebrow: "Reposição",
     title: "Segunda Via de Placa",
     description:
-      "Placa perdida, danificada, furtada ou que precisa ser substituída? Fazemos a segunda via com rapidez e no padrão exigido por lei.",
+      "Placa perdida, furtada, amassada ou ilegível? Estampamos a placa de reposição no padrão exigido por lei.",
     includes: [
-      "Atendimento para perda, furto ou dano",
-      "Orientação sobre boletim de ocorrência",
-      "Nova placa no padrão Mercosul",
+      "Perda, furto, dano ou placa ilegível",
+      "Placa avulsa ou o par completo",
+      "Instalação na hora, se você preferir",
     ],
     steps: [
-      "Você nos conta o que aconteceu com a placa e envia o CRLV",
-      "Orientamos a documentação necessária e abrimos a solicitação",
-      "Produzimos e instalamos a placa de reposição",
+      "Você conta o que aconteceu com a placa e manda os dados pelo WhatsApp",
+      "Estampamos a placa de reposição no padrão Mercosul",
+      "Você agenda o horário e retira — ou já sai com ela instalada",
     ],
     whatsappMessage:
       "Olá! Preciso da segunda via da placa do meu veículo. Pode me ajudar?",
     icon: "duplicate",
   },
   {
-    id: "transferencia",
-    eyebrow: "Compra e venda",
-    title: "Transferência de Propriedade",
-    description:
-      "Comprou ou vendeu um veículo? Organizamos cada etapa da transferência para o documento sair no nome certo, sem pendências.",
-    includes: [
-      "Levantamento de débitos e restrições",
-      "Emissão das guias e apoio na vistoria",
-      "Documento novo em nome do comprador",
-    ],
-    steps: [
-      "Conferimos débitos, multas e restrições do veículo",
-      "Emitimos as guias e orientamos a vistoria obrigatória",
-      "Concluímos a transferência e entregamos o documento atualizado",
-    ],
-    whatsappMessage:
-      "Olá! Quero fazer a transferência de propriedade de um veículo. Pode me orientar?",
-    icon: "transfer",
-  },
-  {
-    id: "licenciamento",
-    eyebrow: "Regularização",
-    title: "Licenciamento Anual",
-    description:
-      "Mantenha seu veículo em dia e evite multa e apreensão. Cuidamos do licenciamento anual do começo ao fim.",
-    includes: [
-      "Consulta de pendências e débitos",
-      "Orientação sobre os pagamentos",
-      "Confirmação da liberação do CRLV",
-    ],
-    steps: [
-      "Consultamos a situação do veículo pelo Renavam",
-      "Orientamos o pagamento das taxas e débitos pendentes",
-      "Confirmamos a liberação e enviamos o CRLV digital",
-    ],
-    whatsappMessage:
-      "Olá! Quero fazer o licenciamento anual do meu veículo. Pode me ajudar?",
-    icon: "license",
-  },
-  {
     id: "frotas",
     eyebrow: "Empresas e PJ",
-    title: "Atendimento para Frotas",
+    title: "Placas para Frotas",
     description:
-      "Sua empresa tem vários veículos? Atendimento dedicado para frotas, com prioridade e acompanhamento centralizado por lote.",
+      "Sua empresa tem vários veículos? Atendimento dedicado para frota, com as placas estampadas por lote.",
     includes: [
       "Atendimento dedicado para pessoa jurídica",
-      "Execução por lote, com prioridade",
-      "Relatório de status por veículo",
+      "Estampagem por lote, com prioridade",
+      "Combinação de horário para a instalação",
     ],
     steps: [
-      "Mapeamos a frota e o que cada veículo precisa",
-      "Montamos o plano de execução por prioridade",
-      "Executamos por lote e entregamos o relatório de conclusão",
+      "Você passa a relação dos veículos pelo WhatsApp",
+      "Estampamos as placas por lote, na ordem que a empresa precisar",
+      "Combinamos o horário e a instalação de cada veículo",
     ],
     whatsappMessage:
-      "Olá! Represento uma empresa e preciso de atendimento para a nossa frota. Pode me passar as condições?",
+      "Olá! Represento uma empresa e preciso de placas para a nossa frota. Pode me passar as condições?",
     icon: "fleet",
   },
 ];
@@ -252,43 +216,6 @@ export const PILLARS: Pillar[] = [
     title: "Atendimento Rápido",
     description: "Equipe preparada para te atender bem e explicar tudo em português claro.",
     icon: "clock",
-  },
-];
-
-export interface Faq {
-  question: string;
-  answer: string;
-}
-
-export const FAQS: Faq[] = [
-  {
-    question: "Quanto tempo leva um processo de emplacamento?",
-    answer:
-      "O prazo varia conforme o tipo de serviço e a situação da documentação. Depois da triagem inicial — que fazemos no mesmo dia — informamos cada etapa com uma estimativa de conclusão, para você não ficar no escuro.",
-  },
-  {
-    question: "Quanto custa emplacar um veículo?",
-    answer:
-      "O valor depende do serviço, da categoria do veículo e das taxas oficiais vigentes do Detran. Envie os dados do seu veículo pelo WhatsApp e passamos um orçamento fechado, sem compromisso e sem surpresa no final.",
-  },
-  {
-    question: "Quais documentos eu preciso apresentar?",
-    answer:
-      "Para primeiro emplacamento de veículo 0km: nota fiscal do veículo, documento de identidade com foto, CPF e comprovante de endereço. Para segunda via de placa: o CRLV e, em caso de furto ou roubo, o boletim de ocorrência. Confirmamos a lista exata pelo WhatsApp antes de você sair de casa.",
-  },
-  {
-    question: "Vocês atendem empresas com frota?",
-    answer:
-      "Sim. Temos atendimento dedicado para pessoa jurídica, com execução por lote, prioridade no processo e acompanhamento do andamento veículo a veículo.",
-  },
-  {
-    question: "Consigo acompanhar meu pedido?",
-    answer:
-      "Sim. Você acompanha o status do processo etapa por etapa e recebe as atualizações direto no WhatsApp, sem precisar ligar para saber como está.",
-  },
-  {
-    question: "Quais regiões vocês atendem?",
-    answer: `Atendemos ${BUSINESS.serviceArea} a partir da nossa unidade na ${BUSINESS.address.street}, ${BUSINESS.address.district} — zona sul de ${BUSINESS.address.city}. Fale com a gente pelo WhatsApp para confirmar o atendimento na sua região.`,
   },
 ];
 
@@ -342,6 +269,10 @@ export const PLATE_PRICES: PlatePrice[] = [
  * é o da placa, e não sabemos o que a MAV inclui ou cobra à parte em taxas
  * oficiais — afirmar isso aqui seria inventar política comercial.
  */
+/** Atalhos para as duas linhas da tabela — usados no FAQ e nas meta tags. */
+const carPrice = PLATE_PRICES.find((item) => item.id === "carro")!;
+const motoPrice = PLATE_PRICES.find((item) => item.id === "moto")!;
+
 export const PRICE_DISCLAIMER =
   "Valor referente à placa Mercosul. Confirme pelo WhatsApp o que está incluído no seu caso e as taxas oficiais aplicáveis.";
 
@@ -361,6 +292,47 @@ export const priceLabel = (value: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+export interface Faq {
+  question: string;
+  answer: string;
+}
+
+export const FAQS: Faq[] = [
+  {
+    question: "Preciso deixar o veículo na loja?",
+    answer:
+      "Não. A instalação é feita na hora, com você esperando: em poucos minutos o veículo sai com a placa nova. Se preferir só retirar a placa e instalar depois, também pode.",
+  },
+  {
+    question: "Quanto custa a placa Mercosul?",
+    answer: `Carro sai por R$ ${carPrice.price},00 o par e moto por R$ ${motoPrice.price},00. ${PRICE_DISCLAIMER}`,
+  },
+  {
+    question: "Quanto tempo leva para a placa ficar pronta?",
+    answer:
+      "Depende do tipo de placa e do movimento do dia. Assim que confirmamos o pedido pelo WhatsApp, informamos o prazo do seu caso e avisamos no mesmo canal quando a placa fica pronta para retirada.",
+  },
+  {
+    question: "Quais documentos eu preciso apresentar?",
+    answer:
+      "Varia conforme o caso. Em geral, o documento do veículo e um documento seu com foto — e, em caso de furto ou roubo da placa, o boletim de ocorrência. Mande os dados pelo WhatsApp que a gente confirma a lista exata antes de você sair de casa.",
+  },
+  {
+    question: "Vocês fazem transferência ou licenciamento?",
+    answer:
+      "Não. A MAV é estampadora de placa Mercosul: o que fazemos é produzir e instalar a placa do seu veículo, para carro, moto e demais categorias. Serviços de despachante, como transferência de propriedade e licenciamento anual, não fazem parte do nosso atendimento.",
+  },
+  {
+    question: "Vocês atendem empresas com frota?",
+    answer:
+      "Sim. Temos atendimento dedicado para pessoa jurídica: a empresa passa a relação dos veículos, estampamos as placas por lote e combinamos o horário da instalação.",
+  },
+  {
+    question: "Quais regiões vocês atendem?",
+    answer: `Atendemos ${BUSINESS.serviceArea} a partir da nossa loja na ${BUSINESS.address.street}, ${BUSINESS.address.district} — zona sul de ${BUSINESS.address.city}. Fale com a gente pelo WhatsApp para combinar o melhor horário.`,
+  },
+];
 
 /* -------------------------------------------------------------------------
  * Avaliações do Google
@@ -397,22 +369,26 @@ export interface GoogleReviewsPayload {
   reviews: GoogleReview[];
 }
 
-/** Passos genéricos exibidos no resumo de "Como funciona". */
+/**
+ * Passos genéricos exibidos no resumo de "Como funciona" — é o fluxo real da
+ * loja: tudo combinado pelo WhatsApp e uma única ida até a MAV, no horário que
+ * o cliente escolher. Em nenhum momento o veículo fica na loja.
+ */
 export const FLOW_SUMMARY = [
   {
-    title: "Validação dos documentos",
+    title: "Você chama no WhatsApp",
     description:
-      "Você manda uma foto dos documentos pelo WhatsApp e a gente confere tudo antes de você pagar qualquer taxa.",
+      "Manda os dados do veículo e a gente confirma o que é preciso e o valor fechado, antes de qualquer pagamento.",
   },
   {
-    title: "Cadastro e protocolo",
+    title: "A gente estampa a placa",
     description:
-      "Abrimos o processo no órgão competente, emitimos as guias e acompanhamos a aprovação para você.",
+      "Produzimos no padrão Mercosul oficial e avisamos pelo WhatsApp assim que a sua placa fica pronta.",
   },
   {
-    title: "Emissão e instalação",
+    title: "Você agenda e vem buscar",
     description:
-      "Produzimos a placa no padrão Mercosul e fazemos a instalação. Você sai com o veículo regularizado.",
+      "Escolhe o horário que der para você e vem à loja. Instalamos na hora — ou você leva a placa, se preferir.",
   },
 ];
 
@@ -424,20 +400,17 @@ export const NAV_ITEMS = [
   { label: "Contato", href: "#contato" },
 ];
 
-const carPrice = PLATE_PRICES.find((item) => item.id === "carro")!;
-const motoPrice = PLATE_PRICES.find((item) => item.id === "moto")!;
-
 /**
  * Meta tags. O `index.html` consome estes valores por placeholders (`%SEO_*%`)
  * resolvidos no build — assim título e descrição não existem em dois lugares
  * que podem divergir. Os preços vêm de PLATE_PRICES pelo mesmo motivo.
  */
 export const SEO = {
-  title: `MAV Emplacamento | Placa Mercosul, 1ª e 2ª Via em ${BUSINESS.address.city}`,
-  description: `Placa Mercosul em ${BUSINESS.address.city}: carro R$ ${carPrice.price} o par e moto R$ ${motoPrice.price}. Primeira e segunda via, 0km, transferência e licenciamento. Fale no WhatsApp.`,
+  title: `MAV Emplacamento | Estampagem de Placa Mercosul em ${BUSINESS.address.city}`,
+  description: `Estampadora de placa Mercosul em ${BUSINESS.address.city}: carro R$ ${carPrice.price} o par e moto R$ ${motoPrice.price}. Primeira via, segunda via e veículo 0km, com instalação na hora. Fale no WhatsApp.`,
   ogTitle: "MAV Emplacamento — Referência em Placa Mercosul",
-  ogDescription: `Placa Mercosul a partir de R$ ${motoPrice.price}. Primeira via, segunda via, 0km, transferência e licenciamento em ${BUSINESS.address.district}, ${BUSINESS.address.city}. WhatsApp ${BUSINESS.phoneDisplay}.`,
+  ogDescription: `Placa Mercosul a partir de R$ ${motoPrice.price}, com instalação na hora e sem deixar o veículo. Primeira via, segunda via e 0km em ${BUSINESS.address.district}, ${BUSINESS.address.city}. WhatsApp ${BUSINESS.phoneDisplay}.`,
   ogImage: "/og-mav-emplacamento.jpg",
   ogImageAlt:
-    "Placa Mercosul emplacada pela MAV Emplacamento, referência em emplacamento em São Paulo",
+    "Placa Mercosul estampada pela MAV Emplacamento, estampadora de placas em São Paulo",
 };

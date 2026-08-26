@@ -16,8 +16,8 @@ export const SiteFooter = () => (
             loading="lazy"
           />
           <p className="mt-5 max-w-xs font-body text-sm leading-relaxed text-white/60">
-            Despachante especializado em Placa Mercosul: primeira via, segunda via,
-            veículo 0km, transferência e licenciamento em {BUSINESS.serviceArea}.
+            Estampadora de Placa Mercosul: primeira via, segunda via e veículo
+            0km, para carro e moto, em {BUSINESS.serviceArea}.
           </p>
           <address className="mt-5 not-italic font-body text-sm leading-relaxed text-white/60">
             {fullAddress}

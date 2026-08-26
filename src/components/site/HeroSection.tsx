@@ -17,7 +17,7 @@ const HERO_WHATSAPP_MESSAGE =
 
 const HIGHLIGHTS = [
   "Padrão Mercosul oficial",
-  "Emissão e instalação da placa",
+  "Instalação na hora, sem deixar o veículo",
   "Orçamento fechado no WhatsApp",
 ];
 
@@ -25,7 +25,7 @@ const HIGHLIGHTS = [
  * Dobra inicial: manchete de valor à esquerda, quadro de preços à direita.
  *
  * A manchete continua sendo a primeira leitura — é ela que sustenta o SEO e a
- * confiança de quem vai entregar documento de veículo a um despachante. O
+ * confiança de quem vai comprar a placa do próprio veículo. O
  * quadro ao lado mostra os dois preços de uma vez, sem carrossel: quem chegou
  * pesquisando "quanto custa" não espera slide nenhum para descobrir.
  *
@@ -65,9 +65,10 @@ export const HeroSection = () => {
           </h1>
 
           <p className="mt-5 max-w-md font-body text-base leading-relaxed text-site-ink/70">
-            Primeira via, segunda via, 0km, transferência e licenciamento em{" "}
-            {BUSINESS.address.city}. A MAV cuida da burocracia — você só busca o
-            veículo com a placa instalada.
+            Estampamos a placa do seu carro ou moto no padrão oficial, em{" "}
+            {BUSINESS.address.city}. Você resolve tudo pelo WhatsApp e, quando a
+            placa fica pronta, agenda o horário e instala na hora — sem deixar o
+            veículo na loja.
           </p>
 
           <ul className="mt-6 grid gap-2.5">

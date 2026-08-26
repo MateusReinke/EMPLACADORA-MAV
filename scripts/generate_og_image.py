@@ -182,7 +182,7 @@ def main() -> None:
         d.text((MARGIN, y), line, font=f, fill=WHITE)
         y += 74
 
-    services = "1ª e 2ª via · Veículo 0km · Transferência · Licenciamento"
+    services = "1ª e 2ª via · Veículo 0km · Frotas · Instalação na hora"
     d.text(
         (MARGIN, y + 22),
         services,

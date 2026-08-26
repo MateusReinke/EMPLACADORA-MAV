@@ -1,10 +1,8 @@
 import {
   Award,
-  CalendarCheck,
   CarFront,
   Copy,
   Lock,
-  Repeat2,
   ScanLine,
   ShieldCheck,
   Timer,
@@ -18,8 +16,6 @@ export const SERVICE_ICONS: Record<Service["icon"], LucideIcon> = {
   plate: ScanLine,
   zeroKm: CarFront,
   duplicate: Copy,
-  transfer: Repeat2,
-  license: CalendarCheck,
   fleet: Truck,
 };
 

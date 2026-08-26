@@ -28,8 +28,8 @@ export const FlowSection = () => {
             Três etapas, do WhatsApp à placa instalada
           </h2>
           <p className="mt-3 font-body text-site-ink/70">
-            O mesmo caminho para qualquer serviço. Você acompanha cada etapa e só
-            paga taxa depois que a documentação está conferida.
+            O mesmo caminho para qualquer placa, e uma única ida até a loja — no
+            horário que você escolher. O veículo não fica com a gente.
           </p>
         </div>
 

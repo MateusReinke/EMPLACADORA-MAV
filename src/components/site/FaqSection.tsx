@@ -12,7 +12,7 @@ const FAQ_WHATSAPP_MESSAGE =
  * para indexação e para o schema FAQPage) e o bloco funciona mesmo sem JS.
  */
 export const FaqSection = () => (
-  <section id="faq" className="relative overflow-hidden bg-site-alt py-16 sm:py-24">
+  <section id="faq" className="relative overflow-hidden bg-site-bg py-16 sm:py-24">
     <AnimatedIconField tone="ink" variant="fleet" />
 
     <div className="relative mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">

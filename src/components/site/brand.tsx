@@ -107,11 +107,20 @@ export const MercosulPlate = ({
   className = "",
   framed = true,
   title = "Placa Mercosul padrão brasileiro emitida pela MAV Emplacamento",
+  // No padrão Mercosul o fundo é sempre branco: o que muda entre as categorias
+  // é a cor dos caracteres. Por isso a cor entra só aqui.
+  charColor = "#111722",
+  // Sufixo dos ids dos gradientes. A página desenha várias placas ao mesmo
+  // tempo, e id repetido no documento faz todas apontarem para a primeira
+  // definição — igual no visual, inválido no HTML.
+  uid = "",
 }: {
   code?: string;
   className?: string;
   framed?: boolean;
   title?: string;
+  charColor?: string;
+  uid?: string;
 }) => (
   <svg
     viewBox="0 0 420 156"
@@ -122,21 +131,21 @@ export const MercosulPlate = ({
   >
     <title>{title}</title>
     <defs>
-      <linearGradient id="mav-plate-frame" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id={`mav-plate-frame${uid}`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#3A4454" />
         <stop offset="45%" stopColor="#171D28" />
         <stop offset="100%" stopColor="#0B0F17" />
       </linearGradient>
-      <linearGradient id="mav-plate-face" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id={`mav-plate-face${uid}`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#FFFFFF" />
         <stop offset="55%" stopColor="#F4F6F9" />
         <stop offset="100%" stopColor="#E3E8EF" />
       </linearGradient>
-      <linearGradient id="mav-plate-band" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id={`mav-plate-band${uid}`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#1450B4" />
         <stop offset="100%" stopColor="#0A3A8C" />
       </linearGradient>
-      <linearGradient id="mav-plate-gloss" x1="0" y1="0" x2="1" y2="1">
+      <linearGradient id={`mav-plate-gloss${uid}`} x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.5" />
         <stop offset="42%" stopColor="#FFFFFF" stopOpacity="0" />
       </linearGradient>
@@ -144,7 +153,7 @@ export const MercosulPlate = ({
 
     {framed && (
       <>
-        <rect x="0" y="0" width="420" height="156" rx="16" fill="url(#mav-plate-frame)" />
+        <rect x="0" y="0" width="420" height="156" rx="16" fill={`url(#mav-plate-frame${uid})`} />
         <rect
           x="6"
           y="6"
@@ -161,7 +170,7 @@ export const MercosulPlate = ({
 
     {/* Corpo da placa */}
     <g transform={framed ? "translate(14 14)" : "translate(0 0)"}>
-      <rect width="392" height="128" rx="9" fill="url(#mav-plate-face)" />
+      <rect width="392" height="128" rx="9" fill={`url(#mav-plate-face${uid})`} />
       <rect
         x="0.75"
         y="0.75"
@@ -176,7 +185,7 @@ export const MercosulPlate = ({
       {/* Faixa azul superior: Mercosul · BRASIL · bandeira */}
       <path
         d="M0 9a9 9 0 0 1 9-9h374a9 9 0 0 1 9 9v22H0z"
-        fill="url(#mav-plate-band)"
+        fill={`url(#mav-plate-band${uid})`}
       />
 
       {/* Estrelas do Mercosul */}
@@ -271,7 +280,7 @@ export const MercosulPlate = ({
         x="222"
         y="100.5"
         textAnchor="middle"
-        fill="#111722"
+        fill={charColor}
         fontSize="60"
         fontFamily="Archivo, Arial Narrow, Arial, sans-serif"
         fontWeight="800"
@@ -281,7 +290,7 @@ export const MercosulPlate = ({
       </text>
 
       {/* Brilho diagonal discreto */}
-      <path d="M0 9a9 9 0 0 1 9-9h150L60 128H9a9 9 0 0 1-9-9z" fill="url(#mav-plate-gloss)" />
+      <path d="M0 9a9 9 0 0 1 9-9h150L60 128H9a9 9 0 0 1-9-9z" fill={`url(#mav-plate-gloss${uid})`} />
     </g>
   </svg>
 );

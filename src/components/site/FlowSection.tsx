@@ -18,7 +18,7 @@ export const FlowSection = () => {
   const ActiveIcon = SERVICE_ICONS[active.icon];
 
   return (
-    <section id="como-funciona" className="relative overflow-hidden bg-site-bg py-16 sm:py-24">
+    <section id="como-funciona" className="relative overflow-hidden bg-site-alt py-16 sm:py-24">
       <AnimatedIconField tone="ink" variant="docs" />
 
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">

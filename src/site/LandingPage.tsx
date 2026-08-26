@@ -4,6 +4,7 @@ import { FlowSection } from "@/components/site/FlowSection";
 import { HeroSection } from "@/components/site/HeroSection";
 import { PillarsSection } from "@/components/site/PillarsSection";
 import { ReviewsSection } from "@/components/site/ReviewsSection";
+import { PlateTypesSection } from "@/components/site/PlateTypesSection";
 import { ServicesSection } from "@/components/site/ServicesSection";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -39,6 +40,8 @@ export const LandingPage = () => {
             confiar em quem vai mexer no documento do veículo. */}
         <PillarsSection />
         <ServicesSection />
+        {/* Depois de saber o que a MAV faz: qual placa é a do seu veículo */}
+        <PlateTypesSection />
         <FlowSection />
         {/* Só renderiza quando há avaliação real vinda do Google */}
         <ReviewsSection />

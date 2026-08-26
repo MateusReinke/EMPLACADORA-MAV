@@ -293,6 +293,144 @@ export const priceLabel = (value: number) =>
     maximumFractionDigits: 2,
   });
 
+/* -------------------------------------------------------------------------
+ * Tipos de placa
+ * ---------------------------------------------------------------------- */
+
+export interface PlateType {
+  id: string;
+  name: string;
+  /**
+   * "categoria" muda a cor dos caracteres; "formato" muda o tamanho da placa.
+   * São dois eixos diferentes e ficam separados na grade por isso.
+   */
+  group: "categoria" | "formato";
+  /** Cor dos caracteres, aplicada ao desenho da placa. */
+  charColor: string;
+  /** Nome da cor por extenso — quem tem daltonismo não lê a cor no desenho. */
+  colorName: string;
+  /** Uma linha, embaixo do nome no card. */
+  summary: string;
+  description: string;
+  examples: string[];
+  /** Caracteres do exemplo. Segue o padrão Mercosul: LLL N L NN. */
+  sample: string;
+  /** Fração da largura do card — reduzida e mini aparecem menores de propósito. */
+  scale?: number;
+}
+
+/**
+ * No padrão Mercosul brasileiro o fundo é sempre branco: o que identifica a
+ * categoria do veículo é a cor dos caracteres. Os dois últimos itens não são
+ * categoria, são formato — mesma placa em outro tamanho.
+ */
+export const PLATE_TYPES: PlateType[] = [
+  {
+    id: "particular",
+    name: "Particular",
+    group: "categoria",
+    charColor: "#111722",
+    colorName: "Caracteres pretos",
+    summary: "Carro e moto de uso pessoal",
+    description:
+      "É a placa da grande maioria dos veículos: carro, moto ou utilitário registrado para uso próprio, de pessoa física ou de empresa. Se o seu veículo não se encaixa em nenhuma das outras categorias, a placa dele é esta.",
+    examples: ["Carro de passeio", "Moto particular", "Veículo de empresa para uso próprio"],
+    sample: "MAV2O26",
+  },
+  {
+    id: "comercial",
+    name: "Comercial",
+    group: "categoria",
+    charColor: "#C62828",
+    colorName: "Caracteres vermelhos",
+    summary: "Aluguel, transporte e autoescola",
+    description:
+      "Placa de caracteres vermelhos, para veículos registrados na categoria aluguel — os que trabalham transportando pessoas ou carga — e para os veículos de autoescola.",
+    examples: ["Táxi e transporte de passageiros", "Ônibus, van e caminhão de frete", "Carro de autoescola"],
+    sample: "BRA1A23",
+  },
+  {
+    id: "oficial",
+    name: "Oficial",
+    group: "categoria",
+    charColor: "#14458C",
+    colorName: "Caracteres azuis",
+    summary: "Veículos de órgãos públicos",
+    description:
+      "Caracteres azuis, para veículos da administração pública — federal, estadual ou municipal — e para os veículos de representação de autoridades.",
+    examples: ["Frota de órgão público", "Veículo de representação"],
+    sample: "BRA1A23",
+  },
+  {
+    id: "diplomatico",
+    name: "Diplomático",
+    group: "categoria",
+    charColor: "#B08A2E",
+    colorName: "Caracteres dourados",
+    summary: "Missões diplomáticas e consulares",
+    description:
+      "Caracteres dourados, reservados a corpo diplomático, corpo consular, missões e organismos internacionais acreditados no Brasil.",
+    examples: ["Corpo diplomático e consular", "Organismo internacional"],
+    sample: "BRA1A23",
+  },
+  {
+    id: "especial",
+    name: "Especial",
+    group: "categoria",
+    charColor: "#1F7A3D",
+    colorName: "Caracteres verdes",
+    summary: "Experiência, fabricante e teste",
+    description:
+      "Caracteres verdes, para veículos de experiência e para os de fabricantes, importadores e encarroçadores — aqueles que precisam circular para teste antes do registro definitivo.",
+    examples: ["Veículo de teste de fabricante", "Implemento e veículo de experiência"],
+    sample: "BRA1A23",
+  },
+  {
+    id: "colecao",
+    name: "Coleção",
+    group: "categoria",
+    charColor: "#7A8291",
+    colorName: "Caracteres prateados",
+    summary: "Veículos de valor histórico",
+    description:
+      "Caracteres prateados, para veículos reconhecidos como de coleção. É a placa do carro antigo registrado nessa categoria, que passa a ter regras próprias de circulação.",
+    examples: ["Carro antigo registrado como coleção", "Moto de coleção"],
+    sample: "BRA1A23",
+  },
+  {
+    id: "reduzida",
+    name: "Placa reduzida",
+    group: "formato",
+    charColor: "#111722",
+    colorName: "Formato menor",
+    summary: "Para quem não tem espaço para a placa padrão",
+    description:
+      "A mesma placa, em tamanho menor. É a saída para veículos cujo espaço de fixação não comporta a placa padrão — situação comum em importados e em alguns modelos esportivos.",
+    examples: ["Importado com berço menor", "Veículo sem espaço para a placa padrão"],
+    sample: "MAV2O26",
+    scale: 0.72,
+  },
+  {
+    id: "mini",
+    name: "Placa mini",
+    group: "formato",
+    charColor: "#111722",
+    colorName: "Miniatura decorativa",
+    summary: "Lembrança do seu veículo, para decorar",
+    description:
+      "Uma miniatura da placa, feita para decoração: quadro, chaveiro, parede da garagem. É lembrança, não substitui a placa oficial do veículo.",
+    examples: ["Lembrança do carro ou da moto", "Presente e decoração"],
+    sample: "MAV2O26",
+    scale: 0.5,
+  },
+];
+
+/** Mensagem do WhatsApp para o tipo de placa aberto no painel. */
+export const plateTypeMessage = (type: PlateType) =>
+  type.group === "formato"
+    ? `Olá! Queria saber mais sobre ${type.name.toLowerCase()}. Pode me explicar?`
+    : `Olá! Preciso de uma placa Mercosul da categoria ${type.name}. Pode me ajudar?`;
+
 export interface Faq {
   question: string;
   answer: string;
@@ -394,6 +532,7 @@ export const FLOW_SUMMARY = [
 
 export const NAV_ITEMS = [
   { label: "Serviços", href: "#servicos" },
+  { label: "Tipos de placa", href: "#tipos-de-placa" },
   { label: "Preços", href: "#precos" },
   { label: "Como funciona", href: "#como-funciona" },
   { label: "FAQ", href: "#faq" },

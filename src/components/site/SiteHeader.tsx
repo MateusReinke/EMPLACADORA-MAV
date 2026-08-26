@@ -72,7 +72,7 @@ export const SiteHeader = () => {
             />
           </a>
 
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegação principal">
+          <nav className="hidden items-center gap-1 xl:flex" aria-label="Navegação principal">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.href}
@@ -100,7 +100,7 @@ export const SiteHeader = () => {
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-site-line text-site-ink transition-colors hover:bg-site-alt lg:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-site-line text-site-ink transition-colors hover:bg-site-alt xl:hidden"
               aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
               aria-expanded={menuOpen}
               aria-controls="menu-mobile"
@@ -111,7 +111,7 @@ export const SiteHeader = () => {
         </div>
 
         {menuOpen && (
-          <div id="menu-mobile" className="border-t border-site-line bg-site-bg px-5 pb-5 pt-2 lg:hidden">
+          <div id="menu-mobile" className="border-t border-site-line bg-site-bg px-5 pb-5 pt-2 xl:hidden">
             <nav className="flex flex-col" aria-label="Navegação principal (mobile)">
               {NAV_ITEMS.map((item) => (
                 <a

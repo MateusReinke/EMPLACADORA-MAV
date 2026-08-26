@@ -290,6 +290,8 @@ export interface PlatePrice {
   label: string;
   /** O que o valor cobre, em uma linha. */
   unit: string;
+  /** Quantas placas o valor cobre — carro leva par, moto leva uma. */
+  units: number;
   price: number;
   /** Preço "de" riscado. `null` quando não há promoção. */
   priceFrom: number | null;
@@ -303,6 +305,7 @@ export const PLATE_PRICES: PlatePrice[] = [
     id: "carro",
     label: "Carro",
     unit: "o par",
+    units: 2,
     price: 140,
     priceFrom: 179,
     description: "Par de placas Mercosul para carro, no padrão oficial.",
@@ -314,6 +317,7 @@ export const PLATE_PRICES: PlatePrice[] = [
     id: "moto",
     label: "Moto",
     unit: "placa única",
+    units: 1,
     price: 90,
     priceFrom: null,
     description: "Placa Mercosul para motocicleta, no padrão oficial.",
@@ -329,6 +333,24 @@ export const PLATE_PRICES: PlatePrice[] = [
  */
 export const PRICE_DISCLAIMER =
   "Valor referente à placa Mercosul. Confirme pelo WhatsApp o que está incluído no seu caso e as taxas oficiais aplicáveis.";
+
+/**
+ * Prazo final da promoção. Só preencha com uma data que a MAV realmente vá
+ * cumprir (ex.: "2026-09-30"). Com `null`, nenhuma urgência é exibida —
+ * contador falso é o tipo de coisa que o cliente percebe e nunca mais confia.
+ */
+export const PROMO_ENDS_AT: string | null = null;
+
+/** Números derivados da oferta: economia, desconto e valor por placa. */
+export const offerInsights = (item: PlatePrice) => {
+  const save = item.priceFrom ? item.priceFrom - item.price : 0;
+
+  return {
+    save,
+    percentOff: item.priceFrom ? Math.round((save / item.priceFrom) * 100) : 0,
+    perPlate: item.price / item.units,
+  };
+};
 
 export const priceLabel = (value: number) =>
   value.toLocaleString("pt-BR", {

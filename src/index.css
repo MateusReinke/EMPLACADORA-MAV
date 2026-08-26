@@ -265,6 +265,47 @@ html[data-site="public"] body {
   scroll-margin-top: 5.5rem;
 }
 
+/* ---------------------------------------------------------------------------
+ * Fundo de ícones da marca (dobra inicial).
+ *
+ * Deriva e pulsação lentas, com duração e atraso vindos de variáveis inline —
+ * assim cada ícone anda no seu tempo e o conjunto não "respira" em bloco, que é
+ * o que faz um fundo animado parecer enfeite barato.
+ * ------------------------------------------------------------------------ */
+
+@keyframes mav-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) rotate(calc(var(--r, 0deg) + 4deg));
+  }
+}
+
+@keyframes mav-breathe {
+  0%,
+  100% {
+    opacity: var(--o, 0.08);
+  }
+  50% {
+    opacity: calc(var(--o, 0.08) * 2.1);
+  }
+}
+
+.mav-icon-field > span {
+  will-change: transform, opacity;
+  animation: mav-drift var(--d, 18s) ease-in-out infinite,
+    mav-breathe var(--pd, 9s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s), var(--delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mav-icon-field > span {
+    animation: none;
+  }
+}
+
 /*
  * Animação de entrada.
  *

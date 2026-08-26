@@ -9,6 +9,12 @@ import { ServicesSection } from "@/components/site/ServicesSection";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
+import { HeroCarousel } from "@/components/site/hero/HeroCarousel";
+import { HeroPoster } from "@/components/site/hero/HeroPoster";
+import { HeroSplitPrices } from "@/components/site/hero/HeroSplitPrices";
+import { PriceStrip } from "@/components/site/hero/PriceStrip";
+import { OfferBar } from "@/components/site/hero/OfferBar";
+import { useHeroVariant } from "@/components/site/hero/useHeroVariant";
 import { useReveal, usePublicTheme } from "@/components/site/useReveal";
 
 /**
@@ -22,6 +28,8 @@ import { useReveal, usePublicTheme } from "@/components/site/useReveal";
 export const LandingPage = () => {
   useReveal();
   usePublicTheme();
+  // TEMPORÁRIO: comparação das três propostas de dobra inicial (?hero=a|b|c).
+  const heroVariant = useHeroVariant();
 
   return (
     <div className="mav-site min-h-screen bg-site-bg font-body text-site-ink antialiased">
@@ -32,10 +40,23 @@ export const LandingPage = () => {
         Pular para os serviços
       </a>
 
+      {heroVariant === "c" && <OfferBar />}
+
       <SiteHeader />
 
       <main>
-        <HeroSection />
+        {heroVariant === "atual" && <HeroSection />}
+        {heroVariant === "a" && <HeroCarousel />}
+        {heroVariant === "b" && <HeroSection offer="tag" />}
+        {heroVariant === "c" && <HeroSection offer="card" />}
+        {heroVariant === "d" && <HeroPoster />}
+        {heroVariant === "e" && <HeroSplitPrices />}
+        {heroVariant === "f" && (
+          <>
+            <HeroSection />
+            <PriceStrip />
+          </>
+        )}
         <ServicesSection />
         <PricingSection />
         <PillarsSection />

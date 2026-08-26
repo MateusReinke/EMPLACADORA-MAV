@@ -2,6 +2,7 @@ import { ArrowRight, MapPin, Phone } from "lucide-react";
 
 import { BUSINESS, fullAddress, whatsappLink } from "@/content/site";
 import { Eyebrow, MercosulPlate, SlashMark, Stars, WhatsAppIcon } from "./brand";
+import { HeroOfferCard, HeroPriceLine, RotatingPriceTag } from "./hero/heroOffers";
 import { useGoogleReviews } from "./useGoogleReviews";
 
 const HERO_WHATSAPP_MESSAGE =
@@ -11,7 +12,17 @@ const HERO_WHATSAPP_MESSAGE =
  * Dobra inicial. Sem `data-reveal` de propósito: é o elemento de LCP e precisa
  * pintar imediatamente, antes de qualquer JavaScript.
  */
-export const HeroSection = () => {
+/**
+ * `offer` escolhe como o preço aparece na dobra:
+ *   "none" → hero original, sem preço;
+ *   "tag"  → etiqueta de preço girando sobre a placa (opção B);
+ *   "card" → painel direito vira cartão de oferta (opção C).
+ */
+export const HeroSection = ({
+  offer = "none",
+}: {
+  offer?: "none" | "tag" | "card";
+}) => {
   const reviews = useGoogleReviews();
 
   return (
@@ -68,6 +79,8 @@ export const HeroSection = () => {
           </a>
         </div>
 
+        {offer === "tag" && <HeroPriceLine />}
+
         {/*
           Selo de confiança. Sem avaliação do Google carregada, mostra o que é
           verdade sobre o serviço; com avaliação, mostra a nota real e leva à
@@ -111,8 +124,11 @@ export const HeroSection = () => {
         </div>
       </div>
 
-      {/* Painel da placa */}
+      {/* Painel da placa (ou cartão de oferta, na opção C) */}
       <div className="relative">
+        {offer === "card" ? (
+          <HeroOfferCard />
+        ) : (
         <div className="relative overflow-hidden rounded-3xl bg-site-contrast px-6 py-10 shadow-mav-plate sm:px-10 lg:bg-transparent lg:shadow-none">
           <div
             aria-hidden="true"
@@ -125,17 +141,21 @@ export const HeroSection = () => {
           <div className="relative flex items-start justify-between gap-4">
             <SlashMark tone="white" className="h-4 w-12 opacity-70" />
 
-            <div className="-rotate-3 rounded-xl border-2 border-gold/70 bg-site-card px-3.5 py-2 text-center shadow-mav-card">
-              <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.18em] text-site-accent">
-                Padrão
-              </p>
-              <p className="font-display text-base font-extrabold leading-none text-site-ink">
-                Mercosul
-              </p>
-              <p className="mt-1 font-body text-[0.6rem] text-site-ink/60">
-                É padrão, é segurança
-              </p>
-            </div>
+            {offer === "tag" ? (
+              <RotatingPriceTag />
+            ) : (
+              <div className="-rotate-3 rounded-xl border-2 border-gold/70 bg-site-card px-3.5 py-2 text-center shadow-mav-card">
+                <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.18em] text-site-accent">
+                  Padrão
+                </p>
+                <p className="font-display text-base font-extrabold leading-none text-site-ink">
+                  Mercosul
+                </p>
+                <p className="mt-1 font-body text-[0.6rem] text-site-ink/60">
+                  É padrão, é segurança
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="relative mt-6 [transform:rotate(-2.5deg)]">
@@ -160,7 +180,7 @@ export const HeroSection = () => {
             </span>
           </div>
         </div>
-
+        )}
       </div>
     </div>
   </section>

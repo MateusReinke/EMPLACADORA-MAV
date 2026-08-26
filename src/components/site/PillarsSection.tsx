@@ -1,5 +1,6 @@
 import { PILLARS } from "@/content/site";
 import { Eyebrow, SlashMark } from "./brand";
+import { AnimatedIconField } from "./hero/AnimatedIconField";
 import { PILLAR_ICONS } from "./icons";
 
 /**
@@ -12,6 +13,7 @@ export const PillarsSection = () => (
       aria-hidden="true"
       className="pointer-events-none absolute -left-24 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-mav-blue/20 blur-3xl"
     />
+    <AnimatedIconField variant="fleet" />
 
     <div className="relative mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
       <div data-reveal>

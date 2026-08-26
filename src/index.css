@@ -219,6 +219,9 @@
   --site-badge: 10 31 68; /* badge circular sólido dos ícones */
   --site-promo: 11 87 224; /* faixa de preços */
   --site-promo-deep: 8 71 184;
+  /* Textura de fundo: tom e intensidade dos pontos. */
+  --site-dot: 10 31 68;
+  --site-dot-alpha: 0.055;
 }
 
 /*
@@ -242,6 +245,9 @@ html[data-site-theme="dark"] {
   /* No escuro o azul cheio da promoção ofusca; entra a versão profunda. */
   --site-promo: 13 44 105;
   --site-promo-deep: 8 28 70;
+  /* Pontos claros sobre fundo escuro, um pouco mais presentes para não sumir. */
+  --site-dot: 190 210 245;
+  --site-dot-alpha: 0.07;
 }
 
 html[data-site="public"] {
@@ -263,6 +269,49 @@ html[data-site="public"] body {
 /* Compensa o cabeçalho fixo ao navegar pelas âncoras do menu. */
 .mav-site :is(section, footer)[id] {
   scroll-margin-top: 5.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Textura de fundo das seções claras.
+ *
+ * Uma grade de pontos discreta, o suficiente para o fundo deixar de ser chapado
+ * sem competir com o conteúdo. Aplicada por cima da cor de cada seção
+ * (`background-image` não substitui `background-color`), então cada faixa
+ * mantém o próprio tom e a alternância entre seções continua legível.
+ *
+ * Só nas seções de fundo claro: as faixas navy já têm as listras diagonais da
+ * marca, e somar as duas viraria ruído.
+ * ------------------------------------------------------------------------ */
+
+/*
+ * `~=` casa a classe inteira, não um pedaço dela. Com `*=`, um botão com
+ * `hover:bg-site-alt` também casaria e nasceria pontilhado.
+ */
+.mav-site :is(section, div)[class~="bg-site-bg"],
+.mav-site :is(section, div)[class~="bg-site-alt"] {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgb(var(--site-dot) / var(--site-dot-alpha)) 1px,
+    transparent 0
+  );
+  background-size: 26px 26px;
+}
+
+/*
+ * Halo azul no alto da página. Dá profundidade à dobra inicial sem virar o
+ * gradiente roxo/azul de template — é um brilho da própria cor da marca,
+ * desbotando rápido.
+ */
+.mav-site > main > section:first-of-type::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    60rem 32rem at 20% -8rem,
+    rgb(var(--site-accent) / 0.1),
+    transparent 65%
+  );
 }
 
 /* ---------------------------------------------------------------------------

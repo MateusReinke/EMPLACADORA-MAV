@@ -2,6 +2,7 @@ import { Clock, Instagram, MapPin, Phone } from "lucide-react";
 
 import { BUSINESS, fullAddress, whatsappLink } from "@/content/site";
 import { Eyebrow, IconBadge, WhatsAppIcon } from "./brand";
+import { AnimatedIconField } from "./hero/AnimatedIconField";
 
 const CONTACT_WHATSAPP_MESSAGE =
   "Olá! Quero falar com a MAV Emplacamento sobre um serviço.";
@@ -61,8 +62,10 @@ const OpeningHours = () => {
 };
 
 export const ContactSection = () => (
-  <section id="contato" className="bg-site-contrast-deep py-16 sm:py-20">
-    <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:gap-14">
+  <section id="contato" className="relative overflow-hidden bg-site-contrast-deep py-16 sm:py-20">
+    <AnimatedIconField variant="docs" />
+
+    <div className="relative mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:gap-14">
       <div data-reveal>
         <Eyebrow tone="white">Contato</Eyebrow>
         <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-white sm:text-4xl">

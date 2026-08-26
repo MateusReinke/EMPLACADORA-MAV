@@ -139,7 +139,7 @@ def build_plate(width: int) -> Image.Image:
     d.text((qx + 4 * s, 148 * s), "BR", font=f_br, fill=INK)
 
     # Caracteres da placa, centrados na área útil à direita do QR
-    code = "BRA2E19"
+    code = "MAV2O26"
     area_l, area_r = 110 * s, (pw - 24 * s)
     f_code = font(BOLD_PATH, 112 * s)
     while width_of(d, code, f_code) > (area_r - area_l) and f_code.size > 40:

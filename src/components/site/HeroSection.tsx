@@ -7,7 +7,7 @@ import {
   fullAddress,
   whatsappLink,
 } from "@/content/site";
-import { Eyebrow, MercosulPlate, SlashMark, Stars, WhatsAppIcon } from "./brand";
+import { Eyebrow, MercosulPlate, Stars, WhatsAppIcon } from "./brand";
 import { AnimatedIconField } from "./hero/AnimatedIconField";
 import { PriceTile } from "./hero/PriceTile";
 import { useGoogleReviews } from "./useGoogleReviews";
@@ -148,8 +148,17 @@ export const HeroSection = () => {
             <AnimatedIconField />
 
             <div className="relative">
-              <div className="flex items-start justify-between gap-4">
-                <SlashMark tone="white" className="h-4 w-12 opacity-70" />
+              {/*
+                Placa e selo dividem a mesma faixa. Com a placa ocupando a
+                largura inteira, ela dominava o painel e empurrava os preços
+                para fora da primeira tela — que é justamente o que precisa
+                ser lido.
+              */}
+              <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-4">
+                <MercosulPlate
+                  className="w-full max-w-[270px] rotate-[-2.5deg] drop-shadow-[0_22px_32px_rgba(0,0,0,0.45)]"
+                  title="Placa Mercosul emitida pela MAV Emplacamento"
+                />
 
                 <div className="-rotate-3 rounded-xl border-2 border-gold/70 bg-site-card px-3.5 py-2 text-center shadow-mav-card">
                   <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.18em] text-site-accent">
@@ -164,12 +173,7 @@ export const HeroSection = () => {
                 </div>
               </div>
 
-              <MercosulPlate
-                className="mt-5 w-full rotate-[-2.5deg] drop-shadow-[0_26px_38px_rgba(0,0,0,0.45)]"
-                title="Par de placas Mercosul emitido pela MAV Emplacamento"
-              />
-
-              <div className="mt-6 flex flex-wrap items-center gap-2">
+              <div className="mt-7 flex flex-wrap items-center gap-2">
                 {["1ª via", "2ª via", "0km", "Transferência"].map((chip) => (
                   <span
                     key={chip}

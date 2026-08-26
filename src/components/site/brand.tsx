@@ -101,7 +101,9 @@ export const Eyebrow = ({
  */
 
 export const MercosulPlate = ({
-  code = "BRA2E19",
+  // MAV2O26 respeita o padrão Mercosul (LLL N L NN) e ainda assina a marca:
+  // o "O" da quinta posição é letra, não zero — é o que a norma pede ali.
+  code = "MAV2O26",
   className = "",
   framed = true,
   title = "Placa Mercosul padrão brasileiro emitida pela MAV Emplacamento",

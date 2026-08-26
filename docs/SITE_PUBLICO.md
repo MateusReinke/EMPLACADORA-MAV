@@ -55,6 +55,25 @@ preço, muda só ali:
 { id: "carro", price: 140, priceFrom: 179, ... }  // priceFrom: null tira o "de/por"
 ```
 
+## Fundo e efeitos
+
+Três camadas, todas desligadas para quem tem "reduzir movimento" ativado no
+sistema:
+
+- **Textura de pontos** nas seções de fundo claro (`src/index.css`, tokens
+  `--site-dot` / `--site-dot-alpha`). Vai por cima da cor de cada seção, então a
+  alternância entre faixas continua legível.
+- **Halo azul** no alto da primeira seção — profundidade sem virar gradiente de
+  template.
+- **Ícones da marca em deriva** (`hero/AnimatedIconField.tsx`): carro, moto,
+  caminhão, placa, documento e chave, entre 6% e 10% de opacidade. Três arranjos
+  (`plates`, `fleet`, `docs`) para as seções não repetirem o mesmo desenho — o
+  que transformaria a textura em padrão reconhecível.
+
+As posições são listas fixas, nunca `Math.random()`: o componente é renderizado
+no build e no navegador, e posições sorteadas fariam o fundo saltar quando o
+React assume a página.
+
 ## Domínio
 
 O canonical, o Open Graph, o JSON-LD e o sitemap usam `VITE_SITE_URL`.

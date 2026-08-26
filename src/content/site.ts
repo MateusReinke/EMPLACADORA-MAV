@@ -334,13 +334,6 @@ export const PLATE_PRICES: PlatePrice[] = [
 export const PRICE_DISCLAIMER =
   "Valor referente à placa Mercosul. Confirme pelo WhatsApp o que está incluído no seu caso e as taxas oficiais aplicáveis.";
 
-/**
- * Prazo final da promoção. Só preencha com uma data que a MAV realmente vá
- * cumprir (ex.: "2026-09-30"). Com `null`, nenhuma urgência é exibida —
- * contador falso é o tipo de coisa que o cliente percebe e nunca mais confia.
- */
-export const PROMO_ENDS_AT: string | null = null;
-
 /** Números derivados da oferta: economia, desconto e valor por placa. */
 export const offerInsights = (item: PlatePrice) => {
   const save = item.priceFrom ? item.priceFrom - item.price : 0;

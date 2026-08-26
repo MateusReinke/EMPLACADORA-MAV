@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { SERVICES, whatsappLink } from "@/content/site";
 import { Eyebrow, MercosulPlate, SlashMark, WhatsAppIcon } from "./brand";
 import { SERVICE_ICONS } from "./icons";
+import { AnimatedIconField } from "./hero/AnimatedIconField";
 
 export const ServicesSection = () => {
   const featured = SERVICES.find((service) => service.featured) ?? SERVICES[0];
@@ -10,8 +11,10 @@ export const ServicesSection = () => {
   const FeaturedIcon = SERVICE_ICONS[featured.icon];
 
   return (
-    <section id="servicos" className="bg-site-alt py-16 sm:py-24">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section id="servicos" className="relative overflow-hidden bg-site-alt py-16 sm:py-24">
+      <AnimatedIconField tone="ink" variant="plates" />
+
+      <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="max-w-2xl" data-reveal>
           <Eyebrow>Serviços</Eyebrow>
           <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-site-ink sm:text-4xl">

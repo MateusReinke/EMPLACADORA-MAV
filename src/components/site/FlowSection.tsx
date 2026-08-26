@@ -4,6 +4,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { FLOW_SUMMARY, SERVICES, whatsappLink } from "@/content/site";
 import { Eyebrow, WhatsAppIcon } from "./brand";
 import { SERVICE_ICONS } from "./icons";
+import { AnimatedIconField } from "./hero/AnimatedIconField";
 
 /**
  * "Como funciona" — mantém o seletor de fluxo de atendimento que já existia
@@ -17,8 +18,10 @@ export const FlowSection = () => {
   const ActiveIcon = SERVICE_ICONS[active.icon];
 
   return (
-    <section id="como-funciona" className="bg-site-bg py-16 sm:py-24">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section id="como-funciona" className="relative overflow-hidden bg-site-bg py-16 sm:py-24">
+      <AnimatedIconField tone="ink" variant="docs" />
+
+      <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="max-w-2xl" data-reveal>
           <Eyebrow>Como funciona</Eyebrow>
           <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-site-ink sm:text-4xl">

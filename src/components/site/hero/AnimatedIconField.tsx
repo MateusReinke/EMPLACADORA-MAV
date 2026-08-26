@@ -78,7 +78,15 @@ export const AnimatedIconField = ({
   className?: string;
   tone?: "white" | "ink";
   variant?: keyof typeof ARRANGEMENTS;
-}) => (
+}) => {
+  /*
+   * Ícone escuro sobre fundo claro pesa mais na vista do que claro sobre
+   * escuro, na mesma opacidade. Sem esse fator, as seções claras ficariam
+   * visivelmente mais sujas que as faixas navy.
+   */
+  const weight = tone === "ink" ? 0.55 : 1;
+
+  return (
   <div
     aria-hidden="true"
     className={`mav-icon-field pointer-events-none absolute inset-0 overflow-hidden ${
@@ -87,6 +95,7 @@ export const AnimatedIconField = ({
   >
     {ARRANGEMENTS[variant].map((spot, index) => {
       const Icon = spot.icon;
+      const opacity = spot.opacity * weight;
 
       return (
         <span
@@ -100,8 +109,8 @@ export const AnimatedIconField = ({
               "--d": `${spot.duration}s`,
               "--pd": `${spot.duration * 0.55}s`,
               "--delay": `${spot.delay}s`,
-              "--o": spot.opacity,
-              opacity: spot.opacity,
+              "--o": opacity,
+              opacity,
             } as React.CSSProperties
           }
         >
@@ -109,5 +118,6 @@ export const AnimatedIconField = ({
         </span>
       );
     })}
-  </div>
-);
+    </div>
+  );
+};

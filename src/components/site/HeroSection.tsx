@@ -149,39 +149,25 @@ export const HeroSection = () => {
 
             <div className="relative">
               {/*
-                Placa e selo dividem a mesma faixa. Com a placa ocupando a
-                largura inteira, ela dominava o painel e empurrava os preços
-                para fora da primeira tela — que é justamente o que precisa
-                ser lido.
+                Placa centralizada com o quadro de preços, e o selo como
+                carimbo no canto dela. Os chips de serviço saíram: a lista
+                completa já está na seção de serviços, e aqui competiam com o
+                preço, que é o que a dobra precisa entregar.
               */}
-              <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-4">
+              <div className="relative mx-auto w-full max-w-[300px] pb-4 pr-2">
                 <MercosulPlate
-                  className="w-full max-w-[270px] rotate-[-2.5deg] drop-shadow-[0_22px_32px_rgba(0,0,0,0.45)]"
+                  className="w-full rotate-[-2.5deg] drop-shadow-[0_22px_32px_rgba(0,0,0,0.45)]"
                   title="Placa Mercosul emitida pela MAV Emplacamento"
                 />
 
-                <div className="-rotate-3 rounded-xl border-2 border-gold/70 bg-site-card px-3.5 py-2 text-center shadow-mav-card">
-                  <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.18em] text-site-accent">
+                <div className="absolute -bottom-1 -right-3 -rotate-6 rounded-xl border-2 border-gold/70 bg-site-card px-3 py-1.5 text-center shadow-mav-card">
+                  <p className="font-display text-[0.55rem] font-bold uppercase tracking-[0.18em] text-site-accent">
                     Padrão
                   </p>
-                  <p className="font-display text-base font-extrabold leading-none text-site-ink">
+                  <p className="font-display text-sm font-extrabold leading-none text-site-ink">
                     Mercosul
                   </p>
-                  <p className="mt-1 font-body text-[0.6rem] text-site-ink/60">
-                    É padrão, é segurança
-                  </p>
                 </div>
-              </div>
-
-              <div className="mt-7 flex flex-wrap items-center gap-2">
-                {["1ª via", "2ª via", "0km", "Transferência"].map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-lg border border-white/15 bg-white/[0.07] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-white/85"
-                  >
-                    {chip}
-                  </span>
-                ))}
               </div>
 
               {/*
@@ -189,7 +175,7 @@ export const HeroSection = () => {
                 da página saiu: repetir os mesmos dois valores duas vezes não
                 acrescentava nada e criava um segundo lugar para desatualizar.
               */}
-              <div id="precos" className="mt-8 border-t border-white/10 pt-7">
+              <div id="precos" className="mt-9 border-t border-white/10 pt-7">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="font-display text-sm font-bold uppercase tracking-[0.16em] text-white/60">
                     Quanto custa a placa

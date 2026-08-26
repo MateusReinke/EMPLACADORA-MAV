@@ -35,8 +35,10 @@ export const LandingPage = () => {
 
       <main>
         <HeroSection />
-        <ServicesSection />
+        {/* Antes dos serviços: quem acabou de ver o preço quer saber por que
+            confiar em quem vai mexer no documento do veículo. */}
         <PillarsSection />
+        <ServicesSection />
         <FlowSection />
         {/* Só renderiza quando há avaliação real vinda do Google */}
         <ReviewsSection />

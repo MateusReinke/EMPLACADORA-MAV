@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 
 import { FAQS, whatsappLink } from "@/content/site";
 import { Eyebrow, WhatsAppIcon } from "./brand";
+import { AnimatedIconField } from "./hero/AnimatedIconField";
 
 const FAQ_WHATSAPP_MESSAGE =
   "Olá! Tenho uma dúvida sobre emplacamento que não estava no site.";
@@ -11,8 +12,10 @@ const FAQ_WHATSAPP_MESSAGE =
  * para indexação e para o schema FAQPage) e o bloco funciona mesmo sem JS.
  */
 export const FaqSection = () => (
-  <section id="faq" className="bg-site-alt py-16 sm:py-24">
-    <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+  <section id="faq" className="relative overflow-hidden bg-site-alt py-16 sm:py-24">
+    <AnimatedIconField tone="ink" variant="fleet" />
+
+    <div className="relative mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
       <div data-reveal>
         <Eyebrow>Dúvidas frequentes</Eyebrow>
         <h2 className="mt-4 font-display text-3xl font-extrabold leading-tight tracking-[-0.015em] text-site-ink sm:text-4xl">

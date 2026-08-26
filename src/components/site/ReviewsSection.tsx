@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 
 import { Eyebrow } from "./brand";
+import { AnimatedIconField } from "./hero/AnimatedIconField";
 import { useGoogleReviews } from "./useGoogleReviews";
 
 /** Estrelas parciais a partir de uma nota real (ex.: 4,6 → 4 cheias + 60%). */
@@ -58,8 +59,10 @@ export const ReviewsSection = () => {
   if (!data) return null;
 
   return (
-    <section id="avaliacoes" className="bg-site-bg py-16 sm:py-20">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+    <section id="avaliacoes" className="relative overflow-hidden bg-site-bg py-16 sm:py-20">
+      <AnimatedIconField tone="ink" variant="fleet" />
+
+      <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Eyebrow>Avaliações</Eyebrow>

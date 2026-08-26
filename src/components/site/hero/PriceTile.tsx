@@ -30,12 +30,14 @@ export const PriceTile = ({
   if (compact) {
     return (
       <article
-        className={`flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl p-4 ${
+        className={`relative flex flex-wrap items-center gap-x-4 gap-y-3 overflow-hidden rounded-2xl p-4 ${
           glass
             ? "border border-white/15 bg-white/[0.08]"
             : "border border-site-line bg-site-card"
         }`}
       >
+        <span aria-hidden="true" className="mav-sheen" />
+
         <span
           className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
             glass ? "bg-white/15 text-white" : "bg-site-badge text-white"
@@ -85,13 +87,15 @@ export const PriceTile = ({
           : "bg-site-card shadow-[0_28px_56px_-30px_rgba(10,31,68,0.7)]"
       } ${featured ? "border-2 border-gold" : glass ? "" : "border border-site-line"}`}
     >
+      <span aria-hidden="true" className="mav-sheen" />
+
       {featured && (
-        <span className="absolute -top-3 left-5 rounded-md bg-gold px-2.5 py-1 font-display text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-mav-navy">
+        <span className="absolute -top-3 left-5 z-[1] rounded-md bg-gold px-2.5 py-1 font-display text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-mav-navy">
           Mais pedido
         </span>
       )}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="relative flex items-center justify-between gap-3">
         <span className="flex items-center gap-2.5">
           <span
             className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${

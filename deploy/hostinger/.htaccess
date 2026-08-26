@@ -96,4 +96,20 @@ RewriteRule ^ /index.html [L]
   Require all denied
 </Files>
 
+# ---------------------------------------------------------------------------
+# Restos do WordPress que ficaram para trás em public_html.
+#
+# `wp-config.php_old` e `wp-config.php.bak.*` guardam usuário e senha do banco
+# em texto puro. Com essas extensões o servidor não os executa como PHP — ele
+# entrega o conteúdo como texto para quem pedir a URL, e esses nomes estão na
+# lista que os scanners automáticos testam sozinhos.
+#
+# O certo é apagar os arquivos (o firewall da hospedagem bloqueia a exclusão
+# pelo gerenciador web; dá para fazer por FTP ou SSH). Enquanto isso não
+# acontece, esta regra fecha o acesso pela web. É remendo, não solução.
+# ---------------------------------------------------------------------------
+<FilesMatch "^wp-config">
+  Require all denied
+</FilesMatch>
+
 ErrorDocument 404 /index.html

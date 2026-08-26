@@ -16,16 +16,16 @@ Guia rápido para manter a landing page (`/`) sem precisar mexer em componente.
 
 ## Pendências de conteúdo real
 
-Estes campos estão como `null` em `src/content/site.ts` **de propósito**. Enquanto
-estiverem nulos, a página mostra um marcador amarelo tracejado e o JSON-LD omite o
-bloco correspondente — em vez de publicar um dado inventado, que violaria as
-diretrizes de dados estruturados do Google e derrubaria a confiança do visitante.
+Nenhuma. Endereço com CEP, coordenadas, telefone, e-mail e horário de atendimento
+estão cadastrados em `src/content/site.ts` com dado real, e a página não tem
+nenhum marcador de pendência.
 
-| Campo | O que preencher |
-| --- | --- |
-| `BUSINESS.geo` | Latitude/longitude reais (pegue no Google Maps: clique com o botão direito no ponto → coordenadas). |
-| `BUSINESS.address.postalCode` | CEP da unidade. |
-| `BUSINESS.email` | E-mail comercial, se houver. |
+O mecanismo continua valendo para o que vier depois: campo em `null` faz a página
+mostrar um marcador amarelo tracejado e o JSON-LD omitir o bloco correspondente —
+em vez de publicar um dado inventado, que violaria as diretrizes de dados
+estruturados do Google e derrubaria a confiança do visitante. Vale para
+`BUSINESS.geo`, `BUSINESS.address.postalCode`, `BUSINESS.email` e
+`BUSINESS.openingHours`.
 
 Depoimentos e nota de avaliação **não** são mais preenchidos à mão: vêm ao vivo
 do Google. Configure a chave e o Place ID conforme `docs/DEPLOY_HOSTINGER.md` e a

@@ -34,19 +34,21 @@ export const BUSINESS = {
   phoneDisplay: "(11) 93929-0373",
   phoneE164: "+5511939290373",
   whatsappNumber: "5511939290373",
-  email: null as string | null, // [inserir e-mail comercial real]
+  email: "contato@mavemplacamento.com.br" as string | null,
   address: {
     street: "Rua Bela Vista, 888",
     district: "Chácara Santo Antônio",
     city: "São Paulo",
     state: "SP",
     country: "BR",
-    postalCode: null as string | null, // [inserir CEP real]
+    postalCode: "04709-000" as string | null,
   },
   /** Região atendida — usada na copy e nas meta tags de SEO local. */
   serviceArea: "São Paulo e região",
-  /** [inserir coordenadas reais] `{ latitude: number; longitude: number }` */
-  geo: null as { latitude: number; longitude: number } | null,
+  /** Coordenadas da unidade — alimentam o `geo` do JSON-LD (mapa no Google). */
+  geo: { latitude: -23.630477, longitude: -46.695692 } as
+    | { latitude: number; longitude: number }
+    | null,
   openingHours: [
     { days: ["Mo", "Tu", "We", "Th", "Fr"], opens: "09:00", closes: "17:00" },
   ] as { days: string[]; opens: string; closes: string }[] | null,
@@ -64,6 +66,14 @@ export const whatsappLink = (message?: string) =>
   message ? `${WHATSAPP_BASE}?text=${encodeURIComponent(message)}` : WHATSAPP_BASE;
 
 export const fullAddress = `${BUSINESS.address.street} — ${BUSINESS.address.district}, ${BUSINESS.address.city} - ${BUSINESS.address.state}`;
+
+/**
+ * Versão com CEP, para o bloco de contato. A do herói fica sem: ali o endereço
+ * divide a linha com telefone e nota, e o CEP só serviria para quebrá-la.
+ */
+export const fullAddressWithZip = BUSINESS.address.postalCode
+  ? `${fullAddress}, ${BUSINESS.address.postalCode}`
+  : fullAddress;
 
 export type ServiceId =
   | "primeira-via"

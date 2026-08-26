@@ -1,14 +1,21 @@
-import { Clock, Instagram, MapPin, Phone } from "lucide-react";
+import { Clock, Instagram, Mail, MapPin, Phone } from "lucide-react";
 
-import { BUSINESS, fullAddress, whatsappLink } from "@/content/site";
+import { BUSINESS, fullAddress, fullAddressWithZip, whatsappLink } from "@/content/site";
 import { Eyebrow, IconBadge, WhatsAppIcon } from "./brand";
 import { AnimatedIconField } from "./hero/AnimatedIconField";
 
 const CONTACT_WHATSAPP_MESSAGE =
   "Olá! Quero falar com a MAV Emplacamento sobre um serviço.";
 
+/*
+ * Com coordenadas cadastradas o pino cai no ponto exato; sem elas, o Google
+ * geocodifica o endereço e o pino fica aproximado. O rótulo entre parênteses é
+ * o que a API de embed aceita para nomear o marcador.
+ */
 const MAP_QUERY = encodeURIComponent(
-  `${BUSINESS.address.street}, ${BUSINESS.address.district}, ${BUSINESS.address.city} - ${BUSINESS.address.state}`
+  BUSINESS.geo
+    ? `${BUSINESS.geo.latitude},${BUSINESS.geo.longitude}(${BUSINESS.name})`
+    : `${BUSINESS.address.street}, ${BUSINESS.address.district}, ${BUSINESS.address.city} - ${BUSINESS.address.state}`
 );
 
 const DAY_LABELS: Record<string, string> = {
@@ -97,7 +104,7 @@ export const ContactSection = () => (
                 Endereço
               </dt>
               <dd className="mt-1 font-body text-[0.9375rem] text-white/85">
-                <address className="not-italic">{fullAddress}</address>
+                <address className="not-italic">{fullAddressWithZip}</address>
               </dd>
             </div>
           </div>
@@ -120,6 +127,27 @@ export const ContactSection = () => (
               </dd>
             </div>
           </div>
+
+          {BUSINESS.email && (
+            <div className="flex gap-4">
+              <IconBadge tone="blue" size="sm" className="ring-0">
+                <Mail className="h-[18px] w-[18px]" strokeWidth={2.5} />
+              </IconBadge>
+              <div className="min-w-0">
+                <dt className="font-display text-xs font-bold uppercase tracking-[0.14em] text-white/45">
+                  E-mail
+                </dt>
+                <dd className="mt-1 font-body text-[0.9375rem] text-white/85">
+                  <a
+                    href={`mailto:${BUSINESS.email}`}
+                    className="break-all font-display font-bold transition-colors hover:text-gold"
+                  >
+                    {BUSINESS.email}
+                  </a>
+                </dd>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-4">
             <IconBadge tone="blue" size="sm" className="ring-0">
@@ -162,7 +190,7 @@ export const ContactSection = () => (
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2">
           <iframe
             title={`Mapa com a localização da ${BUSINESS.name} na ${fullAddress}`}
-            src={`https://www.google.com/maps?q=${MAP_QUERY}&hl=pt-BR&z=16&output=embed`}
+            src={`https://www.google.com/maps?q=${MAP_QUERY}&hl=pt-BR&z=17&output=embed`}
             className="h-[340px] w-full rounded-xl border-0 sm:h-[440px] lg:h-[520px]"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
@@ -170,8 +198,8 @@ export const ContactSection = () => (
           />
         </div>
         <p className="mt-3 font-body text-xs text-white/45">
-          Mapa aproximado pelo endereço. Confirme o ponto exato pelo WhatsApp antes
-          de sair.
+          Estacionamento e acesso podem variar pelo horário — se tiver dúvida,
+          chame no WhatsApp antes de sair.
         </p>
       </div>
     </div>

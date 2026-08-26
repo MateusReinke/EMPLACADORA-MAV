@@ -221,7 +221,9 @@
   --site-promo-deep: 8 71 184;
   /* Textura de fundo: tom e intensidade dos pontos. */
   --site-dot: 10 31 68;
-  --site-dot-alpha: 0.055;
+  --site-dot-alpha: 0.042;
+  /* Banho azul no topo de cada seção clara — ver `.mav-site ... bg-site-*`. */
+  --site-wash: 0.05;
 }
 
 /*
@@ -247,7 +249,8 @@ html[data-site-theme="dark"] {
   --site-promo-deep: 8 28 70;
   /* Pontos claros sobre fundo escuro, um pouco mais presentes para não sumir. */
   --site-dot: 190 210 245;
-  --site-dot-alpha: 0.07;
+  --site-dot-alpha: 0.06;
+  --site-wash: 0.1;
 }
 
 html[data-site="public"] {
@@ -355,11 +358,19 @@ html[data-site="public"] body {
 .mav-site :is(section, div)[class~="bg-site-bg"],
 .mav-site :is(section, div)[class~="bg-site-alt"] {
   background-image: radial-gradient(
-    circle at 1px 1px,
-    rgb(var(--site-dot) / var(--site-dot-alpha)) 1px,
-    transparent 0
-  );
-  background-size: 26px 26px;
+      circle at 1px 1px,
+      rgb(var(--site-dot) / var(--site-dot-alpha)) 1px,
+      transparent 0
+    ),
+    /*
+     * Banho azul curto no alto da seção. É o que tira o degrau seco quando uma
+     * seção clara nasce logo abaixo de uma área escura (o painel navy do herói,
+     * o card em destaque dos serviços): a borda deixa de ser uma linha e vira
+     * transição. Some antes de 22rem, então o miolo da seção continua limpo.
+     */
+      linear-gradient(180deg, rgb(var(--site-accent) / var(--site-wash)) 0, transparent 22rem);
+  background-size: 26px 26px, 100% 100%;
+  background-repeat: repeat, no-repeat;
 }
 
 /*

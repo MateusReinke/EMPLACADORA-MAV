@@ -21,6 +21,7 @@ export const buildLocalBusinessSchema = () => {
     description: SEO.description,
     url: SITE_URL,
     telephone: BUSINESS.phoneE164,
+    ...(BUSINESS.email ? { email: BUSINESS.email } : {}),
     image: absolute(SEO.ogImage),
     logo: absolute("/mav-emplacamento-logo.svg"),
     address: {

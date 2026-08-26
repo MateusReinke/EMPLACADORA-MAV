@@ -40,21 +40,26 @@ exposta: são arquivos estáticos e um único `.php` de 100 linhas.
 ## Parte 2 — Configurar domínio, SSL e PHP
 
 1. **Domínios**: confirme que `mavemplacamento.com.br` aponta para esta
-   hospedagem. Repare em **qual versão é a principal**, com ou sem `www` — você
-   vai precisar disso no passo seguinte.
+   hospedagem.
 2. **Segurança → SSL**: instale o certificado gratuito e ative "Forçar HTTPS".
+   Se o certificado cobrir só um dos dois nomes, peça o que cobre `www` também —
+   senão quem digitar `www.` vê aviso de site inseguro antes do redirecionamento
+   acontecer.
 3. **Avançado → Versão do PHP**: mantenha 8.2 (é o que já está) e confirme que a
    extensão **cURL** está ativa — é o que o proxy das avaliações usa.
 
-### A questão do `www`
+### O endereço canônico é `https://mavemplacamento.com.br`, sem `www`
 
-O build embute o endereço do site no canonical, no Open Graph, no JSON-LD e no
-sitemap. Ele precisa ser **o endereço que o visitante realmente acessa**, senão o
-Google indexa uma URL que só redireciona.
+Está decidido e já implementado nos dois lugares que precisam concordar:
 
-O padrão do projeto é `https://mavemplacamento.com.br` (sem `www`), que é como
-o domínio aparece no seu painel. Se a Hostinger estiver redirecionando para
-`www`, use `https://www.mavemplacamento.com.br` nos passos seguintes.
+- `SITE_URL` em `src/content/site.ts` — assina o canonical, as tags Open Graph,
+  o JSON-LD e o `sitemap.xml`;
+- o `.htaccess`, que redireciona `www.mavemplacamento.com.br` para a versão sem
+  `www` com um 301.
+
+Os dois **precisam** apontar para o mesmo endereço. Se um dia o domínio principal
+virar `www`, mude nos dois — só num, e o Google passa a indexar uma URL que só
+redireciona.
 
 ---
 
@@ -84,7 +89,7 @@ uma decisão sua, num botão.
    Em **Variables**, crie:
    | Nome | Valor |
    | --- | --- |
-   | `SITE_URL` | `https://mavemplacamento.com.br` (ou com `www`, conforme a Parte 2) |
+   | `SITE_URL` | `https://mavemplacamento.com.br` |
 
 **Para publicar:** aba **Actions** → **Publicar site (Hostinger)** → **Run
 workflow** → digite `publicar` → Run.
@@ -121,6 +126,11 @@ dist/
 
 Compacte **o conteúdo** de `dist/` (não a pasta) em um `.zip`, envie para
 `public_html` pelo Gerenciador de Arquivos e extraia ali.
+
+> ⚠️ O destino é `public_html`, nunca a pasta inicial. No Gerenciador de Arquivos
+> a raiz mostra `public_html`, `bck` e um arquivo chamado `DO_NOT_UPLOAD_HERE` —
+> ele existe justamente para avisar isso. Arquivo solto na raiz não é servido
+> pela web e ainda consome inode.
 
 > ⚠️ O `.htaccess` começa com ponto e fica oculto. Ative "Mostrar arquivos
 > ocultos" e confirme que ele chegou. Sem ele o site abre, mas as rotas e o

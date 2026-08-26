@@ -10,7 +10,36 @@ const MAP_QUERY = encodeURIComponent(
   `${BUSINESS.address.street}, ${BUSINESS.address.district}, ${BUSINESS.address.city} - ${BUSINESS.address.state}`
 );
 
-/** Formata o horário cadastrado; enquanto não houver, exibe pendência explícita. */
+const DAY_LABELS: Record<string, string> = {
+  Mo: "Seg",
+  Tu: "Ter",
+  We: "Qua",
+  Th: "Qui",
+  Fr: "Sex",
+  Sa: "Sáb",
+  Su: "Dom",
+};
+
+const WEEK_ORDER = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+/**
+ * "Seg a Sex" em vez de "Seg, Ter, Qua, Qui, Sex" quando os dias são
+ * consecutivos — é como as pessoas leem horário de funcionamento.
+ */
+const formatDays = (days: string[]) => {
+  const indexes = days.map((day) => WEEK_ORDER.indexOf(day)).sort((a, b) => a - b);
+  const consecutive = indexes.every(
+    (value, position) => position === 0 || value === indexes[position - 1] + 1
+  );
+
+  if (consecutive && indexes.length > 2) {
+    return `${DAY_LABELS[WEEK_ORDER[indexes[0]]]} a ${DAY_LABELS[WEEK_ORDER[indexes[indexes.length - 1]]]}`;
+  }
+
+  return indexes.map((index) => DAY_LABELS[WEEK_ORDER[index]]).join(", ");
+};
+
+/** Horário cadastrado; enquanto não houver, exibe pendência explícita. */
 const OpeningHours = () => {
   if (!BUSINESS.openingHours) {
     return (
@@ -20,15 +49,11 @@ const OpeningHours = () => {
     );
   }
 
-  const dayLabels: Record<string, string> = {
-    Mo: "Seg", Tu: "Ter", We: "Qua", Th: "Qui", Fr: "Sex", Sa: "Sáb", Su: "Dom",
-  };
-
   return (
     <>
       {BUSINESS.openingHours.map((slot) => (
         <span key={slot.days.join()} className="block">
-          {slot.days.map((day) => dayLabels[day] ?? day).join(", ")} · {slot.opens} às {slot.closes}
+          {formatDays(slot.days)} · {slot.opens} às {slot.closes}
         </span>
       ))}
     </>

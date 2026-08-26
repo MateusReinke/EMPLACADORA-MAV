@@ -6,7 +6,7 @@ Guia rápido para manter a landing page (`/`) sem precisar mexer em componente.
 
 | Arquivo | O que controla |
 | --- | --- |
-| `src/content/site.ts` | **Todo o conteúdo**: dados do negócio, serviços, pilares, FAQ, depoimentos, números. Fonte única — a página, o JSON-LD e o sitemap saem daqui. |
+| `src/content/site.ts` | **Todo o conteúdo**: dados do negócio, serviços, preços, pilares e FAQ. Fonte única — a página, o JSON-LD e o sitemap saem daqui. |
 | `src/content/schema.ts` | Geração do JSON-LD (`AutomotiveBusiness`, `WebSite`, `FAQPage`) a partir do arquivo acima. |
 | `src/site/LandingPage.tsx` | Montagem das seções. |
 | `src/components/site/` | Componentes de cada seção. |
@@ -23,7 +23,6 @@ diretrizes de dados estruturados do Google e derrubaria a confiança do visitant
 
 | Campo | O que preencher |
 | --- | --- |
-| `BUSINESS.openingHours` | Horário real de atendimento. Ex.: `[{ days: ["Mo","Tu","We","Th","Fr"], opens: "09:00", closes: "18:00" }]` |
 | `BUSINESS.geo` | Latitude/longitude reais (pegue no Google Maps: clique com o botão direito no ponto → coordenadas). |
 | `BUSINESS.address.postalCode` | CEP da unidade. |
 | `BUSINESS.email` | E-mail comercial, se houver. |
@@ -44,9 +43,13 @@ SVG — nítida em qualquer tela e sem custo de download.
 
 ## Preços
 
-`PLATE_PRICES`, em `src/content/site.ts`, controla a seção de preços, as
-mensagens do WhatsApp com o valor citado, a meta description e as ofertas do
-JSON-LD. Mudou o preço, muda só ali:
+Os preços aparecem em **um lugar só**: o quadro na dobra inicial. Não existe
+mais seção de preços no meio da página — repetir os mesmos dois valores criava
+um segundo lugar para desatualizar.
+
+`PLATE_PRICES`, em `src/content/site.ts`, controla esse quadro, as mensagens do
+WhatsApp com o valor citado, a meta description e as ofertas do JSON-LD. Mudou o
+preço, muda só ali:
 
 ```ts
 { id: "carro", price: 140, priceFrom: 179, ... }  // priceFrom: null tira o "de/por"

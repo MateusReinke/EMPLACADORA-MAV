@@ -47,8 +47,9 @@ export const BUSINESS = {
   serviceArea: "São Paulo e região",
   /** [inserir coordenadas reais] `{ latitude: number; longitude: number }` */
   geo: null as { latitude: number; longitude: number } | null,
-  /** [inserir horário real] ex.: [{ days: ["Mo","Tu","We","Th","Fr"], opens: "09:00", closes: "18:00" }] */
-  openingHours: null as { days: string[]; opens: string; closes: string }[] | null,
+  openingHours: [
+    { days: ["Mo", "Tu", "We", "Th", "Fr"], opens: "09:00", closes: "17:00" },
+  ] as { days: string[]; opens: string; closes: string }[] | null,
   /** [inserir avaliação real] Só preencha com dados verificáveis do Google Meu Negócio. */
   aggregateRating: null as { ratingValue: number; reviewCount: number } | null,
   social: {
@@ -100,12 +101,12 @@ export const SERVICES: Service[] = [
     includes: [
       "Conferência completa dos documentos",
       "Emissão no padrão oficial Mercosul",
-      "Instalação com lacre na hora",
+      "Instalação da placa no seu veículo",
     ],
     steps: [
       "Você envia os documentos pelo WhatsApp e conferimos tudo antes de qualquer pagamento",
       "Fazemos o cadastro e emitimos o protocolo junto ao órgão competente",
-      "Produzimos a placa e instalamos com lacre no seu veículo",
+      "Produzimos a placa no padrão Mercosul e instalamos no seu veículo",
     ],
     whatsappMessage:
       "Olá! Quero fazer a primeira via da placa Mercosul do meu veículo. Pode me ajudar?",
@@ -401,7 +402,7 @@ export const FLOW_SUMMARY = [
   {
     title: "Emissão e instalação",
     description:
-      "Produzimos a placa no padrão Mercosul e fazemos a instalação com lacre. Você sai com o veículo regularizado.",
+      "Produzimos a placa no padrão Mercosul e fazemos a instalação. Você sai com o veículo regularizado.",
   },
 ];
 

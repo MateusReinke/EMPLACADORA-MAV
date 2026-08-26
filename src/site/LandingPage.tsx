@@ -3,7 +3,6 @@ import { FaqSection } from "@/components/site/FaqSection";
 import { FlowSection } from "@/components/site/FlowSection";
 import { HeroSection } from "@/components/site/HeroSection";
 import { PillarsSection } from "@/components/site/PillarsSection";
-import { PricingSection } from "@/components/site/PricingSection";
 import { ReviewsSection } from "@/components/site/ReviewsSection";
 import { ServicesSection } from "@/components/site/ServicesSection";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -37,7 +36,6 @@ export const LandingPage = () => {
       <main>
         <HeroSection />
         <ServicesSection />
-        <PricingSection />
         <PillarsSection />
         <FlowSection />
         {/* Só renderiza quando há avaliação real vinda do Google */}

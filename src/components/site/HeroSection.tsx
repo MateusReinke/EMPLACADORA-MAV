@@ -7,7 +7,7 @@ import {
   fullAddress,
   whatsappLink,
 } from "@/content/site";
-import { Eyebrow, MercosulPlate, Stars, WhatsAppIcon } from "./brand";
+import { Eyebrow, MercosulPlate, SlashMark, Stars, WhatsAppIcon } from "./brand";
 import { AnimatedIconField } from "./hero/AnimatedIconField";
 import { PriceTile } from "./hero/PriceTile";
 import { useGoogleReviews } from "./useGoogleReviews";
@@ -17,7 +17,7 @@ const HERO_WHATSAPP_MESSAGE =
 
 const HIGHLIGHTS = [
   "Padrão Mercosul oficial",
-  "Instalação com lacre",
+  "Emissão e instalação da placa",
   "Orçamento fechado no WhatsApp",
 ];
 
@@ -37,8 +37,9 @@ export const HeroSection = () => {
 
   return (
     <section id="topo" className="relative overflow-hidden bg-site-alt">
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-6 lg:grid-cols-[1fr_1fr] lg:gap-12 lg:py-16">
-        <div>
+      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:py-16">
+        {/* Teto de largura: mantém a manchete longe da borda do vinco diagonal */}
+        <div className="lg:max-w-lg">
           <Eyebrow>{BUSINESS.tagline}</Eyebrow>
 
           <h1 className="mt-5 font-display text-[2.05rem] font-extrabold leading-[1.08] tracking-[-0.02em] text-site-ink sm:text-5xl lg:text-[3.1rem]">
@@ -126,58 +127,92 @@ export const HeroSection = () => {
           </div>
         </div>
 
-        {/* Quadro de preços */}
-        <div className="relative overflow-hidden rounded-3xl bg-site-contrast p-6 shadow-[0_40px_80px_-36px_rgba(10,31,68,0.8)] sm:p-8">
+        {/* Lado do produto: placa em destaque e, logo abaixo, os preços */}
+        <div className="relative">
+          {/*
+            Vinco diagonal navy — o recorte que abre a página.
+
+            Preso à coluna (offsets em px a partir dela), e não a uma
+            porcentagem da viewport: ancorado na tela, a borda inclinada
+            passeava conforme a largura do navegador e ora cortava os chips do
+            lado direito, ora invadia a manchete do lado esquerdo. Sangra para
+            fora da tela e é o `overflow-hidden` da seção que apara.
+          */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.1]"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 26px)",
-            }}
+            className="pointer-events-none absolute -bottom-64 -top-64 left-[-5rem] right-[-100vw] hidden bg-site-contrast lg:block"
+            style={{ clipPath: "polygon(64px 0, 100% 0, 100% 100%, 0 100%)" }}
           />
-          <AnimatedIconField />
 
-          <div className="relative">
-            {/*
-              A frase da promoção abre o quadro sozinha. Dividindo a linha com o
-              rótulo "Quanto custa a placa" as duas ficavam encostadas na
-              largura do painel, e nenhuma das duas era lida direito.
-            */}
-            <p className="mx-auto flex w-fit items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-3.5 py-2 font-display text-xs font-extrabold uppercase tracking-[0.14em] text-gold">
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Aproveite a promoção
-            </p>
+          <div className="relative overflow-hidden rounded-3xl bg-site-contrast px-5 py-8 shadow-mav-plate sm:px-7 lg:rounded-none lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none">
+            <AnimatedIconField />
 
-            {/* A placa ancora o quadro: é o produto que os valores abaixo compram */}
-            <MercosulPlate
-              className="mx-auto mt-5 w-full max-w-[250px] rotate-[-2deg] drop-shadow-[0_20px_30px_rgba(0,0,0,0.45)]"
-              title="Par de placas Mercosul emitido pela MAV Emplacamento"
-            />
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4">
+                <SlashMark tone="white" className="h-4 w-12 opacity-70" />
 
-            <p className="mt-7 font-display text-sm font-bold uppercase tracking-[0.16em] text-white/60">
-              Quanto custa a placa
-            </p>
+                <div className="-rotate-3 rounded-xl border-2 border-gold/70 bg-site-card px-3.5 py-2 text-center shadow-mav-card">
+                  <p className="font-display text-[0.6rem] font-bold uppercase tracking-[0.18em] text-site-accent">
+                    Padrão
+                  </p>
+                  <p className="font-display text-base font-extrabold leading-none text-site-ink">
+                    Mercosul
+                  </p>
+                  <p className="mt-1 font-body text-[0.6rem] text-site-ink/60">
+                    É padrão, é segurança
+                  </p>
+                </div>
+              </div>
 
-            {/*
-              Empilhado, não em duas colunas: nesta largura o lado a lado
-              quebrava o selo de desconto e o texto dos botões em duas linhas.
-            */}
-            <div className="mt-5 grid gap-4">
-              {PLATE_PRICES.map((item) => (
-                <PriceTile
-                  key={item.id}
-                  item={item}
-                  featured={item.highlight}
-                  surface="glass"
-                  compact={!item.highlight}
-                />
-              ))}
+              <MercosulPlate
+                className="mt-5 w-full rotate-[-2.5deg] drop-shadow-[0_26px_38px_rgba(0,0,0,0.45)]"
+                title="Par de placas Mercosul emitido pela MAV Emplacamento"
+              />
+
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                {["1ª via", "2ª via", "0km", "Transferência"].map((chip) => (
+                  <span
+                    key={chip}
+                    className="rounded-lg border border-white/15 bg-white/[0.07] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-white/85"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+
+              {/*
+                Os preços moram só aqui. A seção de preços que existia no meio
+                da página saiu: repetir os mesmos dois valores duas vezes não
+                acrescentava nada e criava um segundo lugar para desatualizar.
+              */}
+              <div id="precos" className="mt-8 border-t border-white/10 pt-7">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-display text-sm font-bold uppercase tracking-[0.16em] text-white/60">
+                    Quanto custa a placa
+                  </p>
+                  <p className="flex items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-3 py-1.5 font-display text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-gold">
+                    <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    Aproveite a promoção
+                  </p>
+                </div>
+
+                <div className="mt-5 grid gap-4">
+                  {PLATE_PRICES.map((item) => (
+                    <PriceTile
+                      key={item.id}
+                      item={item}
+                      featured={item.highlight}
+                      surface="glass"
+                      compact={!item.highlight}
+                    />
+                  ))}
+                </div>
+
+                <p className="mt-5 font-body text-xs leading-relaxed text-white/50">
+                  {PRICE_DISCLAIMER}
+                </p>
+              </div>
             </div>
-
-            <p className="mt-5 font-body text-xs leading-relaxed text-white/50">
-              {PRICE_DISCLAIMER}
-            </p>
           </div>
         </div>
       </div>

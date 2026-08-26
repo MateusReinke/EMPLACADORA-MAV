@@ -1,0 +1,74 @@
+name: Publicar site (Hostinger)
+
+# Publicação manual, de propósito: sem gatilho automático em push, nenhum
+# commit derruba ou troca o site no ar sem alguém decidir. Para publicar, vá em
+# Actions → "Publicar site (Hostinger)" → Run workflow.
+#
+# Antes do primeiro uso, cadastre em Settings → Secrets and variables → Actions:
+#   FTP_SERVER    (secret)  ex.: ftp.mavemplacamento.com.br
+#   FTP_USERNAME  (secret)  usuário FTP criado no hPanel
+#   FTP_PASSWORD  (secret)  senha desse usuário
+#   SITE_URL      (variable) ex.: https://mavemplacamento.com.br
+on:
+  workflow_dispatch:
+    inputs:
+      confirmacao:
+        description: 'Digite "publicar" para confirmar'
+        required: true
+        default: ""
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Conferir confirmação
+        # Uma trava simples contra clique acidental no botão de Run workflow.
+        if: inputs.confirmacao != 'publicar'
+        run: |
+          echo "Confirmação inválida. Digite exatamente: publicar"
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Gerar o site
+        env:
+          # Entra no canonical, no Open Graph, no JSON-LD e no sitemap.
+          VITE_SITE_URL: ${{ vars.SITE_URL || 'https://mavemplacamento.com.br' }}
+        run: npm run build:hostinger
+
+      - name: Conferir o que foi gerado
+        # Barra o envio de um build quebrado: sem HTML pré-renderizado ou sem
+        # .htaccess, o site sobe sem conteúdo indexável ou sem as rotas.
+        run: |
+          set -e
+          test -f dist/index.html      || { echo "dist/index.html ausente"; exit 1; }
+          test -f dist/app-shell.html  || { echo "app-shell.html ausente"; exit 1; }
+          test -f dist/.htaccess       || { echo ".htaccess ausente"; exit 1; }
+          test -f dist/sitemap.xml     || { echo "sitemap.xml ausente"; exit 1; }
+          grep -q "Placa Mercosul" dist/index.html || { echo "HTML sem conteúdo pré-renderizado"; exit 1; }
+          echo "Build conferido."
+
+      - name: Enviar por FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/
+          # api/config.php guarda a chave da API do Google e existe só no
+          # servidor. Sem esta exclusão, cada publicação apagaria o arquivo e as
+          # avaliações sumiriam do site até alguém recriá-lo à mão.
+          exclude: |
+            **/api/config.php
+            **/.git*
+            **/node_modules/**

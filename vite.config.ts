@@ -9,11 +9,13 @@ import { buildAllSchemas } from "./src/content/schema";
 import { SEO } from "./src/content/site";
 
 /**
- * Domínio canônico do site. Enquanto a MAV não migrar para domínio próprio,
- * defina `VITE_SITE_URL` no build para apontar ao endereço realmente publicado
- * — canonical, Open Graph, JSON-LD e sitemap saem todos daqui.
+ * Domínio canônico do site — canonical, Open Graph, JSON-LD e sitemap saem
+ * todos daqui. O padrão é o domínio da MAV sem `www`, que é como ele aparece no
+ * painel da Hostinger. Se a hospedagem redirecionar para `www`, sobrescreva com
+ * `VITE_SITE_URL` no build: o canonical precisa apontar para o endereço que o
+ * visitante realmente acessa, senão o Google indexa uma URL que só redireciona.
  */
-const SITE_URL = (process.env.VITE_SITE_URL || "https://www.mavemplacamento.com.br")
+const SITE_URL = (process.env.VITE_SITE_URL || "https://mavemplacamento.com.br")
   .replace(/\/+$/, "");
 
 /** Escapa para uso dentro de um atributo HTML (`content="..."`). */

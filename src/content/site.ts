@@ -24,7 +24,7 @@
 const resolvedSiteUrl =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SITE_URL) ||
   (typeof process !== "undefined" && process.env?.VITE_SITE_URL) ||
-  "https://www.mavemplacamento.com.br";
+  "https://mavemplacamento.com.br";
 
 export const SITE_URL = resolvedSiteUrl.replace(/\/+$/, "");
 

@@ -59,7 +59,7 @@ export const ReviewsSection = () => {
   if (!data) return null;
 
   return (
-    <section id="avaliacoes" className="relative overflow-hidden bg-site-bg py-16 sm:py-20">
+    <section id="avaliacoes" className="relative overflow-hidden py-16 sm:py-20">
       <AnimatedIconField tone="ink" variant="fleet" />
 
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">

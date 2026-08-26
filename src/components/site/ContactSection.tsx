@@ -69,7 +69,7 @@ const OpeningHours = () => {
 };
 
 export const ContactSection = () => (
-  <section id="contato" className="relative overflow-hidden bg-site-contrast-deep py-16 sm:py-20">
+  <section id="contato" className="mav-hex relative overflow-hidden bg-site-contrast-deep py-16 sm:py-20">
     <AnimatedIconField variant="docs" />
 
     <div className="relative mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:gap-14">

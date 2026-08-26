@@ -11,7 +11,7 @@ export const ServicesSection = () => {
   const FeaturedIcon = SERVICE_ICONS[featured.icon];
 
   return (
-    <section id="servicos" className="relative overflow-hidden bg-site-alt py-16 sm:py-24">
+    <section id="servicos" className="relative overflow-hidden py-16 sm:py-24">
       <AnimatedIconField tone="ink" variant="plates" />
 
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">

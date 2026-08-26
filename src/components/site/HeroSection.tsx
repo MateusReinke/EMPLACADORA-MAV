@@ -36,7 +36,7 @@ export const HeroSection = () => {
   const reviews = useGoogleReviews();
 
   return (
-    <section id="topo" className="relative overflow-hidden bg-site-alt">
+    <section id="topo" className="relative overflow-hidden">
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:py-16">
         {/* Teto de largura: mantém a manchete longe da borda do vinco diagonal */}
         <div className="lg:max-w-lg">
@@ -141,11 +141,11 @@ export const HeroSection = () => {
           */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-64 -top-64 left-[-5rem] right-[-100vw] hidden bg-site-contrast lg:block"
+            className="mav-hex pointer-events-none absolute -bottom-64 -top-64 left-[-5rem] right-[-100vw] hidden bg-site-contrast lg:block"
             style={{ clipPath: "polygon(64px 0, 100% 0, 100% 100%, 0 100%)" }}
           />
 
-          <div className="relative overflow-hidden rounded-3xl bg-site-contrast px-5 py-8 shadow-mav-plate sm:px-7 lg:rounded-none lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none">
+          <div className="mav-hex relative overflow-hidden rounded-3xl bg-site-contrast px-5 py-8 shadow-mav-plate sm:px-7 lg:rounded-none lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none">
             <AnimatedIconField />
 
             <div className="relative">

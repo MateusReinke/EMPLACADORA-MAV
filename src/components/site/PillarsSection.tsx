@@ -16,7 +16,7 @@ import { PILLAR_ICONS } from "./icons";
  * única faixa escura de largura inteira passa a ser o contato, no fim.
  */
 export const PillarsSection = () => (
-  <section className="relative overflow-hidden bg-site-bg py-16 sm:py-20">
+  <section className="relative overflow-hidden py-16 sm:py-20">
     <div
       aria-hidden="true"
       className="pointer-events-none absolute -left-24 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-mav-blue/10 blur-3xl"

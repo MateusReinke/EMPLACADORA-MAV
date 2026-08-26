@@ -207,26 +207,30 @@
  * ------------------------------------------------------------------------ */
 
 :root {
-  --site-bg: 255 255 255; /* seções principais */
-  --site-alt: 245 247 250; /* seções alternadas (#F5F7FA) */
+  /*
+   * Chão único da página. Deixou de ser branco: agora existe um fundo de
+   * favos atrás de tudo, as seções são transparentes e o que sustenta a
+   * profundidade é o contraste entre este azul pálido e o branco dos cards.
+   */
+  --site-bg: 238 244 251;
+  /* Superfície de componente — painel do fluxo, hover de botão. Não de seção. */
+  --site-alt: 228 236 246;
   --site-card: 255 255 255;
   --site-ink: 10 31 68; /* navy da marca */
-  --site-line: 221 228 238;
+  --site-line: 216 225 238;
   --site-accent: 11 87 224; /* azul #0B57E0 */
-  --site-accent-soft: 232 240 254;
-  --site-contrast: 10 31 68; /* faixas navy (pilares, contato) */
+  --site-accent-soft: 226 236 253;
+  --site-contrast: 10 31 68; /* blocos navy (herói, contato) */
   --site-contrast-deep: 6 20 49;
   --site-badge: 10 31 68; /* badge circular sólido dos ícones */
   --site-promo: 11 87 224; /* faixa de preços */
   --site-promo-deep: 8 71 184;
-  /* Textura de fundo: tom e intensidade dos pontos. */
   /* Tinta sobre o fundo dourado dos avisos. O #FDB813 puro não tem contraste
      como texto no claro, e no escuro precisa ser justamente ele. */
   --site-gold-ink: 138 90 0;
-  --site-dot: 10 31 68;
-  --site-dot-alpha: 0.042;
-  /* Banho azul no topo de cada seção clara — ver `.mav-site ... bg-site-*`. */
-  --site-wash: 0.05;
+  /* Favo de mel do fundo: cor e intensidade do traço. */
+  --site-hex: 10 31 68;
+  --site-hex-alpha: 0.11;
 }
 
 /*
@@ -235,26 +239,24 @@
  * fundo, para a alternância entre seções não se perder.
  */
 html[data-site-theme="dark"] {
-  --site-bg: 11 23 46;
-  --site-alt: 8 17 36;
+  --site-bg: 9 20 40;
+  --site-alt: 15 28 53;
   --site-card: 18 34 64;
   --site-ink: 232 238 248;
   --site-line: 34 55 93;
   --site-accent: 105 158 255; /* clareado para contraste sobre fundo escuro */
   --site-accent-soft: 22 45 91;
-  /* Precisa continuar mais escuro que --site-alt, senão a faixa some. */
-  --site-contrast: 4 11 26;
-  --site-contrast-deep: 2 7 18;
+  --site-contrast: 5 13 30;
+  --site-contrast-deep: 3 9 22;
   /* Navy sobre card escuro vira o mesmo tom: o badge passa a ser azul. */
   --site-badge: 11 87 224;
   /* No escuro o azul cheio da promoção ofusca; entra a versão profunda. */
   --site-promo: 13 44 105;
   --site-promo-deep: 8 28 70;
-  /* Pontos claros sobre fundo escuro, um pouco mais presentes para não sumir. */
   --site-gold-ink: 240 180 65;
-  --site-dot: 190 210 245;
-  --site-dot-alpha: 0.06;
-  --site-wash: 0.1;
+  /* Traço claro sobre fundo escuro, mais presente para não sumir. */
+  --site-hex: 150 195 255;
+  --site-hex-alpha: 0.13;
 }
 
 html[data-site="public"] {
@@ -344,54 +346,62 @@ html[data-site="public"] body {
 }
 
 /* ---------------------------------------------------------------------------
- * Textura de fundo das seções claras.
+ * Fundo de favos — uma camada só, atrás da página inteira.
  *
- * Uma grade de pontos discreta, o suficiente para o fundo deixar de ser chapado
- * sem competir com o conteúdo. Aplicada por cima da cor de cada seção
- * (`background-image` não substitui `background-color`), então cada faixa
- * mantém o próprio tom e a alternância entre seções continua legível.
+ * Antes cada seção pintava o próprio fundo e ganhava uma textura de pontos com
+ * um banho de cor no topo. O resultado era um degrau visível em toda troca de
+ * seção — a página parecia costurada de pedaços. Agora as seções são
+ * transparentes e quem pinta é esta camada, que atravessa o documento inteiro
+ * sem emenda.
  *
- * Só nas seções de fundo claro: as faixas navy já têm as listras diagonais da
- * marca, e somar as duas viraria ruído.
+ * O desenho vem como máscara, e não como imagem colorida: assim a cor sai de
+ * `--site-hex` e acompanha o tema, em vez de exigir um SVG por tema.
+ *
+ * A malha: hexágonos de ponta para cima, lado 20 no sistema do próprio SVG. O
+ * ladrilho mede 34,64 × 60 (√3·20 por 3·20) e desenha cinco hexágonos — o do
+ * meio e os quatro que atravessam as bordas, sem os quais o padrão quebraria
+ * nas emendas do ladrilho.
  * ------------------------------------------------------------------------ */
 
-/*
- * `~=` casa a classe inteira, não um pedaço dela. Com `*=`, um botão com
- * `hover:bg-site-alt` também casaria e nasceria pontilhado.
- */
-.mav-site :is(section, div)[class~="bg-site-bg"],
-.mav-site :is(section, div)[class~="bg-site-alt"] {
-  background-image: radial-gradient(
-      circle at 1px 1px,
-      rgb(var(--site-dot) / var(--site-dot-alpha)) 1px,
-      transparent 0
-    ),
-    /*
-     * Banho azul curto no alto da seção. É o que tira o degrau seco quando uma
-     * seção clara nasce logo abaixo de uma área escura (o painel navy do herói,
-     * o card em destaque dos serviços): a borda deixa de ser uma linha e vira
-     * transição. Some antes de 22rem, então o miolo da seção continua limpo.
-     */
-      linear-gradient(180deg, rgb(var(--site-accent) / var(--site-wash)) 0, transparent 22rem);
-  background-size: 26px 26px, 100% 100%;
-  background-repeat: repeat, no-repeat;
+.mav-site {
+  position: relative;
+  /* Contexto de empilhamento próprio: o `z-index: -1` abaixo não pode escapar
+     e cair atrás do fundo da própria página. */
+  isolation: isolate;
 }
 
-/*
- * Halo azul no alto da página. Dá profundidade à dobra inicial sem virar o
- * gradiente roxo/azul de template — é um brilho da própria cor da marca,
- * desbotando rápido.
- */
-.mav-site > main > section:first-of-type::before {
+:root {
+  --mav-hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34.64' height='60' viewBox='0 0 34.64 60'%3E%3Cpath d='M17.32 0 34.64 10 34.64 30 17.32 40 0 30 0 10Z M0 30 17.32 40 17.32 60 0 70 -17.32 60 -17.32 40Z M34.64 30 51.96 40 51.96 60 34.64 70 17.32 60 17.32 40Z M0 -30 17.32 -20 17.32 0 0 10 -17.32 0 -17.32 -20Z M34.64 -30 51.96 -20 51.96 0 34.64 10 17.32 0 17.32 -20Z' fill='none' stroke='%23fff' stroke-width='.6'/%3E%3C/svg%3E");
+}
+
+/* A camada da página inteira e a de cada bloco escuro desenham o mesmo favo. */
+.mav-site::before,
+.mav-site .mav-hex::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(
-    60rem 32rem at 20% -8rem,
-    rgb(var(--site-accent) / 0.1),
-    transparent 65%
-  );
+  background-color: rgb(var(--site-hex) / var(--site-hex-alpha));
+  -webkit-mask-image: var(--mav-hex);
+  mask-image: var(--mav-hex);
+  -webkit-mask-size: 90px 155.9px;
+  mask-size: 90px 155.9px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+/* Atrás de todo o conteúdo da página, à frente do fundo dela. */
+.mav-site::before {
+  z-index: -1;
+}
+
+/*
+ * Bloco navy: é opaco e taparia a camada da página, então desenha a própria —
+ * e com o traço claro, que é o que aparece sobre fundo escuro.
+ */
+.mav-site .mav-hex {
+  --site-hex: 175 210 255;
+  --site-hex-alpha: 0.075;
 }
 
 /* ---------------------------------------------------------------------------
